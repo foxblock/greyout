@@ -7,7 +7,6 @@
 #include "userStates.h"
 #include "SurfaceCache.h"
 #include "LevelLoader.h"
-#include "Chapter.h"
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
@@ -64,6 +63,16 @@ StateLevelSelect::StateLevelSelect()
     imageText.setUpBoundary(size);
     imageText.setWrapping(true);
     imageText.setColour(WHITE);
+    title.loadFont("fonts/Lato-Bold.ttf",48);
+    title.setAlignment(LEFT_JUSTIFIED);
+    title.setColour(WHITE);
+    title.setPosition(0,-10);
+    #ifdef _DEBUG
+    fpsDisplay.loadFont("fonts/Lato-Bold.ttf",24);
+    fpsDisplay.setColour(GREEN);
+    fpsDisplay.setPosition(GFX::getXResolution(),0);
+    fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
+    #endif
 
     // thread stuff
     levelLock = SDL_CreateMutex();
@@ -78,7 +87,7 @@ StateLevelSelect::StateLevelSelect()
     dirLister.addFilter("DIR");
     state = lsChapter;
     setChapterDirectory(DEFAULT_CHAPTER_FOLDER);
-    chapterPath = "";
+    exChapter = NULL;
 }
 
 StateLevelSelect::~StateLevelSelect()
@@ -94,12 +103,7 @@ StateLevelSelect::~StateLevelSelect()
 
 void StateLevelSelect::init()
 {
-#ifdef _DEBUG
-    //fpsDisplay.loadFont("fonts/Lato-Bold.ttf",24);
-    fpsDisplay.setColour(GREEN);
-    fpsDisplay.setPosition(GFX::getXResolution(),0);
-    fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
-#endif
+
 }
 
 void StateLevelSelect::clear()
@@ -123,7 +127,8 @@ void StateLevelSelect::clearLevelListing()
         SDL_FreeSurface((*iter).surface);
     }
     levelPreviews.clear();
-    chapterPath = "";
+    delete exChapter;
+    exChapter = NULL;
 }
 
 void StateLevelSelect::clearChapterListing()
@@ -179,7 +184,8 @@ void StateLevelSelect::userInput()
         if (input->isStart() || input->isB())
         {
             abortLevelLoading = true;
-            setNextState(STATE_MAIN);
+            switchState();
+            input->resetKeys();
             return;
         }
         if (input->isA())
@@ -189,10 +195,10 @@ void StateLevelSelect::userInput()
             if (levelPreviews.at(value).surface && levelPreviews.at(value).hasBeenLoaded)
             {
                 abortLevelLoading = true;
-                if (chapterPath[0] == 0) // level from level folder
+                if (not exChapter) // level from level folder
                     ENGINE->playSingleLevel(levelPreviews.at(value).filename,STATE_LEVELSELECT);
                 else // exploring chapter -> start chapter at selected level
-                    ENGINE->playChapter(chapterPath + DEFAULT_CHAPTER_INFO_FILE,value);
+                    ENGINE->playChapter(exChapter->path + DEFAULT_CHAPTER_INFO_FILE,value);
             }
         }
         checkSelection(levelPreviews,selection);
@@ -201,7 +207,9 @@ void StateLevelSelect::userInput()
     {
         if (input->isStart() || input->isB())
         {
+            abortLevelLoading = true;
             setNextState(STATE_MAIN);
+            input->resetKeys();
             return;
         }
         if (input->isA())
@@ -259,17 +267,23 @@ void StateLevelSelect::render()
     bg.render();
     cursor.render();
 
+    vector<PreviewData>* activeData;
+
     switch (state)
     {
     case lsChapter:
-        renderPreviews(chapterPreviews,previewDraw,lastDraw - gridOffset * PREVIEW_COUNT_X);
+        title.print("CHAPTERS");
+        activeData = &chapterPreviews;
         break;
     case lsLevel:
-        renderPreviews(levelPreviews,previewDraw,lastDraw - gridOffset * PREVIEW_COUNT_X);
+        title.print("LEVELS");
+        activeData = &levelPreviews;
         break;
     default:
         break;
     }
+
+    renderPreviews(*activeData,previewDraw,lastDraw - gridOffset * PREVIEW_COUNT_X);
     SDL_BlitSurface(previewDraw,NULL,GFX::getVideoSurface(),NULL);
 
     if (gridOffset > 0)
@@ -278,7 +292,7 @@ void StateLevelSelect::render()
         arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), OFFSET_Y);
         arrows.render();
     }
-    if (levelPreviews.size() - gridOffset * PREVIEW_COUNT_X > PREVIEW_COUNT_X * PREVIEW_COUNT_Y)
+    if (activeData->size() - gridOffset * PREVIEW_COUNT_X > PREVIEW_COUNT_X * PREVIEW_COUNT_Y)
     {
         arrows.setCurrentFrame(1);
         arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), GFX::getYResolution() - arrows.getHeight());
@@ -286,7 +300,7 @@ void StateLevelSelect::render()
     }
 
 #ifdef _DEBUG
-    //fpsDisplay.print(StringUtility::intToString(MyGame::getMyGame()->getFPS()));
+    fpsDisplay.print(StringUtility::intToString(MyGame::getMyGame()->getFPS()));
 #endif
 }
 
@@ -400,19 +414,17 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
 void StateLevelSelect::exploreChapter(CRstring filename)
 {
     clearLevelListing();
-    Chapter chapter;
+    exChapter = new Chapter;
 
-    if (not chapter.loadFromFile(filename))
+    if (not exChapter->loadFromFile(filename))
     {
         ENGINE->stateParameter = "Error loading chapter!";
         setNextState(STATE_ERROR);
     }
 
-    chapterPath = chapter.path;
-
-    for (vector<string>::const_iterator file = chapter.levels.begin(); file != chapter.levels.end(); ++file)
+    for (vector<string>::const_iterator file = exChapter->levels.begin(); file != exChapter->levels.end(); ++file)
     {
-        PreviewData temp = {chapter.path + (*file),NULL,false};
+        PreviewData temp = {exChapter->path + (*file),NULL,false};
         levelPreviews.push_back(temp);
     }
     cout << "Chapter has " << levelPreviews.size() << " levels" << endl;
@@ -426,9 +438,17 @@ void StateLevelSelect::exploreChapter(CRstring filename)
 void StateLevelSelect::switchState()
 {
     if (state == lsLevel)
+    {
         state = lsChapter;
+        title.setPosition(0,-10);
+        title.setAlignment(LEFT_JUSTIFIED);
+    }
     else
+    {
         state = lsLevel;
+        title.setPosition(GFX::getXResolution(),-10);
+        title.setAlignment(RIGHT_JUSTIFIED);
+    }
     gridOffset = 0;
     lastDraw = 0;
     firstDraw = true;
@@ -467,7 +487,11 @@ int StateLevelSelect::loadLevelPreviews(void* data)
     {
         string filename = (*iter).filename;
 
-        Level* level = LEVEL_LOADER->loadLevelFromFile(filename,self->chapterPath);
+        Level* level;
+        if (self->exChapter)
+            level = LEVEL_LOADER->loadLevelFromFile(filename,self->exChapter->path);
+        else
+            level = LEVEL_LOADER->loadLevelFromFile(filename);
         if (level)
         {
             SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
