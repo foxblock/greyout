@@ -1,17 +1,26 @@
 #ifndef STATELEVELSELECT_H
 #define STATELEVELSELECT_H
 
-#include "BaseState.h"
-
 #include <vector>
 #include <SDL/SDL_mutex.h>
 #include <SDL/SDL_thread.h>
 
+#include "BaseState.h"
 #include "AnimatedSprite.h"
 #include "Rectangle.h"
 #include "Vector2di.h"
 #include "FileLister.h"
 #include "Text.h"
+
+#include "Chapter.h"
+
+/**
+Displays chapters and levels graphically
+Chapters will be displayed by an image specified in the chapter file or fallback text
+Levels will be displayed by rendering of the actual level
+Currently there is no overflow detection present so this might crash due to memory
+limits when more than 100 maps are present (depending on size of memory)
+**/
 
 struct PreviewData;
 
@@ -30,26 +39,40 @@ class StateLevelSelect : public BaseState
         virtual void update();
         virtual void render();
 
+        // renders the passed preview images (either chapters or levels) to a
+        // target surface, addOffset is the number of preview images to skip
+        // rendering (which have been rendered in the last cycle to speed things up)
         virtual void renderPreviews(const vector<PreviewData>& data, SDL_Surface* const target, CRint addOffset);
 
+        // set the browsing directories for chapters and levels
+        // setChapterDirectory will be called upon entering this state,
+        // setLevelDirectory will be called when selecting the level folder item
+        // these functions use FileLister objects to fill the appropriate vectors with data
         virtual void setLevelDirectory(CRstring dir);
         virtual void setChapterDirectory(CRstring dir);
 
+        // similar to setLevelDirectory, but takes the currently selected chapter
+        // to fill the data vector
         virtual void exploreChapter(CRstring filename);
 
         enum LevelSelectState
         {
             lsChapter,
-            lsIntermediate,
+            lsIntermediate, // when selecting a chapter and chosing between play and explore
             lsLevel
         };
-        LevelSelectState state; // 0 - chapter select, 1 - play/explore, 2 - level select
+        LevelSelectState state;
 
     protected:
+        // switches between chapter and level state and resets certain variables
         void switchState();
 
+        // checks whether the passed selection is valid in the context of the
+        // currently displayed data (i.e. it does not go out of bounds)
         void checkSelection(const vector<PreviewData>& data, Vector2di& sel);
 
+        // Thread functions, which load SDL_Surfaces* from chapter or level
+        // data to display the preview images and save them in the vectors
         static int loadLevelPreviews(void* data);
         static int loadChapterPreviews(void* data);
 
@@ -58,11 +81,14 @@ class StateLevelSelect : public BaseState
         AnimatedSprite loading;
         AnimatedSprite arrows;
         Rectangle cursor;
+        // preview images will be drawn onto this surface for less redraws needed
+        // TODO: Or do they? Think about that!
         SDL_Surface* previewDraw;
         #ifdef _DEBUG
         Text fpsDisplay;
         #endif
         Text imageText; // fallback text when encountering chapter without image
+        Text title;
 
         // map<filename,pair<surface, hasbeenloaded>
         // if hasBeenLoaded is true but surface is NULL an error occurred while loading
@@ -78,6 +104,7 @@ class StateLevelSelect : public BaseState
         SDL_Thread* chapterThread;
         bool abortChapterLoading; // if true chapter preview generation will exit
 
+        // mutex to prevent threads from writing cout at the same time
         SDL_mutex* coutLock;
 
         Vector2di size;
@@ -89,7 +116,8 @@ class StateLevelSelect : public BaseState
 
         FileLister levelLister;
         FileLister dirLister;
-        string chapterPath;
+        // the currently active chapter (or NULL if level folder)
+        Chapter* exChapter;
     private:
 
 };

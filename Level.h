@@ -70,6 +70,8 @@ public:
     #ifdef _DEBUG
     string debugString;
     #endif
+    // errors (on loading) will be placed here
+    string errorString;
 
     enum LevelFlag
     {

@@ -241,7 +241,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
     {
         if (not level->levelImage)
         {
-            cout << "Error: No image has been specified! (critical)" << endl;
+            errorString = "Error: No image has been specified! (critical)";
             error = ecCritical;
         }
         if (level->players.size() == 0)

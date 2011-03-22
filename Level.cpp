@@ -20,6 +20,7 @@ Level::Level()
     logicTimer.setRewind(STOP);
     levelFileName = "";
     chapterPath = "";
+    errorString = "";
 
     stringToFlag["repeatx"] = lfRepeatX;
     stringToFlag["repeaty"] = lfRepeatY;
@@ -30,10 +31,10 @@ Level::Level()
     stringToProp["filename"] = lpFilename;
 
     #ifdef _DEBUG
-    debugText.loadFont("fonts/Lato-Bold.ttf",12);
+    debugText.loadFont("fonts/unispace.ttf",12);
     debugText.setColour(GREEN);
     debugString = "";
-    fpsDisplay.loadFont("fonts/Lato-Bold.ttf",24);
+    fpsDisplay.loadFont("fonts/unispace.ttf",24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
