@@ -34,7 +34,12 @@ class SurfaceCache
         // clear the cache - frees all stored surfaces!
         void clear();
 
+        // removes a surface from the cache, set destroy to false to only remove
+        // the reference from the map and not actually free the surface
+        void removeSurface(CRstring filename,CRbool destroy=true);
+
         int size() const {return cachedSurfaces.size();}
+
         bool isCached(CRstring filename) const;
     protected:
     private:

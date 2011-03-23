@@ -23,7 +23,7 @@ StateError::StateError()
 
 StateError::~StateError()
 {
-    //
+    cout << errorString << endl;
 }
 
 void StateError::userInput()

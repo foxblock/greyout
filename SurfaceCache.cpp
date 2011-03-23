@@ -94,6 +94,21 @@ void SurfaceCache::clear()
     std::cout << "Cache cleared - deleted " << size << " images!" << std::endl;
 }
 
+void SurfaceCache::removeSurface(CRstring filename, CRbool destroy)
+{
+    std::map<string, SDL_Surface*>::iterator iter;
+
+    iter = cachedSurfaces.find(filename);
+    if (iter != cachedSurfaces.end())
+    {
+        std::cout << "Removing single surface from cache \"" << filename << "\"" << std::endl;
+        if (destroy)
+            SDL_FreeSurface(iter->second);
+        iter->second = NULL;
+        cachedSurfaces.erase(iter);
+    }
+}
+
 bool SurfaceCache::isCached(CRstring filename) const
 {
     std::map<string, SDL_Surface*>::const_iterator iter;

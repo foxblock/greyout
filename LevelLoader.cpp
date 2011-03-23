@@ -181,7 +181,8 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
                 level = createLevel(params,chapterPath,lineNumber);
                 if (not level)
                 {
-                    errorString = "Level creation failed!";
+                    if (errorString[0] == 0)
+                        errorString = "Level creation failed!";
                     error = ecCritical;
                 }
                 break;
@@ -234,16 +235,15 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
 
         if (error == ecCritical) // encountered a critical error, abort
             break;
-    }
+    } // while
 
-    // Check for missing initialisation
+
+    if (file.is_open())
+        file.close();
+
+    // Additional check for missing initialisation
     if (level)
     {
-        if (not level->levelImage)
-        {
-            errorString = "Error: No image has been specified! (critical)";
-            error = ecCritical;
-        }
         if (level->players.size() == 0)
         {
             cout << "Error: No player unit has been specified in the map, what did you plan to play with?" << endl;
@@ -316,6 +316,7 @@ Level* LevelLoader::createLevel(PARAMETER_TYPE& params, CRstring chapterPath, CR
 
     if (not result->load(params))
     {
+        errorString = result->errorString;
         delete result;
         result = NULL;
     }

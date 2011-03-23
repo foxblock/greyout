@@ -4,6 +4,7 @@
 
 #include "StringUtility.h"
 
+#include "Savegame.h"
 #include "fileTypeDefines.h"
 
 Chapter::Chapter()
@@ -76,6 +77,21 @@ bool Chapter::loadFromFile(CRstring filename)
         }
     }
 
+    if (file.is_open())
+        file.close();
+
+    // Check for missing initialisation
+    if (name[0] == 0)
+    {
+        errorString = "Mandatory parameter \"name\" not set!";
+        return false;
+    }
+    if (levels.empty())
+    {
+        errorString = "No levels added to chapter!";
+        return false;
+    }
+
     return true;
 }
 
@@ -97,7 +113,7 @@ string Chapter::getNextLevel(CRstring current)
         {
             if ((I+1) < levels.size())
                 return path + levels.at(I+1);
-            else
+            else // end of the chapter
                 return "";
         }
     }
@@ -108,12 +124,53 @@ string Chapter::getNextLevel(CRstring current)
 
 string Chapter::getLevelFilename(CRint pos)
 {
-    if (pos < 0 || pos >= levels.size())
+    errorString = "";
+
+    if (pos < 0 || pos >= (int)levels.size())
     {
         errorString = "Level number out of range " + StringUtility::intToString(pos);
         return "";
     }
     return path + levels.at(pos);
+}
+
+int Chapter::getLevelIndex(CRstring filename)
+{
+    errorString = "";
+
+    if (filename[0] == 0) // empty string
+        return -1;
+
+    for (int I = levels.size()-1; I >= 0; --I)
+    {
+        if (path + levels.at(I) == filename)
+            return I;
+    }
+    errorString = "Level not found in chapter!";
+    return -1;
+}
+
+int Chapter::getProgress() const
+{
+    if (filename[0] != 0)
+        return SAVEGAME->getChapterProgress(filename);
+    return -1;
+}
+
+string Chapter::getNextLevelAndSave(CRstring current)
+{
+    int index = getLevelIndex(current);
+
+    if (errorString[0] != 0) // we have an error
+        return "";
+
+    if (index < (int)levels.size()-1) // there is a next level
+    {
+        SAVEGAME->setChapterProgress(filename,++index);
+        return path + levels.at(index);
+    }
+
+    return "";
 }
 
 /// ---protected---

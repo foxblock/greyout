@@ -3,6 +3,9 @@
 #include "userStateList.h"
 #include "SurfaceCache.h"
 #include "LevelLoader.h"
+#include "Savegame.h"
+
+#define SAVE_FILE "save.me"
 
 MyGame* MyGame::m_MyGame = NULL;
 
@@ -42,6 +45,7 @@ PENJIN_ERRORS MyGame::init()
     GFX::showCursor(true);
     #endif
     setFrameRate(30);
+    SAVEGAME->setFile(SAVE_FILE);
     return PENJIN_OK;
 }
 
@@ -64,7 +68,7 @@ void MyGame::stateManagement()
     {
         if (currentChapter) // we are playing a chapter
         {
-            stateParameter = currentChapter->getNextLevel(stateParameter);
+            stateParameter = currentChapter->getNextLevelAndSave(stateParameter);
 
             if (stateParameter == "") // no next level found
             {
@@ -72,12 +76,14 @@ void MyGame::stateManagement()
                 {
                     next = STATE_TITLE;
                     delete currentChapter;
+                    currentChapter = NULL;
                 }
                 else // error -> show it to the world
                 {
                     next = STATE_ERROR;
                     state = createState(next,currentChapter->errorString);
                     delete currentChapter;
+                    currentChapter = NULL;
                     return;
                 }
             }
@@ -164,12 +170,16 @@ void MyGame::playChapter(CRstring filename, CRint startLevel)
     {
         stateParameter = currentChapter->errorString;
         delete currentChapter;
+        currentChapter = NULL;
         state->setNextState(STATE_ERROR);
     }
-    else // start with first level
+    else
     {
-        if (startLevel <= 0 || startLevel >= currentChapter->levels.size())
-            stateParameter = "";
+        // set stateParameter to level before the one we want to play
+        if (startLevel <= 0 || startLevel >= currentChapter->levels.size()) // no startLevel -> load progress
+        {
+            stateParameter = currentChapter->getLevelFilename(currentChapter->getProgress()-1);
+        }
         else
             stateParameter = currentChapter->getLevelFilename(startLevel-1);
 
