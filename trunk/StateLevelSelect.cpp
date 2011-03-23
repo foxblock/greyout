@@ -11,9 +11,14 @@
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
 #define SPACING_X 20
-#define OFFSET_Y 40
+#define OFFSET_Y 35
+#define TITLE_FONT_SIZE 48
+#define IMAGE_FONT_SIZE 24
 
 #define CURSOR_BORDER 5
+
+#define INTERMEDIATE_MENU_ITEM_COUNT 2
+#define INTERMEDIATE_MENU_SPACING 20
 
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
 #define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
@@ -38,6 +43,7 @@ StateLevelSelect::StateLevelSelect()
     lastDraw = 0;
     firstDraw = true;
     selection = Vector2di(0,0);
+    intermediateSelection = 0;
 
     // graphic stuff
     bool fromCache;
@@ -52,6 +58,10 @@ StateLevelSelect::StateLevelSelect()
     error.disableTransparentColour();
     error.setScaleX((float)size.x / error.getWidth());
     error.setScaleY((float)size.y / error.getHeight());
+    locked.loadFrames(SURFACE_CACHE->getSurface("images/general/locked.png",fromCache,true),1,1,0,0);
+    locked.disableTransparentColour();
+    locked.setScaleX((float)size.x / locked.getWidth());
+    locked.setScaleY((float)size.y / locked.getHeight());
     arrows.loadFrames(SURFACE_CACHE->getSurface("images/general/arrows.png",fromCache),2,1,0,0);
     arrows.setTransparentColour(MAGENTA);
     cursor.setDimensions(size.x + 2*CURSOR_BORDER,size.y + 2*CURSOR_BORDER);
@@ -63,16 +73,20 @@ StateLevelSelect::StateLevelSelect()
     imageText.setUpBoundary(size);
     imageText.setWrapping(true);
     imageText.setColour(WHITE);
-    title.loadFont("fonts/Lato-Bold.ttf",48);
+    title.loadFont("fonts/Lato-Bold.ttf",TITLE_FONT_SIZE);
     title.setAlignment(LEFT_JUSTIFIED);
     title.setColour(WHITE);
-    title.setPosition(0,-10);
-    #ifdef _DEBUG
-    fpsDisplay.loadFont("fonts/Lato-Bold.ttf",24);
+    title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
+    title.setUpBoundary(Vector2di(GFX::getXResolution(),OFFSET_Y));
+    menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
+    menu.setColour(BLACK);
+    menu.setPosition(0,0);
+#ifdef _DEBUG
+    fpsDisplay.loadFont("fonts/Lato-Bold.ttf",IMAGE_FONT_SIZE);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
-    #endif
+#endif
 
     // thread stuff
     levelLock = SDL_CreateMutex();
@@ -159,7 +173,7 @@ void StateLevelSelect::userInput()
         return;
     }
 #endif
-    if (state != lsIntermediate)
+    if (state != lsIntermediate) // grid navigation
     {
         if (input->isLeft())
         {
@@ -178,13 +192,48 @@ void StateLevelSelect::userInput()
             ++selection.y;
         }
     }
+    else // intermediate menu navigation
+    {
+        if (input->isUp())
+        {
+            if (intermediateSelection > 0)
+                --intermediateSelection;
+        }
+        else if (input->isDown())
+        {
+            if (intermediateSelection < INTERMEDIATE_MENU_ITEM_COUNT-1)
+                ++intermediateSelection;
+        }
+
+        if (input->isA())
+        {
+            int value = selection.y * PREVIEW_COUNT_X + selection.x;
+            switch (intermediateSelection)
+            {
+            case 0: // play
+                ENGINE->playChapter(chapterPreviews.at(value).filename);
+                break;
+            case 1: // explore
+                exploreChapter(chapterPreviews.at(value).filename);
+                switchState(lsLevel);
+                break;
+            default: // nothing
+                break;
+            }
+        }
+        else if (input->isB())
+        {
+            switchState(lsChapter);
+        }
+        input->resetKeys();
+    }
 
     if (state == lsLevel)
     {
-        if (input->isStart() || input->isB())
+        if (input->isStart() || input->isB()) // return to chapter selection
         {
             abortLevelLoading = true;
-            switchState();
+            switchState(lsChapter);
             input->resetKeys();
             return;
         }
@@ -198,14 +247,14 @@ void StateLevelSelect::userInput()
                 if (not exChapter) // level from level folder
                     ENGINE->playSingleLevel(levelPreviews.at(value).filename,STATE_LEVELSELECT);
                 else // exploring chapter -> start chapter at selected level
-                    ENGINE->playChapter(exChapter->path + DEFAULT_CHAPTER_INFO_FILE,value);
+                    ENGINE->playChapter(exChapter->filename,value);
             }
         }
         checkSelection(levelPreviews,selection);
     }
     else if (state == lsChapter)
     {
-        if (input->isStart() || input->isB())
+        if (input->isStart() || input->isB()) // return to menu
         {
             abortLevelLoading = true;
             setNextState(STATE_MAIN);
@@ -218,14 +267,15 @@ void StateLevelSelect::userInput()
             if (value == 0) // level folder
             {
                 setLevelDirectory(DEFAULT_LEVEL_FOLDER);
-                switchState();
+                switchState(lsLevel);
             }
-            else
+            else // show play/explore menu
             {
                 if (chapterPreviews.at(value).surface && chapterPreviews.at(value).hasBeenLoaded)
                 {
-                    exploreChapter(chapterPreviews.at(value).filename);
-                    switchState();
+                    switchState(lsIntermediate);
+                    input->resetKeys();
+                    return;
                 }
             }
         }
@@ -237,66 +287,106 @@ void StateLevelSelect::userInput()
 
 void StateLevelSelect::update()
 {
-    // check selection and adjust grid offset
-    bool changed = false;
-    if (selection.y < gridOffset)
+    if (state != lsIntermediate)
     {
-        --gridOffset;
-        changed = true;
-    }
-    else if (selection.y >= gridOffset + PREVIEW_COUNT_Y)
-    {
-        ++gridOffset;
-        changed = true;
-    }
-    if (changed)
-    {
-        firstDraw = true;
-        lastDraw = 0;
-        SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
-    }
+        // check selection and adjust grid offset
+        bool changed = false;
+        if (selection.y < gridOffset)
+        {
+            --gridOffset;
+            changed = true;
+        }
+        else if (selection.y >= gridOffset + PREVIEW_COUNT_Y)
+        {
+            ++gridOffset;
+            changed = true;
+        }
+        if (changed)
+        {
+            // redraw previews on scroll
+            firstDraw = true;
+            lastDraw = 0;
+            SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
+        }
 
-    cursor.setPosition(selection.x * size.x + (selection.x + 1) * spacing.x - CURSOR_BORDER,
-                       OFFSET_Y + (selection.y - gridOffset) * size.y + (selection.y - gridOffset + 1) * spacing.y - CURSOR_BORDER);
+        cursor.setPosition(selection.x * size.x + (selection.x + 1) * spacing.x - CURSOR_BORDER,
+                           OFFSET_Y + (selection.y - gridOffset) * size.y + (selection.y - gridOffset + 1) * spacing.y - CURSOR_BORDER);
+
+    }
 }
 
 void StateLevelSelect::render()
 {
-    GFX::clearScreen();
-
-    bg.render();
-    cursor.render();
-
-    vector<PreviewData>* activeData;
-
-    switch (state)
+    if (state != lsIntermediate)
     {
-    case lsChapter:
-        title.print("CHAPTERS");
-        activeData = &chapterPreviews;
-        break;
-    case lsLevel:
-        title.print("LEVELS");
-        activeData = &levelPreviews;
-        break;
-    default:
-        break;
+        GFX::clearScreen();
+
+        bg.render();
+        cursor.render();
+        menu.render();
+
+        vector<PreviewData>* activeData;
+
+        switch (state)
+        {
+        case lsChapter:
+            title.print("CHAPTERS");
+            activeData = &chapterPreviews;
+            break;
+        case lsLevel:
+            title.print("LEVELS");
+            activeData = &levelPreviews;
+            break;
+        default:
+            break;
+        }
+
+        // render previews to temp surface (checks for newly generated previews and renders them only)
+        renderPreviews(*activeData,previewDraw,lastDraw - gridOffset * PREVIEW_COUNT_X);
+        // blit temp surface
+        SDL_BlitSurface(previewDraw,NULL,GFX::getVideoSurface(),NULL);
+
+        // show arrows
+        if (gridOffset > 0)
+        {
+            arrows.setCurrentFrame(0);
+            arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), OFFSET_Y);
+            arrows.render();
+        }
+        if (activeData->size() - gridOffset * PREVIEW_COUNT_X > PREVIEW_COUNT_X * PREVIEW_COUNT_Y)
+        {
+            arrows.setCurrentFrame(1);
+            arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), GFX::getYResolution() - arrows.getHeight());
+            arrows.render();
+        }
     }
-
-    renderPreviews(*activeData,previewDraw,lastDraw - gridOffset * PREVIEW_COUNT_X);
-    SDL_BlitSurface(previewDraw,NULL,GFX::getVideoSurface(),NULL);
-
-    if (gridOffset > 0)
+    else
     {
-        arrows.setCurrentFrame(0);
-        arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), OFFSET_Y);
-        arrows.render();
-    }
-    if (activeData->size() - gridOffset * PREVIEW_COUNT_X > PREVIEW_COUNT_X * PREVIEW_COUNT_Y)
-    {
-        arrows.setCurrentFrame(1);
-        arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), GFX::getYResolution() - arrows.getHeight());
-        arrows.render();
+        // previewDraw now holds the background image
+        SDL_BlitSurface(previewDraw,NULL,GFX::getVideoSurface(),NULL);
+
+        // OFFSET_Y is also the height of the rectangle used
+        int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (INTERMEDIATE_MENU_ITEM_COUNT-1)) / 2 - OFFSET_Y;
+        string items[2] = {"PLAY","EXPLORE"};
+        for (int I = 0; I < INTERMEDIATE_MENU_ITEM_COUNT; ++I)
+        {
+            menu.setPosition(0,pos);
+            title.setPosition(0,pos + OFFSET_Y - TITLE_FONT_SIZE);
+            if (I == intermediateSelection)
+            {
+                menu.setColour(WHITE);
+                title.setColour(BLACK);
+            }
+            else
+            {
+                menu.setColour(BLACK);
+                title.setColour(WHITE);
+            }
+            menu.render();
+            title.print(items[I]);
+            pos += OFFSET_Y + INTERMEDIATE_MENU_SPACING;
+        }
+
     }
 
 #ifdef _DEBUG
@@ -308,6 +398,13 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
 {
     int numOffset = gridOffset * PREVIEW_COUNT_X;
     bool reachedLoaded = false; // set when the first not loaded surface is found
+
+    int maxUnlocked = 0;
+    if (state == lsLevel && exChapter)
+    {
+        maxUnlocked = exChapter->getProgress();
+    }
+
     for (int I = numOffset + max(addOffset,0); I < (numOffset + PREVIEW_COUNT_X * PREVIEW_COUNT_Y); ++I)
     {
         if (I >= data.size())
@@ -327,11 +424,19 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
                 SDL_BlitSurface(data.at(I).surface,NULL,target,&rect);
                 SDL_mutexV(levelLock);
             }
-            else // render error
+            else // render error or locked image
             {
                 SDL_mutexV(levelLock);
-                error.setPosition(pos);
-                error.render(target);
+                if (state == lsLevel && exChapter && (I > maxUnlocked)) // locked
+                {
+                    locked.setPosition(pos);
+                    locked.render(target);
+                }
+                else
+                {
+                    error.setPosition(pos);
+                    error.render(target);
+                }
             }
             lastDraw = I;
         }
@@ -390,10 +495,15 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
 
     // add single level folder
     bool fromCache;
-    SDL_Surface* img = SURFACE_CACHE->getSurface("images/general/levelFolder.png",fromCache,true);
+    SDL_Surface* img = SURFACE_CACHE->getSurface("images/general/levelfolder.png",fromCache,true);
     if (img->w != size.x || img->h != size.y)
     {
         img = rotozoomSurfaceXY(img,0,(float)size.x / (float)img->w , (float)size.y / (float)img->h, SMOOTHING_OFF);
+    }
+    else
+    {
+        // remove image from cache to prevent double freeing
+        SURFACE_CACHE->removeSurface("images/general/levelfolder.png",false);
     }
     PreviewData temp = {DEFAULT_LEVEL_FOLDER,img,true};
     chapterPreviews.push_back(temp);
@@ -435,25 +545,48 @@ void StateLevelSelect::exploreChapter(CRstring filename)
 
 /// ---protected---
 
-void StateLevelSelect::switchState()
+void StateLevelSelect::switchState(const LevelSelectState& toState)
 {
-    if (state == lsLevel)
+    if (toState == lsChapter)
     {
-        state = lsChapter;
-        title.setPosition(0,-10);
+        title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
         title.setAlignment(LEFT_JUSTIFIED);
     }
-    else
+    else if (toState == lsLevel)
     {
         state = lsLevel;
-        title.setPosition(GFX::getXResolution(),-10);
+        title.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
         title.setAlignment(RIGHT_JUSTIFIED);
     }
-    gridOffset = 0;
-    lastDraw = 0;
-    firstDraw = true;
-    selection = Vector2di(0,0);
-    SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
+    else if (toState == lsIntermediate)
+    {
+        menu.setDimensions(GFX::getXResolution(),GFX::getYResolution());
+        menu.setAlpha(100);
+        menu.render();
+        SDL_BlitSurface(GFX::getVideoSurface(),NULL,previewDraw,NULL);
+        menu.setAlpha(255);
+        menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
+        intermediateSelection = 0;
+        title.setAlignment(CENTRED);
+    }
+
+    if (toState != lsIntermediate)
+    {
+        // preserve selection when coming from intermediate state
+        if (state != lsIntermediate)
+        {
+            selection = Vector2di(0,0);
+            gridOffset = 0;
+        }
+        title.setColour(WHITE);
+        menu.setColour(BLACK);
+        menu.setPosition(0,0);
+        lastDraw = 0;
+        firstDraw = true;
+        SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
+    }
+
+    state = toState;
 }
 
 void StateLevelSelect::checkSelection(const vector<PreviewData>& data, Vector2di& sel)
@@ -482,14 +615,23 @@ int StateLevelSelect::loadLevelPreviews(void* data)
     cout << "Generating level previews images" << endl;
     StateLevelSelect* self = (StateLevelSelect*)data;
     vector<PreviewData>::iterator iter = self->levelPreviews.begin();
+    int levelNumber, maxUnlocked = 0;
+    if (self->exChapter)
+        maxUnlocked = self->exChapter->getProgress();
 
     while (not self->abortLevelLoading && iter != self->levelPreviews.end())
     {
         string filename = (*iter).filename;
 
         Level* level;
-        if (self->exChapter)
-            level = LEVEL_LOADER->loadLevelFromFile(filename,self->exChapter->path);
+        if (self->exChapter) // we are browsing a chapter
+        {
+            // check whether the level has been unlocked, else don't load
+            if (levelNumber <= maxUnlocked)
+                level = LEVEL_LOADER->loadLevelFromFile(filename,self->exChapter->path);
+            else
+                level = NULL;
+        }
         else
             level = LEVEL_LOADER->loadLevelFromFile(filename);
         if (level)
@@ -512,10 +654,12 @@ int StateLevelSelect::loadLevelPreviews(void* data)
             // set loaded to true, but keep surface == NULL indicating an error
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->levelLock);
-            cout << LEVEL_LOADER->errorString << endl;
+            if (LEVEL_LOADER->errorString[0] != 0)
+                cout << LEVEL_LOADER->errorString << endl;
         }
         delete level;
         ++iter;
+        ++levelNumber;
     }
     SDL_mutexP(self->coutLock);
     if (self->abortLevelLoading)
@@ -524,7 +668,7 @@ int StateLevelSelect::loadLevelPreviews(void* data)
         self->abortLevelLoading = false;
     }
     else
-        cout << "Finished level generating preview images" << endl;
+        cout << "Finished generating level preview images" << endl;
     SDL_mutexV(self->coutLock);
     return 0;
 }
@@ -559,12 +703,17 @@ int StateLevelSelect::loadChapterPreviews(void* data)
         if (chapter.imageFile[0] != 0) // we have an image file
         {
             bool fromCache;
-            SDL_Surface* img = SURFACE_CACHE->getSurface(chapter.imageFile,chapter.path,fromCache);
+            SDL_Surface* img = SURFACE_CACHE->getSurface(chapter.imageFile,chapter.path,fromCache,true);
             if (img) // load successful
             {
                 if (img->w != self->size.x || img->h != self->size.y) // scale if needed
                 {
                     img = rotozoomSurfaceXY(img,0,(float)self->size.x / (float)img->w , (float)self->size.y / (float)img->h, SMOOTHING_OFF);
+                }
+                else // remove the surface from the cache to prevent double freeing
+                {
+                    SURFACE_CACHE->removeSurface(chapter.imageFile,false);
+                    SURFACE_CACHE->removeSurface(chapter.path + chapter.imageFile,false);
                 }
                 SDL_mutexP(self->chapterLock);
                 (*iter).surface = img;

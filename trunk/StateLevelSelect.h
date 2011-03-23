@@ -64,8 +64,8 @@ class StateLevelSelect : public BaseState
         LevelSelectState state;
 
     protected:
-        // switches between chapter and level state and resets certain variables
-        void switchState();
+        // switches between states and resets certain variables
+        void switchState(const LevelSelectState& toState);
 
         // checks whether the passed selection is valid in the context of the
         // currently displayed data (i.e. it does not go out of bounds)
@@ -79,8 +79,10 @@ class StateLevelSelect : public BaseState
         AnimatedSprite bg;
         AnimatedSprite error;
         AnimatedSprite loading;
+        AnimatedSprite locked;
         AnimatedSprite arrows;
         Rectangle cursor;
+        Rectangle menu;
         // preview images will be drawn onto this surface for less redraws needed
         // TODO: Or do they? Think about that!
         SDL_Surface* previewDraw;
@@ -110,6 +112,7 @@ class StateLevelSelect : public BaseState
         Vector2di size;
         Vector2di spacing;
         Vector2di selection;
+        int intermediateSelection;
         int gridOffset; // the topmost column to render (=offset)
         int lastDraw; // indicates the last drawn preview image to speed up rendering
         bool firstDraw; // if true the all preview images will be rendered (also set on scrolling)

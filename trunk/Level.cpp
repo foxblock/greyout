@@ -77,6 +77,12 @@ bool Level::load(const PARAMETER_TYPE& params)
         }
     }
 
+    if (not levelImage)
+    {
+        errorString = "Error: No image has been specified! (critical)";
+        return false;
+    }
+
     return true;
 }
 
@@ -115,6 +121,11 @@ void Level::userInput()
         units.push_back(box);
 
         input->resetY();
+    }
+    if (input->isX())
+    {
+        setNextState(STATE_NEXT);
+        input->resetKeys();
     }
 
 
