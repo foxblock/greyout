@@ -14,21 +14,28 @@ Level::Level()
 {
     noCollision = MAGENTA;
     levelImage = NULL;
-    collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
     unitRect.setColour(noCollision);
     rectangleLayer = NULL;
+    collisionLayer = NULL;
     logicTimer.setRewind(STOP);
     levelFileName = "";
     chapterPath = "";
     errorString = "";
+    drawOffset = Vector2df(0,0);
 
     stringToFlag["repeatx"] = lfRepeatX;
     stringToFlag["repeaty"] = lfRepeatY;
-    stringToFlag["disableSwap"] = lfDisableSwap;
+    stringToFlag["scrollx"] = lfScrollX;
+    stringToFlag["scrolly"] = lfScrollY;
+    stringToFlag["disableswap"] = lfDisableSwap;
+    stringToFlag["keepcentred"] = lfKeepCentred;
 
     stringToProp["image"] = lpImage;
     stringToProp["flags"] = lpFlags;
     stringToProp["filename"] = lpFilename;
+    stringToProp["offset"] = lpOffset;
+    stringToProp["background"] = lpBackground;
+    stringToProp["boundaries"] = lpBoundaries;
 
     #ifdef _DEBUG
     debugText.loadFont("fonts/unispace.ttf",12);
@@ -39,6 +46,8 @@ Level::Level()
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
     #endif
+
+    cam.parent = this;
 }
 
 Level::~Level()
@@ -62,6 +71,9 @@ Level::~Level()
         delete (*curr);
     }
     mouseRects.clear();
+
+    // reset background colour
+    GFX::setClearColour(BLACK);
 }
 
 /// ---public---
@@ -81,6 +93,11 @@ bool Level::load(const PARAMETER_TYPE& params)
     {
         errorString = "Error: No image has been specified! (critical)";
         return false;
+    }
+    else
+    {
+        collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->getWidth(),levelImage->getHeight(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+        levelImage->renderImage(collisionLayer,Vector2di(0,0));
     }
 
     return true;
@@ -117,7 +134,7 @@ void Level::userInput()
         params.push_back(make_pair("class","pushablebox"));
         params.push_back(make_pair("collision","0,255"));
         BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
-        box->position = input->getMouse() - Vector2df(12,12);
+        box->position = drawOffset + input->getMouse() - Vector2df(12,12);
         units.push_back(box);
 
         input->resetY();
@@ -193,7 +210,8 @@ void Level::update()
         }
     }
 
-    // physics (acceleration, friction, etc.) and unit collision
+    // physics (acceleration, friction, etc)
+    // and unit collision
     for (list<ControlUnit*>::iterator player = players.begin(); player != players.end(); ++player)
     {
         adjustPosition((*player));
@@ -217,13 +235,13 @@ void Level::update()
             for (list<BaseUnit*>::iterator other = units.begin(); other != units.end(); ++other)
             {
                 if ((*curr) != (*other) && PHYSICS->checkUnitCollision(this,(*curr),(*other)))
-                    renderUnit(collisionLayer,(*other));
+                    renderUnit(collisionLayer,(*other),Vector2df(0,0));
             }
             PHYSICS->unitMapCollision(this,collisionLayer,(*curr));
         }
         // else still update unit on collision surface for player-map collision
         (*curr)->update();
-        renderUnit(collisionLayer,(*curr));
+        renderUnit(collisionLayer,(*curr),Vector2df(0,0));
     }
 
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -236,6 +254,8 @@ void Level::update()
     }
 
     // other update stuff
+    if (flags.hasFlag(lfKeepCentred))
+        cam.centerOnUnit(getFirstActivePlayer());
 }
 
 void Level::render()
@@ -255,7 +275,7 @@ void Level::render(SDL_Surface* screen)
 {
     GFX::clearScreen(screen);
 
-    levelImage->renderImage(screen,0,0);
+    levelImage->renderImage(screen,-drawOffset);
 
     if (rectangleLayer)
     {
@@ -269,25 +289,50 @@ void Level::render(SDL_Surface* screen)
     }
 
     #ifdef _DEBUG_COL
-    SDL_Rect temp;
-    temp.w = 800;
-    temp.h = 480;
-    temp.x = 0;
-    temp.y = 480;
-    SDL_BlitSurface(collisionLayer,NULL,screen,&temp);
+    SDL_Rect dest;
+    dest.x = 0;
+    dest.y = 480;
+    float factorX = (float)GFX::getXResolution() / (float)collisionLayer->w;
+    float factorY = (float)GFX::getYResolution() / 2.0f / (float)collisionLayer->h;
+    SDL_Surface* draw = rotozoomSurfaceXY(collisionLayer,0,factorX,factorY,SMOOTHING_OFF);
+    for (list<ControlUnit*>::const_iterator iter = players.begin(); iter != players.end(); ++iter)
+    {
+        Rectangle foo;
+        foo.setDimensions((float)((*iter)->getWidth()) * factorX, (float)((*iter)->getHeight()) * factorY);
+        Vector2df rectPos = (*iter)->getPixel(diTOPLEFT);
+        rectPos.x *= factorX;
+        rectPos.y *= factorY;
+        foo.setPosition(rectPos);
+        foo.setColour(GREEN);
+        foo.render(draw);
+    }
+    SDL_BlitSurface(draw,NULL,screen,&dest);
+    SDL_FreeSurface(draw);
     #endif
 
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
-        renderUnit(screen,(*curr));
+        renderUnit(screen,(*curr),drawOffset);
     }
 
     // draw to image used for collision testing before players get drawn
-    SDL_BlitSurface(screen,NULL,collisionLayer,NULL);
+    SDL_Rect temp;
+    temp.x = drawOffset.x;
+    temp.y = drawOffset.y;
+    #ifdef _DEBUG_COL
+    SDL_Rect temp2;
+    temp2.x = 0;
+    temp2.y = 0;
+    temp2.w = GFX::getXResolution();
+    temp2.h = GFX::getYResolution() / 2.0f;
+    SDL_BlitSurface(screen,&temp2,collisionLayer,&temp);
+    #else
+    SDL_BlitSurface(screen,NULL,collisionLayer,&temp);
+    #endif
 
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
-        renderUnit(screen,(*curr));
+        renderUnit(screen,(*curr),drawOffset);
     }
 
 
@@ -325,15 +370,16 @@ void Level::logicPauseUpdate()
 
 int Level::getWidth() const
 {
-    return GFX::getXResolution();
+    if (levelImage)
+        return levelImage->getWidth();
+    return -1;
 }
 
 int Level::getHeight() const
 {
-    #ifdef _DEBUG_COL
-    return GFX::getYResolution() / 2;
-    #endif
-    return GFX::getYResolution();
+    if (levelImage)
+        return levelImage->getHeight();
+    return -1;
 }
 
 Vector2df Level::transformCoordinate(const Vector2df& coord) const
@@ -387,6 +433,16 @@ Vector2df Level::boundsCheck(const BaseUnit* const unit) const
     return result;
 }
 
+ControlUnit* Level::getFirstActivePlayer() const
+{
+    for (list<ControlUnit*>::const_iterator unit = players.begin(); unit != players.end(); ++unit)
+    {
+        if ((*unit)->takesControl)
+            return (*unit);
+    }
+    return NULL;
+}
+
 /// ---protected---
 
 void Level::clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const unit)
@@ -402,26 +458,26 @@ void Level::clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const u
     }
 }
 
-void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit)
+void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset)
 {
+    unit->updateScreenPosition(offset);
     unit->render(surface);
     Vector2df pos2 = boundsCheck(unit);
     if (pos2 != unit->position)
     {
         Vector2df temp = unit->position;
         unit->position = pos2;
-        unit->updateScreenPosition();
+        unit->updateScreenPosition(offset);
         unit->render(surface);
         unit->position = temp;
-        unit->updateScreenPosition();
     }
 }
 
 void Level::adjustPosition(BaseUnit* const unit)
 {
     // 1 = out of right/bottom bounds, -1 = out of left/top bounds
-    int boundsX = (unit->position.x > GFX::getXResolution()) - (unit->position.x + unit->getWidth() < 0);
-    int boundsY = (unit->position.y > GFX::getYResolution()) - (unit->position.y + unit->getHeight() < 0);
+    int boundsX = (unit->position.x > getWidth()) - (unit->position.x + unit->getWidth() < 0);
+    int boundsY = (unit->position.y > getHeight()) - (unit->position.y + unit->getHeight() < 0);
     bool changed = false;
 
     if (boundsX != 0 && flags.hasFlag(lfRepeatX))
@@ -439,8 +495,6 @@ void Level::adjustPosition(BaseUnit* const unit)
         unit->position = unit->startingPosition;
         changed = true;
     }
-    if (changed)
-        unit->updateScreenPosition();
 }
 
 bool Level::processParameter(const pair<string,string>& value)
@@ -455,6 +509,15 @@ bool Level::processParameter(const pair<string,string>& value)
         bool fromCache;
         levelImage->loadImage(SURFACE_CACHE->getSurface(value.second,chapterPath,fromCache));
         levelImage->setSurfaceSharing(true);
+        if (levelImage->getWidth() < GFX::getXResolution())
+            drawOffset.x = ((int)levelImage->getWidth() - (int)GFX::getXResolution()) / 2.0f;
+        #ifdef _DEBUG_COL
+        if (levelImage->getHeight() < GFX::getYResolution() / 2)
+            drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution() / 2.0f) / 2.0f;
+        #else
+        if (levelImage->getHeight() < GFX::getYResolution())
+            drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution()) / 2.0f;
+        #endif
         break;
     }
     case lpFlags:
@@ -468,6 +531,33 @@ bool Level::processParameter(const pair<string,string>& value)
     case lpFilename:
     {
         levelFileName = value.second;
+        break;
+    }
+    case lpOffset:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        drawOffset.x = StringUtility::stringToFloat(token.at(0));
+        drawOffset.y = StringUtility::stringToFloat(token.at(1));
+        break;
+    }
+    case lpBackground:
+    {
+        int val = StringUtility::stringToInt(value.second);
+        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
+            GFX::setClearColour(Colour(val));
+        else // string colour code
+            GFX::setClearColour(Colour(value.second));
+        break;
+    }
+    case lpBoundaries:
+    {
+        cam.disregardBoundaries = not StringUtility::stringToBool(value.second);
         break;
     }
     default:

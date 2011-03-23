@@ -82,7 +82,7 @@ New implementation, checking each direction of movement individually. This keeps
 the correction of gravity induced movement separate from sideways movement
 correction, which is desired in platformers. (assuming gravity in y-direction)
 **/
-void Physics::unitMapCollision(const Level* const parent, SDL_Surface* const level, BaseUnit* const unit, const Vector2df& mapOffset) const
+void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colImage, BaseUnit* const unit, const Vector2df& mapOffset) const
 {
     /// TODO: Implement step-size and check diBOTTOMLEFT and -RIGHT in x-direction, too
     /// compare to y-correction values and step-size
@@ -106,13 +106,13 @@ void Physics::unitMapCollision(const Level* const parent, SDL_Surface* const lev
     {
         Vector2df pixel = unit->getPixel((*dir));
         pixel.x += unit->velocity.x;
-        pixel = parent->transformCoordinate(pixel);
+        pixel = level->transformCoordinate(pixel);
 
         // out of bounds check
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
+        if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
             continue;
 
-        Colour colColour = GFX::getPixel(level,pixel.x,pixel.y);
+        Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
         if (unit->checkCollisionColour(colColour))
         {
@@ -143,11 +143,11 @@ void Physics::unitMapCollision(const Level* const parent, SDL_Surface* const lev
         {
             Vector2df pixel = entryPtr->pixel;
             pixel.x += correctionX;
-            pixel = parent->transformCoordinate(pixel);
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
+            pixel = level->transformCoordinate(pixel);
+            if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
                 continue;
 
-            Colour colColour = GFX::getPixel(level,pixel.x,pixel.y);
+            Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
             if (unit->checkCollisionColour(colColour))
                 break;
         }
@@ -178,12 +178,12 @@ void Physics::unitMapCollision(const Level* const parent, SDL_Surface* const lev
         Vector2df pixel = unit->getPixel((*dir));
         pixel += unit->velocity;
         pixel.x += correctionX;
-        pixel = parent->transformCoordinate(pixel);
+        pixel = level->transformCoordinate(pixel);
 
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
+        if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
             continue;
 
-        Colour colColour = GFX::getPixel(level,pixel.x,pixel.y);
+        Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
         if (unit->checkCollisionColour(colColour))
         {
@@ -212,11 +212,11 @@ void Physics::unitMapCollision(const Level* const parent, SDL_Surface* const lev
         {
             Vector2df pixel = entryPtr->pixel;
             pixel.y += correctionY;
-            pixel = parent->transformCoordinate(pixel);
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
+            pixel = level->transformCoordinate(pixel);
+            if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
                 continue;
 
-            Colour colColour = GFX::getPixel(level,pixel.x,pixel.y);
+            Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
             if (unit->checkCollisionColour(colColour))
                 break;
         }
@@ -250,7 +250,7 @@ commented as the above function).
 **/
 /// TODO: Implement latest changes with pixel transformation
 /*
-void Physics::unitMapCollision(SDL_Surface* const level, BaseUnit* const unit, const Vector2df& mapOffset) const
+void Physics::unitMapCollision(SDL_Surface* const colImage, BaseUnit* const unit, const Vector2df& mapOffset) const
 {
     Vector2df correction(0,0);
     Vector2di pixelCorrection(0,0); // unit will be moved in this steps until no collision occurs
@@ -270,7 +270,7 @@ void Physics::unitMapCollision(SDL_Surface* const level, BaseUnit* const unit, c
         if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
             continue;
 
-        Colour colColour = GFX::getPixel(level,pixel.x,pixel.y);
+        Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
         if (unit->checkCollisionColour(colColour))
         {
@@ -315,7 +315,7 @@ void Physics::unitMapCollision(SDL_Surface* const level, BaseUnit* const unit, c
             if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
                 continue;
 
-            Colour colColour = GFX::getPixel(level,pixel.x,pixel.y);
+            Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
             // if unit is still colliding break here and go into next iteration
             if (unit->checkCollisionColour(colColour))
                 break;
@@ -332,7 +332,7 @@ void Physics::unitMapCollision(SDL_Surface* const level, BaseUnit* const unit, c
 */
 
 
-void Physics::playerUnitCollision(const Level* const parent, BaseUnit* const player, BaseUnit* const unit) const
+void Physics::playerUnitCollision(const Level* const level, BaseUnit* const player, BaseUnit* const unit) const
 {
     /// TODO: Optimize this and remove redundant stuff (aka this is a mess!)
     if (not unit->checkCollisionColour(player->col) && not player->checkCollisionColour(unit->col))
@@ -356,7 +356,7 @@ void Physics::playerUnitCollision(const Level* const parent, BaseUnit* const pla
         unit->hitUnit(make_pair(dir,Vector2df(diffX,diffY)),player);
     }
 
-    Vector2df pos2 = parent->boundsCheck(player);
+    Vector2df pos2 = level->boundsCheck(player);
     if (pos2 != player->position)
     {
         Vector2df proPosPlayer = pos2 + player->velocity;
@@ -378,7 +378,7 @@ void Physics::playerUnitCollision(const Level* const parent, BaseUnit* const pla
     }
 }
 
-bool Physics::checkUnitCollision(const Level* const parent, const BaseUnit* const unitA, const BaseUnit* const unitB) const
+bool Physics::checkUnitCollision(const Level* const level, const BaseUnit* const unitA, const BaseUnit* const unitB) const
 {
     SDL_Rect rectA = {unitA->position.x, unitA->position.y, unitA->getWidth(), unitA->getHeight()};
     SDL_Rect rectB = {unitB->position.x, unitB->position.y, unitB->getWidth(), unitB->getHeight()};
@@ -386,8 +386,8 @@ bool Physics::checkUnitCollision(const Level* const parent, const BaseUnit* cons
         return true;
 
     // check warped position
-    Vector2df posA2 = parent->boundsCheck(unitA);
-    Vector2df posB2 = parent->boundsCheck(unitB);
+    Vector2df posA2 = level->boundsCheck(unitA);
+    Vector2df posB2 = level->boundsCheck(unitB);
     if (posA2 != unitA->position || posB2 != unitB->position)
     {
         rectA.x = posA2.x;

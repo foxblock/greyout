@@ -7,7 +7,7 @@
 
 #include "PenjinTypes.h"
 
-/*
+/**
 Organizing and ordering levels loaded from a chapter information file
 Also displaying a name and image if needed
 Additionally providing other classes with variables for file loading (such as the chapter path)
@@ -16,7 +16,7 @@ Chapters are a bunch of levels put together in a folder, they can use their own
 graphic set and sounds as well as override or use the default ones
 You can order the levels in the info.txt file
 User progress will be saved in global savegame file
-*/
+**/
 
 using namespace std;
 

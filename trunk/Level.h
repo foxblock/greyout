@@ -12,6 +12,7 @@
 #include "BaseState.h"
 
 #include "SimpleFlags.h"
+#include "Camera.h"
 
 /**
 Base level class interacting with the Penjin framwork through userInput,update and render
@@ -58,6 +59,10 @@ public:
     // the screen) and returns an adjusted position
     virtual Vector2df boundsCheck(const BaseUnit* const unit) const;
 
+    // returns the first player unit with takesControl == true
+    // returns NULL if none is found
+    virtual ControlUnit* getFirstActivePlayer() const;
+
     list<ControlUnit*> players;
     list<BaseUnit*> units;
     Image* levelImage;
@@ -79,9 +84,13 @@ public:
         lfScrollY = 2,
         lfRepeatX = 4,
         lfRepeatY = 8,
-        lfDisableSwap = 16
+        lfDisableSwap = 16,
+        lfKeepCentred = 32
     };
     map<string,int> stringToFlag;
+
+    Vector2df drawOffset;
+    Camera cam;
 
 protected:
     // deletes the passed unit from the collision surface (to avoid checking
@@ -91,7 +100,8 @@ protected:
     // this renders a unit taking into account the flags, so if a unit moves out
     // of bounds and the level is set to repeat it will also get drawn on the
     // opposite side of the screen
-    virtual void renderUnit(SDL_Surface* const surface, BaseUnit* const unit);
+    // specify offset to pass to updateScreenPosition
+    virtual void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
 
     // checks whether the unit has left the bounds and adjust position accordingly
     virtual void adjustPosition(BaseUnit* const unit);
@@ -107,6 +117,9 @@ protected:
         lpImage,
         lpFlags,
         lpFilename,
+        lpOffset,
+        lpBackground,
+        lpBoundaries,
         lpEOL
     };
     map<string,int> stringToProp;

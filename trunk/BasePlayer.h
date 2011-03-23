@@ -17,10 +17,14 @@ class BasePlayer : public ControlUnit
 
         virtual bool load(const PARAMETER_TYPE& params);
 
+        virtual void update();
+
+        virtual void hitMap(const Vector2df& correctionOverride);
+
         virtual void control(SimpleJoy* input);
 
-        virtual void update();
     protected:
+        bool canJump;
     private:
 
 };

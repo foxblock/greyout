@@ -133,7 +133,6 @@ void BaseUnit::setStartingPosition(const Vector2df& pos)
 void BaseUnit::update()
 {
     move();
-    updateScreenPosition();
     if (currentSprite)
         currentSprite->update();
 }
@@ -151,7 +150,7 @@ void BaseUnit::render(SDL_Surface* surf)
     #ifdef _DEBUG
     for (vector<CollisionEntry>::const_iterator temp = collisionInfo.entries.begin(); temp != collisionInfo.entries.end(); ++temp)
     {
-        GFX::setPixel(temp->pixel,GREEN);
+        GFX::setPixel(temp->pixel - parent->drawOffset,GREEN);
     }
     GFX::renderPixelBuffer();
     #endif

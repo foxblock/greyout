@@ -176,7 +176,7 @@ void MyGame::playChapter(CRstring filename, CRint startLevel)
     else
     {
         // set stateParameter to level before the one we want to play
-        if (startLevel <= 0 || startLevel >= currentChapter->levels.size()) // no startLevel -> load progress
+        if (startLevel < 0 || startLevel >= currentChapter->levels.size()) // no startLevel -> load progress
         {
             stateParameter = currentChapter->getLevelFilename(currentChapter->getProgress()-1);
         }

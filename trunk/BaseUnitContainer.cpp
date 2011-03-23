@@ -22,11 +22,11 @@ void BaseUnitContainer::update()
     }
 }
 
-void BaseUnitContainer::updateScreenPosition()
+void BaseUnitContainer::updateScreenPosition(const Vector2df& offset)
 {
     for (vector<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
-        (*curr)->updateScreenPosition();
+        (*curr)->updateScreenPosition(offset);
     }
 }
 

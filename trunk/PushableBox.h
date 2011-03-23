@@ -25,7 +25,7 @@ class PushableBox : public BaseUnit
         virtual int getHeight() const;
         virtual int getWidth() const;
 
-        virtual void updateScreenPosition(Vector2di offset = Vector2di(0,0));
+        virtual void updateScreenPosition(Vector2di offset);
         virtual void render(SDL_Surface* surf);
 
         virtual void hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit);
