@@ -31,21 +31,21 @@ public:
     void applyPhysics(BaseUnit* const unit) const;
 
     // check for a collision between the passed unit and level
-    // parent - the parent Level, used for bounds checking
-    // level - the actual image against which we will test
+    // level - the parent Level, used for bounds checking
+    // colImage - the actual image against which we will test
     // unit - the unit to test
     // mapOffset - optional offset parameter
     // will not return anything but set unit->collisionInfo and call unit->hitMap instead
-    void unitMapCollision(const Level* const parent, SDL_Surface* const level, BaseUnit* const unit, const Vector2df& mapOffset = Vector2df(0,0)) const;
+    void unitMapCollision(const Level* const level, SDL_Surface* const colImage, BaseUnit* const unit, const Vector2df& mapOffset = Vector2df(0,0)) const;
     // check for a collision between two units
-    // parent - Level, used for bounds checking
+    // level - Level, used for bounds checking
     // calls unit->hit on hit (does not call player->hit, call that from unit->hit
     // by using the passed parameter instead)
     // see readme for why this is done
-    void playerUnitCollision(const Level* const parent, BaseUnit* const player, BaseUnit* const unit) const;
+    void playerUnitCollision(const Level* const level, BaseUnit* const player, BaseUnit* const unit) const;
 
     // simple rectangular check between two units, returns true on collision
-    bool checkUnitCollision(const Level* const parent, const BaseUnit* const unitA, const BaseUnit* const unitB) const;
+    bool checkUnitCollision(const Level* const level, const BaseUnit* const unitA, const BaseUnit* const unitB) const;
 
     Vector2df gravity;
     Vector2df maximum; // the maximum, absolute value a unit is allowed to move (limit)

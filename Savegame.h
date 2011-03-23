@@ -8,6 +8,12 @@
 
 #define SAVEGAME Savegame::getSavegame()
 
+/**
+Save progress to and load from a file (encrypted)
+Also provides functions for generic data saving and loading
+Chapter progress is saved by the highest level reached
+**/
+
 class Savegame
 {
 private:

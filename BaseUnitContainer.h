@@ -13,7 +13,7 @@ class BaseUnitContainer
         virtual ~BaseUnitContainer();
 
         virtual void update();
-        virtual void updateScreenPosition();
+        virtual void updateScreenPosition(const Vector2df& offset);
         virtual void render() {render(GFX::getVideoSurface());}
         virtual void render(SDL_Surface* surf);
 

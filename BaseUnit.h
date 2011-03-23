@@ -48,7 +48,7 @@ public:
     virtual void setStartingPosition(const Vector2df& pos);
 
     virtual void update();
-    virtual void updateScreenPosition(Vector2di offset=Vector2di(0,0));
+    virtual void updateScreenPosition(Vector2di offset);
     virtual void render() {render(GFX::getVideoSurface());}
     virtual void render(SDL_Surface* surf);
 

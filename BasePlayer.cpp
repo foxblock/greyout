@@ -4,7 +4,7 @@
 
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
 {
-    //
+    canJump = false;
 }
 
 BasePlayer::~BasePlayer()
@@ -32,17 +32,37 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
     return result;
 }
 
+void BasePlayer::update()
+{
+    BaseUnit::update();
+
+    #ifdef _DEBUG
+    parent->debugString += "P: " + StringUtility::vecToString(position) + "\n" +
+        "V: " + StringUtility::vecToString(velocity) + "\n" +
+        "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n";
+    #endif
+}
+
+void BasePlayer::hitMap(const Vector2df& correctionOverride)
+{
+    BaseUnit::hitMap(correctionOverride);
+
+    if (correctionOverride.y < 0)
+        canJump = true;
+}
+
+
 void BasePlayer::control(SimpleJoy* input)
 {
     if (input->isLeft())
     {
         acceleration[0].x = -2;
-        acceleration[1].x = -16;
+        acceleration[1].x = -8;
     }
     else if (input->isRight())
     {
         acceleration[0].x = 2;
-        acceleration[1].x = 16;
+        acceleration[1].x = 8;
     }
     else
     {
@@ -66,19 +86,9 @@ void BasePlayer::control(SimpleJoy* input)
         acceleration[1].y = 0;
         velocity.y = 0;
     }*/
-    if (input->isA())
+    if (input->isA() && canJump)
     {
-        velocity.y = -20;
+        velocity.y = -12;
+        canJump = false;
     }
-}
-
-void BasePlayer::update()
-{
-    BaseUnit::update();
-
-    #ifdef _DEBUG
-    parent->debugString += "P: " + StringUtility::vecToString(position) + "\n" +
-        "V: " + StringUtility::vecToString(velocity) + "\n" +
-        "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n";
-    #endif
 }

@@ -50,7 +50,7 @@ int PushableBox::getWidth() const
 
 void PushableBox::updateScreenPosition(Vector2di offset)
 {
-    rect.setPosition(position);
+    rect.setPosition(position - offset);
 }
 
 void PushableBox::render(SDL_Surface* surf)
