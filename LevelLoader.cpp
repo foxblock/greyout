@@ -21,6 +21,7 @@
 #include "BasePlayer.h"
 #include "PushableBox.h"
 #include "SolidBox.h"
+#include "Exit.h"
 
 using namespace std;
 
@@ -51,7 +52,8 @@ enum UnitIdent
 {
     ucUnknown,
     ucPushableBox,
-    ucSolidBox
+    ucSolidBox,
+    ucExit
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -76,6 +78,7 @@ void createIdentMaps()
 
     unitClasses["pushablebox"] = ucPushableBox;
     unitClasses["solidbox"] = ucSolidBox;
+    unitClasses["exit"] = ucExit;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -345,7 +348,7 @@ ControlUnit* LevelLoader::createPlayer(PARAMETER_TYPE& params, Level* const pare
     {
         // unit specific parameters as this is merely an alias for a customized BasePlayer
         params.push_back(make_pair("collision","black,red"));
-        params.push_back(make_pair("imageoverwrite","images/player/m_black.png"));
+        params.push_back(make_pair("imageoverwrite","images/player/black_big.png"));
         params.push_back(make_pair("colour","black"));
         result = new BasePlayer(parent);
         break;
@@ -353,7 +356,7 @@ ControlUnit* LevelLoader::createPlayer(PARAMETER_TYPE& params, Level* const pare
     case pcWhite:
     {
         params.push_back(make_pair("collision","red,white"));
-        params.push_back(make_pair("imageoverwrite","images/player/m_white.png"));
+        params.push_back(make_pair("imageoverwrite","images/player/white_big.png"));
         params.push_back(make_pair("colour","white"));
         result = new BasePlayer(parent);
         break;
@@ -393,6 +396,11 @@ BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, C
     case ucSolidBox:
     {
         result = new SolidBox(parent);
+        break;
+    }
+    case ucExit:
+    {
+        result = new Exit(parent);
         break;
     }
     default:

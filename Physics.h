@@ -44,6 +44,8 @@ public:
     // see readme for why this is done
     void playerUnitCollision(const Level* const level, BaseUnit* const player, BaseUnit* const unit) const;
 
+    void particleMapCollision(const Level* const level, SDL_Surface* const colImage, BaseUnit* const particle) const;
+
     // simple rectangular check between two units, returns true on collision
     bool checkUnitCollision(const Level* const level, const BaseUnit* const unitA, const BaseUnit* const unitB) const;
 
@@ -51,7 +53,7 @@ public:
     Vector2df maximum; // the maximum, absolute value a unit is allowed to move (limit)
 private:
     // check for overlapping rectangles
-    bool rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const;
+     bool rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const;
 };
 
 #endif

@@ -98,6 +98,10 @@ void MyGame::stateManagement()
             returnState = STATE_MAIN; // reset return state
         }
     }
+    else if (next == STATE_THIS)
+    {
+        next = STATE_LEVEL;
+    }
 
     currentState = next;
     state = createState(next,stateParameter);
@@ -156,6 +160,9 @@ Level* MyGame::getCurrentLevel() const
 
 void MyGame::playSingleLevel(CRstring filename, CRuint returnState)
 {
+    delete currentChapter;
+    currentChapter = NULL;
+
     stateParameter = filename;
     this->returnState = returnState;
     state->setNextState(STATE_LEVEL);

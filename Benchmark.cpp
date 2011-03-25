@@ -39,6 +39,8 @@ void Benchmark::init()
     counter.init(BECHMARK_DURATION,MILLI_SECONDS,this,Benchmark::timerCallback);
     counter.setRewind(REWIND);
     counter.start();
+
+    winCounter = 1;
 }
 
 void Benchmark::userInput()

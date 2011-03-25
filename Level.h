@@ -21,6 +21,7 @@ Does input processing, collision testing and bounds checking
 
 class BaseUnit;
 class ControlUnit;
+class PixelParticle;
 
 class Level : public BaseState
 {
@@ -42,9 +43,9 @@ public:
 
     // this is a second pause mode, where only the game logic is paused
     //(movement, input, etc.), but no pause sceen is shown and the screen updates normally
-    virtual void logicPauseToggle();
-    virtual void logicPause(CRint time);
-    virtual void logicPauseUpdate();
+    void logicPauseToggle();
+    void logicPause(CRint time);
+    void logicPauseUpdate();
 
     // size of the level in pixels
     virtual int getWidth() const;
@@ -53,18 +54,26 @@ public:
     // this transforms a passed coordinate to conform to the level flags
     // so for example if the level repeats, this will get applied here
     // you should always pass a coordinate to this before it can be worked with
-    virtual Vector2df transformCoordinate(const Vector2df& coord) const;
+    Vector2df transformCoordinate(const Vector2df& coord) const;
 
     // checks whether the unit is leaving the bounds (aka standing on the edge of
     // the screen) and returns an adjusted position
-    virtual Vector2df boundsCheck(const BaseUnit* const unit) const;
+    Vector2df boundsCheck(const BaseUnit* const unit) const;
 
     // returns the first player unit with takesControl == true
     // returns NULL if none is found
-    virtual ControlUnit* getFirstActivePlayer() const;
+    ControlUnit* getFirstActivePlayer() const;
+
+    void swapControl();
+    void lose();
+    void win();
+
+    // adds a formatted particle to the list
+    void addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime);
 
     list<ControlUnit*> players;
     list<BaseUnit*> units;
+    list<PixelParticle*> effects;
     Image* levelImage;
     Colour noCollision; // used to clear units in clearUnitFromCollision
     SimpleFlags flags;
@@ -85,12 +94,16 @@ public:
         lfRepeatX = 4,
         lfRepeatY = 8,
         lfDisableSwap = 16,
-        lfKeepCentred = 32
+        lfKeepCentred = 32,
+        lfScale = 64
     };
     map<string,int> stringToFlag;
 
     Vector2df drawOffset;
     Camera cam;
+
+    // essentially counts how many players have left through exits
+    int winCounter;
 
 protected:
     // deletes the passed unit from the collision surface (to avoid checking
@@ -101,15 +114,18 @@ protected:
     // of bounds and the level is set to repeat it will also get drawn on the
     // opposite side of the screen
     // specify offset to pass to updateScreenPosition
-    virtual void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
+    void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
 
     // checks whether the unit has left the bounds and adjust position accordingly
-    virtual void adjustPosition(BaseUnit* const unit);
+    void adjustPosition(BaseUnit* const unit);
 
     // processes a single key=value pair for loading
     // this function can be overwritten in child classes to allow for custom data fiels
     // return true if the data has been successfully processed, false otherwise
     virtual bool processParameter(const pair<string,string>& value);
+
+    static void loseCallback(void* data);
+    static void winCallback(void* data);
 
     enum LevelProp
     {
@@ -133,6 +149,7 @@ protected:
     vector<Rectangle*> mouseRects; // temp
     SDL_Surface* rectangleLayer; // temp
     CountDown logicTimer; // used in logicPause
+    CountDown eventTimer;
 };
 
 #endif

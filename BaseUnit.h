@@ -37,32 +37,39 @@ public:
     // returns true on success and false on fail
     virtual bool load(const PARAMETER_TYPE& params);
 
+    // resets the unit to its initial state (right after loading)
+    virtual void reset();
+
     // loads an image file through the surface cache and returns the result
-    virtual SDL_Surface* getSurface(CRstring filename, CRbool optimize=false) const;
+    SDL_Surface* getSurface(CRstring filename, CRbool optimize=false) const;
 
     virtual int getHeight() const;
     virtual int getWidth() const;
     virtual Vector2di getSize() const;
     // returns the coordinate of an edge pixel (edge indicated by passed direction)
     virtual Vector2df getPixel(const SimpleDirection& dir) const;
-    virtual void setStartingPosition(const Vector2df& pos);
+    void setStartingPosition(const Vector2df& pos);
+    void setStartingVelocity(const Vector2df& vel);
 
     virtual void update();
-    virtual void updateScreenPosition(Vector2di offset);
+    virtual void updateScreenPosition(const Vector2di& offset);
     virtual void render() {render(GFX::getVideoSurface());}
     virtual void render(SDL_Surface* surf);
 
     // sets the currently displayed sprite to a state linked in the map
     // sets to fallbackState if newState is not found, does not set anything if that is not found either
     // returns the new currentSprite
-    virtual AnimatedSprite* setSpriteState(CRstring newState, CRstring fallbackState="");
+    AnimatedSprite* setSpriteState(CRstring newState, CRstring fallbackState="");
 
     // called after a collision check with the map
     virtual void hitMap(const Vector2df& correctionOverride);
     // checks whether the unit collides with the passed colour
-    virtual bool checkCollisionColour(const Colour& col) const;
+    bool checkCollisionColour(const Colour& col) const;
     // called after a successful collision check with another unit
     virtual void hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit);
+
+    // kills the unit
+    virtual void explode();
 
     Vector2df position;
     Vector2df startingPosition;
@@ -90,7 +97,9 @@ public:
         ufNoMapCollision=1,
         ufNoUnitCollision=2,
         ufNoGravity=4,
-        ufEOL=8
+        ufInvincible=8,
+        ufNoCollisionDraw=16,
+        ufEOL=32
     };
     // converts a string from a level file to a usable flag
     // you can simply add unit-specific flags in child classes

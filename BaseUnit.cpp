@@ -1,6 +1,7 @@
 #include "BaseUnit.h"
 
 #include "StringUtility.h"
+#include "Random.h"
 
 #include "Level.h"
 #include "SurfaceCache.h"
@@ -20,14 +21,13 @@ BaseUnit::BaseUnit(Level* newParent)
     tag = "";
     imageOverwrite = "";
     col = WHITE;
-    #ifdef _DEBUG
-    collisionColours.push_back(GREEN); // collision indicator pixels else messing things up
-    #endif
 
     // set-up conversion maps
     stringToFlag["nomapcollision"] = ufNoMapCollision;
     stringToFlag["nounitcollision"] = ufNoUnitCollision;
     stringToFlag["nogravity"] = ufNoGravity;
+    stringToFlag["invincible"] = ufInvincible;
+    stringToFlag["nocollisiondraw"] = ufNoCollisionDraw;
 
     stringToProp["class"] = upClass;
     stringToProp["position"] = upPosition;
@@ -69,7 +69,23 @@ bool BaseUnit::load(const PARAMETER_TYPE& params)
         }
 
     }
+
+#ifdef _DEBUG
+    collisionColours.push_back(GREEN); // collision indicator pixels else messing things up
+#endif
+
     return true; // Currently returns always true as no critical error checking is done
+}
+
+void BaseUnit::reset()
+{
+    position = startingPosition;
+    velocity = startingVelocity;
+    gravity = Vector2df(0,0);
+    acceleration[0] = Vector2df(0,0);
+    acceleration[1] = Vector2df(0,0);
+    collisionInfo.clear();
+    toBeRemoved = false;
 }
 
 SDL_Surface* BaseUnit::getSurface(CRstring filename, CRbool optimize) const
@@ -130,16 +146,28 @@ void BaseUnit::setStartingPosition(const Vector2df& pos)
     startingPosition = pos;
 }
 
-void BaseUnit::update()
+void BaseUnit::setStartingVelocity(const Vector2df& vel)
 {
-    move();
-    if (currentSprite)
-        currentSprite->update();
+    velocity = vel;
+    startingVelocity = vel;
 }
 
-void BaseUnit::updateScreenPosition(Vector2di offset)
+void BaseUnit::update()
 {
-    currentSprite->setPosition(position - offset);
+    if (not flags.hasFlag(ufInvincible) && collisionInfo.isBeingSquashed())
+        explode();
+    else
+    {
+        move();
+        if (currentSprite)
+            currentSprite->update();
+    }
+}
+
+void BaseUnit::updateScreenPosition(const Vector2di& offset)
+{
+    if (currentSprite)
+        currentSprite->setPosition(position - offset);
 }
 
 void BaseUnit::render(SDL_Surface* surf)
@@ -147,13 +175,13 @@ void BaseUnit::render(SDL_Surface* surf)
     if (currentSprite)
         currentSprite->render(surf);
 
-    #ifdef _DEBUG
+#ifdef _DEBUG
     for (vector<CollisionEntry>::const_iterator temp = collisionInfo.entries.begin(); temp != collisionInfo.entries.end(); ++temp)
     {
         GFX::setPixel(temp->pixel - parent->drawOffset,GREEN);
     }
     GFX::renderPixelBuffer();
-    #endif
+#endif
 }
 
 AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRstring fallbackState)
@@ -174,7 +202,16 @@ AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRstring fallbackSta
 
 void BaseUnit::hitMap(const Vector2df& correctionOverride)
 {
-    velocity += correctionOverride;
+    if (correctionOverride.y < 0) // hitting the ground
+    {
+        position.y += velocity.y + correctionOverride.y;
+        velocity.y = 0;
+        velocity.x += correctionOverride.x;
+    }
+    else
+    {
+        velocity += correctionOverride;
+    }
 }
 
 bool BaseUnit::checkCollisionColour(const Colour& col) const
@@ -192,6 +229,32 @@ bool BaseUnit::checkCollisionColour(const Colour& col) const
 void BaseUnit::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
 {
     //
+}
+
+void BaseUnit::explode()
+{
+    if (currentSprite && parent)
+    {
+        // go through the image and create a particle for every visible pixel
+        // only takes every fourth pixel for speed reasons
+        Colour none = currentSprite->getTransparentColour();
+        Colour pix = MAGENTA;
+        Vector2df vel(0,0);
+        for (int X = 0; X < currentSprite->getWidth(); X+=2)
+        {
+            for (int Y = 0; Y < currentSprite->getHeight(); Y+=2)
+            {
+                pix = currentSprite->getPixel(X,Y);
+                if (pix != none)
+                {
+                    vel.x = Random::nextFloat(-10,10);
+                    vel.y = Random::nextFloat(-15,-5);
+                    parent->addParticle(this,pix,position + Vector2df(X,Y),vel,500);
+                }
+            }
+        }
+    }
+    toBeRemoved = true;
 }
 
 /// ---protected---
@@ -247,6 +310,7 @@ bool BaseUnit::processParameter(const pair<string,string>& value)
     }
     case upCollision:
     {
+        collisionColours.clear();
         vector<string> token;
         StringUtility::tokenize(value.second,token,DELIMIT_STRING);
         for (vector<string>::const_iterator col = token.begin(); col != token.end(); ++col)
@@ -271,6 +335,7 @@ bool BaseUnit::processParameter(const pair<string,string>& value)
             col = Colour(val);
         else // string colour code
             col = Colour(value.second);
+        collisionColours.push_back(col);
         break;
     }
     default:
