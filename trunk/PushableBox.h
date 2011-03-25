@@ -24,11 +24,14 @@ class PushableBox : public BaseUnit
 
         virtual int getHeight() const;
         virtual int getWidth() const;
+        virtual Vector2df getPixel(const SimpleDirection& dir) const;
 
-        virtual void updateScreenPosition(Vector2di offset);
+        virtual void updateScreenPosition(const Vector2di& offset);
         virtual void render(SDL_Surface* surf);
 
         virtual void hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit);
+
+        virtual void explode();
 
         void setRectangle();
 

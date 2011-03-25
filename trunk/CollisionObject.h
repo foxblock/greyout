@@ -23,14 +23,13 @@ struct CollisionEntry
 class CollisionObject
 {
     public:
-        CollisionObject() {correction = Vector2df(0.0f,0.0f); positionCorrection = Vector2df(0.0f,0.0f);}
-        virtual ~CollisionObject() {clear();}
+        CollisionObject();
+        virtual ~CollisionObject();
 
         virtual void clear() {entries.clear();}
 
         /// Analysing functions
-        /// TODO: Implement this, check for colliding pixels on opposite directions
-        bool isBeingSquashed() const {};
+        bool isBeingSquashed() const;
 
         // Contains the checked pixels
         vector<CollisionEntry> entries;

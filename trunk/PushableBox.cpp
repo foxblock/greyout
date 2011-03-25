@@ -1,6 +1,9 @@
 #include "PushableBox.h"
 
-#include "LevelLoader.h"
+#include "fileTypeDefines.h"
+#include "Level.h"
+
+#define PUSHING_SPEED 3.0f
 
 PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 {
@@ -48,7 +51,21 @@ int PushableBox::getWidth() const
     return width;
 }
 
-void PushableBox::updateScreenPosition(Vector2di offset)
+Vector2df PushableBox::getPixel(const SimpleDirection& dir) const
+{
+    switch (dir.value)
+    {
+    case diBOTTOMLEFT:
+        return Vector2df(position.x+1, position.y + getHeight() - 1);
+    case diBOTTOMRIGHT:
+        return position + getSize() - Vector2df(2,1);
+    default:
+        return BaseUnit::getPixel(dir);
+    }
+}
+
+
+void PushableBox::updateScreenPosition(const Vector2di& offset)
 {
     rect.setPosition(position - offset);
 }
@@ -62,22 +79,46 @@ void PushableBox::render(SDL_Surface* surf)
 
 void PushableBox::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
 {
-    if (collision.second.y > unit->velocity.y && collision.second.y > collision.second.x)
+    if (velocity.y < 4) // if not falling
     {
-        float diff = unit->velocity.x;
-        float vel = 4 * NumberUtility::sign(unit->velocity.x);
-        diff -= vel;
-        if (abs(diff) < abs(collision.second.x))
+        if (collision.second.y > unit->velocity.y && collision.second.y > collision.second.x)
         {
-            velocity.x += collision.second.x * collision.first.xDirection() * -1 - diff;
-            unit->velocity.x = vel;
+            // horizontal collision
+            float diff = unit->velocity.x;
+            // limit speed of pushing unit
+            float vel = PUSHING_SPEED * NumberUtility::sign(unit->velocity.x);
+            diff -= vel;
+            if (abs(diff) <= abs(collision.second.x))
+            {
+                velocity.x += collision.second.x * collision.first.xDirection() * -1 - diff;
+                unit->velocity.x = vel;
+            }
+        }
+        else if (unit->position.y > position.y)
+        {
+            // vertical collision
+            position.y -= collision.second.y;
+            velocity.y = 0;
         }
     }
-    else if (unit->position.y > position.y)
+}
+
+void PushableBox::explode()
+{
+    if (parent)
     {
-        position.y -= collision.second.y;
-        velocity.y = 0;
+        Vector2df vel(0,0);
+        for (int X = 0; X < getWidth(); X+=2)
+        {
+            for (int Y = 0; Y < getHeight(); Y+=2)
+            {
+                vel.x = Random::nextFloat(-10,10);
+                vel.y = Random::nextFloat(-15,-5);
+                parent->addParticle(this,col,position + Vector2df(X,Y),vel,500);
+            }
+        }
     }
+    toBeRemoved = true;
 }
 
 void PushableBox::setRectangle()

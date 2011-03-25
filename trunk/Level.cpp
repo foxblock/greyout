@@ -4,6 +4,7 @@
 
 #include "BaseUnit.h"
 #include "ControlUnit.h"
+#include "PixelParticle.h"
 #include "Physics.h"
 #include "MyGame.h"
 #include "userStates.h"
@@ -23,12 +24,17 @@ Level::Level()
     errorString = "";
     drawOffset = Vector2df(0,0);
 
+    eventTimer.init(1000,MILLI_SECONDS);
+    eventTimer.setRewind(STOP);
+    winCounter = 0;
+
     stringToFlag["repeatx"] = lfRepeatX;
     stringToFlag["repeaty"] = lfRepeatY;
     stringToFlag["scrollx"] = lfScrollX;
     stringToFlag["scrolly"] = lfScrollY;
     stringToFlag["disableswap"] = lfDisableSwap;
     stringToFlag["keepcentred"] = lfKeepCentred;
+    stringToFlag["scale"] = lfScale;
 
     stringToProp["image"] = lpImage;
     stringToProp["flags"] = lpFlags;
@@ -37,7 +43,7 @@ Level::Level()
     stringToProp["background"] = lpBackground;
     stringToProp["boundaries"] = lpBoundaries;
 
-    #ifdef _DEBUG
+#ifdef _DEBUG
     debugText.loadFont("fonts/unispace.ttf",12);
     debugText.setColour(GREEN);
     debugString = "";
@@ -45,7 +51,7 @@ Level::Level()
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
-    #endif
+#endif
 
     cam.parent = this;
 }
@@ -71,6 +77,11 @@ Level::~Level()
         delete (*curr);
     }
     mouseRects.clear();
+    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
+    {
+        delete (*curr);
+    }
+    effects.clear();
 
     // reset background colour
     GFX::setClearColour(BLACK);
@@ -110,6 +121,11 @@ void Level::init()
     // Fill it with magenta and apply a colour key to make it transparent
     SDL_FillRect(rectangleLayer, NULL, SDL_MapRGB(rectangleLayer->format,255,0,255));
     SDL_SetColorKey(rectangleLayer, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(rectangleLayer->format,255,0,255));
+
+    if (players.size() == 0)
+        winCounter = 1; // never win
+    else
+        winCounter = players.size();
 }
 
 void Level::userInput()
@@ -133,15 +149,33 @@ void Level::userInput()
         list<pair<string,string> > params;
         params.push_back(make_pair("class","pushablebox"));
         params.push_back(make_pair("collision","0,255"));
+        params.push_back(make_pair("size","32,32"));
         BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
-        box->position = drawOffset + input->getMouse() - Vector2df(12,12);
+        box->position = drawOffset + input->getMouse() - Vector2df(16,16);
         units.push_back(box);
 
         input->resetY();
     }
     if (input->isX())
     {
-        setNextState(STATE_NEXT);
+        list<pair<string,string> > params;
+        params.push_back(make_pair("class","pushablebox"));
+        params.push_back(make_pair("collision","white,255"));
+        params.push_back(make_pair("size","32,32"));
+        params.push_back(make_pair("colour","white"));
+        BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
+        box->position = drawOffset + input->getMouse() - Vector2df(16,16);
+        units.push_back(box);
+
+        input->resetX();
+    }
+    if (input->isB())
+    {
+        for (list<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
+        {
+            (*iter)->explode();
+        }
+        lose();
         input->resetKeys();
     }
 
@@ -183,14 +217,15 @@ void Level::userInput()
 
 void Level::update()
 {
-    #ifdef _DEBUG
+#ifdef _DEBUG
     debugString = "";
-    #endif
+#endif
     // Check for units to be removed
     for (list<ControlUnit*>::iterator player = players.begin(); player != players.end();)
     {
         if ((*player)->toBeRemoved)
         {
+            delete (*player);
             player = players.erase(player);
         }
         else
@@ -202,6 +237,7 @@ void Level::update()
     {
         if ((*unit)->toBeRemoved)
         {
+            delete (*unit);
             unit = units.erase(unit);
         }
         else
@@ -209,17 +245,32 @@ void Level::update()
             ++unit;
         }
     }
+    for (list<PixelParticle*>::iterator part = effects.begin();  part != effects.end();)
+    {
+        if ((*part)->toBeRemoved)
+        {
+            delete (*part);
+            part = effects.erase(part);
+        }
+        else
+        {
+            ++part;
+        }
+    }
 
     // physics (acceleration, friction, etc)
     // and unit collision
+    for (list<BaseUnit*>::iterator unit = units.begin();  unit != units.end(); ++unit)
+    {
+        adjustPosition((*unit));
+        PHYSICS->applyPhysics((*unit));
+    }
     for (list<ControlUnit*>::iterator player = players.begin(); player != players.end(); ++player)
     {
         adjustPosition((*player));
         PHYSICS->applyPhysics((*player));
         for (list<BaseUnit*>::iterator unit = units.begin();  unit != units.end(); ++unit)
         {
-            adjustPosition((*unit));
-            PHYSICS->applyPhysics((*unit));
             if (not (*unit)->flags.hasFlag(BaseUnit::ufNoUnitCollision))
                 PHYSICS->playerUnitCollision(this,(*player),(*unit));
         }
@@ -228,20 +279,28 @@ void Level::update()
     // map collision
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
-        clearUnitFromCollision(collisionLayer,(*curr));
-        if (not (*curr)->flags.hasFlag(BaseUnit::ufNoMapCollision))
+        if (not (*curr)->flags.hasFlag(BaseUnit::ufNoCollisionDraw))
         {
-            // check for overwritten units by last clearUnitFromCollision call and redraw them
-            for (list<BaseUnit*>::iterator other = units.begin(); other != units.end(); ++other)
+            clearUnitFromCollision(collisionLayer,(*curr));
+            if (not (*curr)->flags.hasFlag(BaseUnit::ufNoMapCollision))
             {
-                if ((*curr) != (*other) && PHYSICS->checkUnitCollision(this,(*curr),(*other)))
-                    renderUnit(collisionLayer,(*other),Vector2df(0,0));
+                // check for overwritten units by last clearUnitFromCollision call and redraw them
+                for (list<BaseUnit*>::iterator other = units.begin(); other != units.end(); ++other)
+                {
+                    if ((*curr) != (*other) && PHYSICS->checkUnitCollision(this,(*curr),(*other)))
+                        renderUnit(collisionLayer,(*other),Vector2df(0,0));
+                }
+                PHYSICS->unitMapCollision(this,collisionLayer,(*curr));
             }
-            PHYSICS->unitMapCollision(this,collisionLayer,(*curr));
+            // else still update unit on collision surface for player-map collision
+            (*curr)->update();
+            renderUnit(collisionLayer,(*curr),Vector2df(0,0));
+
         }
-        // else still update unit on collision surface for player-map collision
-        (*curr)->update();
-        renderUnit(collisionLayer,(*curr),Vector2df(0,0));
+        else
+        {
+            (*curr)->update();
+        }
     }
 
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -253,9 +312,20 @@ void Level::update()
         // unit-map collision testing
     }
 
+    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
+    {
+        PHYSICS->applyPhysics((*curr));
+        PHYSICS->particleMapCollision(this,collisionLayer,(*curr));
+        (*curr)->update();
+    }
+
     // other update stuff
     if (flags.hasFlag(lfKeepCentred))
         cam.centerOnUnit(getFirstActivePlayer());
+    eventTimer.update();
+
+    if (winCounter <= 0)
+        win();
 }
 
 void Level::render()
@@ -288,7 +358,33 @@ void Level::render(SDL_Surface* screen)
         SDL_BlitSurface(rectangleLayer,NULL,screen,NULL);
     }
 
-    #ifdef _DEBUG_COL
+
+    for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
+    {
+        renderUnit(screen,(*curr),drawOffset);
+    }
+
+    // draw to image used for collision testing before players get drawn
+    SDL_Rect temp;
+    temp.x = drawOffset.x;
+    temp.y = drawOffset.y;
+#ifdef _DEBUG_COL
+    SDL_Rect temp2;
+    temp2.x = 0;
+    temp2.y = 0;
+    temp2.w = GFX::getXResolution();
+    temp2.h = GFX::getYResolution() / 2.0f;
+    SDL_BlitSurface(screen,&temp2,collisionLayer,&temp);
+#else
+    SDL_BlitSurface(screen,NULL,collisionLayer,&temp);
+#endif
+
+    for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
+    {
+        renderUnit(screen,(*curr),drawOffset);
+    }
+
+#ifdef _DEBUG_COL
     SDL_Rect dest;
     dest.x = 0;
     dest.y = 480;
@@ -306,43 +402,60 @@ void Level::render(SDL_Surface* screen)
         foo.setColour(GREEN);
         foo.render(draw);
     }
+    if (getWidth() > GFX::getXResolution() || getHeight() > GFX::getYResolution())
+    {
+        Rectangle scr;
+        scr.setDimensions((float)GFX::getXResolution() * factorX,(float)GFX::getYResolution() / 2.0f * factorY);
+        scr.setColour(GREEN);
+        scr.setThickness(1);
+        scr.setPosition(drawOffset.x * factorX, drawOffset.y * factorY);
+        scr.render(draw);
+    }
     SDL_BlitSurface(draw,NULL,screen,&dest);
     SDL_FreeSurface(draw);
-    #endif
+#endif
 
-    for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
+    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
     {
-        renderUnit(screen,(*curr),drawOffset);
+        (*curr)->updateScreenPosition(drawOffset);
+        (*curr)->render(screen);
+        GFX::renderPixelBuffer();
     }
 
-    // draw to image used for collision testing before players get drawn
-    SDL_Rect temp;
-    temp.x = drawOffset.x;
-    temp.y = drawOffset.y;
-    #ifdef _DEBUG_COL
-    SDL_Rect temp2;
-    temp2.x = 0;
-    temp2.y = 0;
-    temp2.w = GFX::getXResolution();
-    temp2.h = GFX::getYResolution() / 2.0f;
-    SDL_BlitSurface(screen,&temp2,collisionLayer,&temp);
-    #else
-    SDL_BlitSurface(screen,NULL,collisionLayer,&temp);
-    #endif
-
-    for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
+#ifdef _DEBUG_COL
+    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution() / 2.0f))
+#else
+    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution()))
+#endif
     {
-        renderUnit(screen,(*curr),drawOffset);
+        float fx = (float)GFX::getXResolution() / (float)getWidth();
+#ifdef _DEBUG_COL
+        float fy = (float)GFX::getYResolution() / 2.0f / (float)getHeight();
+#else
+        float fy = (float)GFX::getYResolution() / (float)getHeight();
+#endif
+        SDL_Surface* scaled = rotozoomSurfaceXY(screen,0,fx,fy,SMOOTHING_OFF);
+        SDL_Rect scaleRect;
+        scaleRect.x = (float)-drawOffset.x * fx;
+        scaleRect.y = (float)-drawOffset.y * fy;
+        scaleRect.w = GFX::getXResolution();
+#ifdef _DEBUG_COL
+        scaleRect.h = GFX::getYResolution() / 2.0f;
+#else
+        scaleRect.h = GFX::getYResolution();
+#endif
+        SDL_BlitSurface(scaled,&scaleRect,screen,NULL);
+        SDL_FreeSurface(scaled);
     }
 
-
-    #ifdef _DEBUG
+#ifdef _DEBUG
     debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
     debugString += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
+    debugString += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
     debugText.setPosition(10,10);
     debugText.print(screen,debugString);
-    fpsDisplay.print(screen,StringUtility::intToString(MyGame::getMyGame()->getFPS()));
-    #endif
+    fpsDisplay.print(screen,StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
+#endif
 
 }
 
@@ -365,6 +478,16 @@ void Level::logicPause(CRint time)
 void Level::logicPauseUpdate()
 {
     logicTimer.update();
+
+    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
+    {
+        PHYSICS->applyPhysics((*curr));
+        PHYSICS->particleMapCollision(this,collisionLayer,(*curr));
+        (*curr)->update();
+        (*curr)->updateScreenPosition(drawOffset);
+        (*curr)->render(GFX::getVideoSurface());
+        GFX::renderPixelBuffer();
+    }
 }
 
 
@@ -443,6 +566,42 @@ ControlUnit* Level::getFirstActivePlayer() const
     return NULL;
 }
 
+void Level::swapControl()
+{
+    for (list<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
+        (*unit)->takesControl = not (*unit)->takesControl;
+}
+
+void Level::lose()
+{
+    if (not eventTimer.isStarted())
+    {
+        eventTimer.setCallback(this,Level::loseCallback);
+        eventTimer.start(750);
+    }
+}
+
+void Level::win()
+{
+    if (not eventTimer.isStarted())
+    {
+        eventTimer.setCallback(this,Level::winCallback);
+        eventTimer.start(1000);
+    }
+}
+
+void Level::addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime)
+{
+    PixelParticle* temp = new PixelParticle(this,lifeTime);
+    // copy the collision colours from the calling unit to mimic behaviour
+    for (list<Colour>::const_iterator iter = caller->collisionColours.begin(); iter != caller->collisionColours.end(); ++iter)
+        temp->collisionColours.push_back(*iter);
+    temp->position = pos;
+    temp->velocity = vel;
+    temp->col = col;
+    effects.push_back(temp);
+}
+
 /// ---protected---
 
 void Level::clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const unit)
@@ -505,19 +664,25 @@ bool Level::processParameter(const pair<string,string>& value)
     {
     case lpImage:
     {
-        levelImage = new Image;
         bool fromCache;
-        levelImage->loadImage(SURFACE_CACHE->getSurface(value.second,chapterPath,fromCache));
-        levelImage->setSurfaceSharing(true);
-        if (levelImage->getWidth() < GFX::getXResolution())
-            drawOffset.x = ((int)levelImage->getWidth() - (int)GFX::getXResolution()) / 2.0f;
-        #ifdef _DEBUG_COL
-        if (levelImage->getHeight() < GFX::getYResolution() / 2)
-            drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution() / 2.0f) / 2.0f;
-        #else
-        if (levelImage->getHeight() < GFX::getYResolution())
-            drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution()) / 2.0f;
-        #endif
+        SDL_Surface* surf = SURFACE_CACHE->getSurface(value.second,chapterPath,fromCache);
+        if (surf)
+        {
+            levelImage = new Image;
+            levelImage->loadImage(surf);
+            levelImage->setSurfaceSharing(true);
+            if (levelImage->getWidth() < GFX::getXResolution())
+                drawOffset.x = ((int)levelImage->getWidth() - (int)GFX::getXResolution()) / 2.0f;
+#ifdef _DEBUG_COL
+            if (levelImage->getHeight() < GFX::getYResolution() / 2)
+                drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution() / 2.0f) / 2.0f;
+#else
+            if (levelImage->getHeight() < GFX::getYResolution())
+                drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution()) / 2.0f;
+#endif
+        }
+        else
+            parsed = false;
         break;
     }
     case lpFlags:
@@ -564,4 +729,14 @@ bool Level::processParameter(const pair<string,string>& value)
         parsed = false;
     }
     return parsed;
+}
+
+void Level::loseCallback(void* data)
+{
+    ((Level*)data)->setNextState(STATE_THIS);
+}
+
+void Level::winCallback(void* data)
+{
+    ((Level*)data)->setNextState(STATE_NEXT);
 }

@@ -70,11 +70,19 @@ void Physics::applyPhysics(BaseUnit* const unit) const
 
     // Gravity
     if (not unit->flags.hasFlag(BaseUnit::ufNoGravity))
+    {
+        // gravity is directly added to velocity to give a more arcade-style movement
+        // this obviously is not realistic or physically correct
         unit->velocity += gravity;
+    }
 
     // Check for max
     unit->velocity.x = NumberUtility::signMin(unit->velocity.x,maximum.x);
     unit->velocity.y = NumberUtility::signMin(unit->velocity.y,maximum.y);
+    unit->acceleration[0].x = NumberUtility::signMin(unit->acceleration[0].x,maximum.x);
+    unit->acceleration[0].y = NumberUtility::signMin(unit->acceleration[0].x,maximum.y);
+    unit->acceleration[1].x = NumberUtility::signMin(unit->acceleration[1].y,maximum.x);
+    unit->acceleration[1].y = NumberUtility::signMin(unit->acceleration[1].y,maximum.y);
 }
 
 /** NOTICE:
@@ -91,6 +99,8 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
     Vector2df correction(0,0);
     Vector2di pixelCorrection(0,0); // unit will be moved by this step until no collision occurs
     vector<SimpleDirection> checkPoints; // the points being checked
+    Colour colColour; // the colour taken from the collision surface at the tested point
+    Vector2df pixel(0,0); // currently tested pixel
 
     /// clear data of previous check
     unit->collisionInfo.clear();
@@ -104,15 +114,15 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
     // check which pixels are colliding
     for (vector<SimpleDirection>::const_iterator dir = checkPoints.begin(); dir != checkPoints.end(); ++dir)
     {
-        Vector2df pixel = unit->getPixel((*dir));
+        pixel = unit->getPixel((*dir));
         pixel.x += unit->velocity.x;
         pixel = level->transformCoordinate(pixel);
 
         // out of bounds check
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
+        if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
             continue;
 
-        Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+        colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
         if (unit->checkCollisionColour(colColour))
         {
@@ -141,13 +151,13 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
         vector<CollisionEntry>::const_iterator entryPtr;
         for (entryPtr = collisionDir.entries.begin(); entryPtr != collisionDir.entries.end(); ++entryPtr)
         {
-            Vector2df pixel = entryPtr->pixel;
+            pixel = entryPtr->pixel;
             pixel.x += correctionX;
             pixel = level->transformCoordinate(pixel);
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
+            if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
                 continue;
 
-            Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+            colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
             if (unit->checkCollisionColour(colColour))
                 break;
         }
@@ -175,15 +185,15 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
 
     for (vector<SimpleDirection>::const_iterator dir = checkPoints.begin(); dir != checkPoints.end(); ++dir)
     {
-        Vector2df pixel = unit->getPixel((*dir));
+        pixel = unit->getPixel((*dir));
         pixel += unit->velocity;
         pixel.x += correctionX;
         pixel = level->transformCoordinate(pixel);
 
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
+        if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
             continue;
 
-        Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+        colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
         if (unit->checkCollisionColour(colColour))
         {
@@ -210,13 +220,13 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
         vector<CollisionEntry>::const_iterator entryPtr;
         for (entryPtr = collisionDir.entries.begin(); entryPtr != collisionDir.entries.end(); ++entryPtr)
         {
-            Vector2df pixel = entryPtr->pixel;
+            pixel = entryPtr->pixel;
             pixel.y += correctionY;
             pixel = level->transformCoordinate(pixel);
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x > colImage->w || pixel.y > colImage->h)
+            if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
                 continue;
 
-            Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+            colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
             if (unit->checkCollisionColour(colColour))
                 break;
         }
@@ -234,6 +244,65 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
 
     unit->hitMap(correction);
 }
+
+void Physics::particleMapCollision(const Level* const level, SDL_Surface* const colImage, BaseUnit* const particle) const
+{
+    Vector2df proPos = particle->position;
+    Vector2df correction(0,0);
+    Vector2di pixelCorrection(0,0);
+    pixelCorrection.x = NumberUtility::sign(particle->velocity.x) * -1;
+    pixelCorrection.y = NumberUtility::sign(particle->velocity.y) * -1;
+
+    // x
+    bool colliding = true;
+    Colour temp;
+    if (pixelCorrection.x != 0)
+    {
+        proPos.x += particle->velocity.x;
+        while (colliding && (abs(correction.x) < abs(particle->velocity.x)))
+        {
+            if (proPos.x + correction.x < 0 || proPos.y < 0 || proPos.x + correction.x >= colImage->w || proPos.y >= colImage->h)
+                break;
+
+            temp = GFX::getPixel(colImage,proPos.x + correction.x, proPos.y);
+
+            if (particle->checkCollisionColour(temp)) // collision
+            {
+                correction.x += pixelCorrection.x;
+            }
+            else
+            {
+                colliding = false;
+            }
+        }
+        proPos.x -= particle->velocity.x;
+    }
+    // y
+    if (pixelCorrection.y != 0)
+    {
+        proPos.y += particle->velocity.y;
+        colliding = true;
+        while (colliding && (abs(correction.y) < abs(particle->velocity.y)))
+        {
+            if (proPos.x < 0 || proPos.y + correction.y < 0 || proPos.x >= colImage->w || proPos.y + correction.y >= colImage->h)
+                break;
+
+            temp = GFX::getPixel(colImage,proPos.x, proPos.y + correction.y);
+
+            if (particle->checkCollisionColour(temp)) // collision
+            {
+                correction.y += pixelCorrection.y;
+            }
+            else
+            {
+                colliding = false;
+            }
+        }
+    }
+
+    particle->hitMap(correction);
+}
+
 
 /** NOTICE:
 The following implementation checks both directions at once instead of one after
@@ -405,7 +474,7 @@ bool Physics::checkUnitCollision(const Level* const level, const BaseUnit* const
 bool Physics::rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const
 {
     if (((rectB.x - rectA.x) < rectA.w && (rectA.x - rectB.x) < rectB.w) &&
-        ((rectB.y - rectA.y) < rectA.h && (rectA.y - rectB.y) < rectB.h))
+            ((rectB.y - rectA.y) < rectA.h && (rectA.y - rectB.y) < rectB.h))
         return true;
     return false;
 }

@@ -19,10 +19,10 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
 
     if (imageOverwrite[0] == 0)
     {
-        imageOverwrite = "images/player/m_black.png";
+        imageOverwrite = "images/player/black_big.png";
     }
     AnimatedSprite* temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),5,3,10,5);
+    temp->loadFrames(getSurface(imageOverwrite),6,3,12,6);
     temp->setTransparentColour(MAGENTA);
     temp->setFrameRate(DECI_SECONDS);
     temp->setPlayMode(pmPulse);
@@ -36,11 +36,18 @@ void BasePlayer::update()
 {
     BaseUnit::update();
 
+    if (collisionInfo.isBeingSquashed())
+        parent->lose();
+
     #ifdef _DEBUG
     parent->debugString += "P: " + StringUtility::vecToString(position) + "\n" +
         "V: " + StringUtility::vecToString(velocity) + "\n" +
-        "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n";
+        "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
+        "C: " + StringUtility::vecToString(collisionInfo.correction) + "\n";
     #endif
+
+    if ((int)velocity.y != 0)
+        canJump = false;
 }
 
 void BasePlayer::hitMap(const Vector2df& correctionOverride)
@@ -88,7 +95,7 @@ void BasePlayer::control(SimpleJoy* input)
     }*/
     if (input->isA() && canJump)
     {
-        velocity.y = -12;
+        velocity.y = -14;
         canJump = false;
     }
 }

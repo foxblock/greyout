@@ -30,7 +30,7 @@ class MyGame : public Engine
 
         Level* getCurrentLevel() const;
         void playSingleLevel(CRstring filename, CRuint returnState);
-        void playChapter(CRstring filename, CRint startLevel=0);
+        void playChapter(CRstring filename, CRint startLevel=-1);
 
         string stateParameter; // this might be the current level filename or an error string
         Chapter* currentChapter;

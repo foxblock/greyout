@@ -69,7 +69,7 @@ StateLevelSelect::StateLevelSelect()
     previewDraw = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
     SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
     SDL_SetColorKey(previewDraw, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(previewDraw->format,255,0,255));
-    imageText.loadFont("fonts/Lato-Bold.ttf",24);
+    imageText.loadFont("fonts/Lato-Bold.ttf",IMAGE_FONT_SIZE);
     imageText.setUpBoundary(size);
     imageText.setWrapping(true);
     imageText.setColour(WHITE);
@@ -82,7 +82,7 @@ StateLevelSelect::StateLevelSelect()
     menu.setColour(BLACK);
     menu.setPosition(0,0);
 #ifdef _DEBUG
-    fpsDisplay.loadFont("fonts/Lato-Bold.ttf",IMAGE_FONT_SIZE);
+    fpsDisplay.loadFont("fonts/unispace.ttf",24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
@@ -390,7 +390,7 @@ void StateLevelSelect::render()
     }
 
 #ifdef _DEBUG
-    fpsDisplay.print(StringUtility::intToString(MyGame::getMyGame()->getFPS()));
+    fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
 #endif
 }
 
