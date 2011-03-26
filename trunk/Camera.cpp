@@ -38,20 +38,28 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
     #endif
 
     #ifdef _DEBUG_COL
-    if (not disregardBoundaries && (parent->getWidth() >= GFX::getXResolution()) && (parent->getHeight() >= GFX::getYResolution() / 2.0f))
+    if (not disregardBoundaries)
     #else
-    if (not disregardBoundaries && (parent->getWidth() >= GFX::getXResolution()) && (parent->getHeight() >= GFX::getYResolution()))
+    if (not disregardBoundaries )
     #endif
     {
         // make sure not moving past the levels boundaries
-        result.x += max(-result.x,0.0f); // left
-        result.y += max(-result.y,0.0f); // top
-        result.x += min(parent->getWidth() - (result.x + GFX::getXResolution()),0.0f); // right
+        if (parent->getWidth() >= GFX::getXResolution())
+        {
+            result.x += max(-result.x,0.0f); // left
+            result.x += min(parent->getWidth() - (result.x + GFX::getXResolution()),0.0f); // right
+        }
         #ifdef _DEBUG_COL
-        result.y += min(parent->getHeight() - (result.y + GFX::getYResolution() / 2.0f),0.0f);
+        if (parent->getHeight() >= GFX::getYResolution() / 2.0f)
+        {
+            result.y += min(parent->getHeight() - (result.y + GFX::getYResolution() / 2.0f),0.0f);
         #else
-        result.y += min(parent->getHeight() - (result.y + GFX::getYResolution()),0.0f); // bottom
+        if ((parent->getHeight() >= GFX::getYResolution()))
+        {
+            result.y += min(parent->getHeight() - (result.y + GFX::getYResolution()),0.0f); // bottom
         #endif
+            result.y += max(-result.y,0.0f); // top
+        }
     }
 
     parent->drawOffset = result;

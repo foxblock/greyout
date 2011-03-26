@@ -36,6 +36,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["collision"] = upCollision;
     stringToProp["imageoverwrite"] = upImageOverwrite;
     stringToProp["colour"] = upColour;
+    stringToProp["health"] = upHealth;
 }
 
 BaseUnit::BaseUnit(const BaseUnit& source)
@@ -154,7 +155,7 @@ void BaseUnit::setStartingVelocity(const Vector2df& vel)
 
 void BaseUnit::update()
 {
-    if (not flags.hasFlag(ufInvincible) && collisionInfo.isBeingSquashed())
+    if (not flags.hasFlag(ufInvincible) && not collisionInfo.isHealthy(velocity))
         explode();
     else
     {
@@ -249,7 +250,7 @@ void BaseUnit::explode()
                 {
                     vel.x = Random::nextFloat(-10,10);
                     vel.y = Random::nextFloat(-15,-5);
-                    parent->addParticle(this,pix,position + Vector2df(X,Y),vel,500);
+                    parent->addParticle(this,pix,position + Vector2df(X,Y),vel,750);
                 }
             }
         }
@@ -336,6 +337,11 @@ bool BaseUnit::processParameter(const pair<string,string>& value)
         else // string colour code
             col = Colour(value.second);
         collisionColours.push_back(col);
+        break;
+    }
+    case upHealth:
+    {
+        collisionInfo.squashThreshold = StringUtility::stringToInt(value.second);
         break;
     }
     default:

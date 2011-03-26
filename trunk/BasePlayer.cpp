@@ -34,9 +34,11 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
 
 void BasePlayer::update()
 {
+    bool isExploding = not toBeRemoved;
+
     BaseUnit::update();
 
-    if (collisionInfo.isBeingSquashed())
+    if (toBeRemoved && isExploding)
         parent->lose();
 
     #ifdef _DEBUG

@@ -6,6 +6,7 @@
 
 #include "MyGame.h"
 #include "SurfaceCache.h"
+#include "effects/Hollywood.h"
 
 #define DEFAULT_SELECTION 0
 #define MENU_ITEM_COUNT 4
@@ -14,7 +15,6 @@
 #define MENU_ITEM_SPACING 0
 
 #define MARKER_SPEED 10
-
 
 TitleMenu::TitleMenu()
 {
@@ -60,6 +60,7 @@ TitleMenu::~TitleMenu()
 void TitleMenu::init()
 {
     input->resetKeys(); // avoid sticky keys when returning from level
+    EFFECTS->fadeIn(1000);
 }
 
 void TitleMenu::userInput()
@@ -88,6 +89,7 @@ void TitleMenu::userInput()
 void TitleMenu::update()
 {
     setSelection(false);
+    EFFECTS->update();
 }
 
 void TitleMenu::render()
@@ -99,6 +101,8 @@ void TitleMenu::render()
     SDL_BlitSurface(inverseBG.at(bg.getCurrentFrame()),&invertRegion,GFX::getVideoSurface(),&invertRegion);
 
     marker.render();
+
+    EFFECTS->render();
 
     #ifdef _DEBUG
     fpsDisplay.print(StringUtility::intToString(MyGame::getMyGame()->getFPS()));
@@ -142,7 +146,7 @@ void TitleMenu::doSelection()
     switch (selection)
     {
     case 0:
-        ENGINE->playSingleLevel("levels/test.txt",STATE_MAIN);
+        ENGINE->playChapter(DEFAULT_CHAPTER);
         break;
     case 1:
         setNextState(STATE_BENCHMARK);

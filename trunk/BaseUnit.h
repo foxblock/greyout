@@ -124,6 +124,7 @@ protected:
         upCollision,
         upImageOverwrite,
         upColour,
+        upHealth,
         upEOL // end of list value, starting point for child classes' lists
     };
     // converts a string from a level file to a propIdent usable in a switch statement

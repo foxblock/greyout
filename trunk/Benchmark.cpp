@@ -124,6 +124,7 @@ void Benchmark::secondUpdate()
     list<pair<string,string> > params;
     params.push_back(make_pair("class","pushablebox"));
     params.push_back(make_pair("collision","0"));
+    params.push_back(make_pair("size","24,24"));
 
     BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
     box->position.x = rand() % (left.w) + left.x;

@@ -5,15 +5,16 @@
 #include <map>
 
 #include "StringUtility.h"
+#include "Image.h"
 
 #include "userStates.h"
-
-// Level classes
-#include "Image.h"
 #include "SurfaceCache.h"
 #include "SimpleFlags.h"
+
+// Level classes
 #include "Level.h"
 #include "Benchmark.h"
+#include "Playground.h"
 
 // Unit classes
 #include "BaseUnit.h"
@@ -37,7 +38,8 @@ enum LevelIdent
 {
     lcUnknown,
     lcGeneric,
-    lcBenchmark
+    lcBenchmark,
+    lcPlayground
 };
 
 enum PlayerIdent
@@ -71,6 +73,7 @@ void createIdentMaps()
 
     levelClasses["generic"] = lcGeneric;
     levelClasses["benchmark"] = lcBenchmark;
+    levelClasses["playground"] = lcPlayground;
 
     playerClasses["generic"] = pcGeneric;
     playerClasses["black"] = pcBlack;
@@ -109,6 +112,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
     ifstream file(filename.c_str());
     int lineNumber = 0; // for error output
     errorString = "";
+    bool lastField = true;
 
     if (file.fail())
     {
@@ -306,6 +310,11 @@ Level* LevelLoader::createLevel(PARAMETER_TYPE& params, CRstring chapterPath, CR
     case lcBenchmark:
     {
         result = new Benchmark;
+        break;
+    }
+    case lcPlayground:
+    {
+        result = new Playground;
         break;
     }
     default:
