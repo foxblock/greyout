@@ -59,13 +59,13 @@ void Physics::applyPhysics(BaseUnit* const unit) const
     // Reset acceleration
     if (unit->velocity.x == unit->acceleration[1].x)
     {
-        unit->acceleration[0] = Vector2df(0,0);
-        unit->acceleration[1] = Vector2df(0,0);
+        unit->acceleration[0].x = 0.0f;
+        unit->acceleration[1].x = 0.0f;
     }
     if (unit->velocity.y == unit->acceleration[1].y)
     {
-        unit->acceleration[0] = Vector2df(0,0);
-        unit->acceleration[1] = Vector2df(0,0);
+        unit->acceleration[0].y = 0.0f;
+        unit->acceleration[1].y = 0.0f;
     }
 
     // Gravity
@@ -79,10 +79,10 @@ void Physics::applyPhysics(BaseUnit* const unit) const
     // Check for max
     unit->velocity.x = NumberUtility::signMin(unit->velocity.x,maximum.x);
     unit->velocity.y = NumberUtility::signMin(unit->velocity.y,maximum.y);
-    unit->acceleration[0].x = NumberUtility::signMin(unit->acceleration[0].x,maximum.x);
+    /*unit->acceleration[0].x = NumberUtility::signMin(unit->acceleration[0].x,maximum.x);
     unit->acceleration[0].y = NumberUtility::signMin(unit->acceleration[0].x,maximum.y);
     unit->acceleration[1].x = NumberUtility::signMin(unit->acceleration[1].y,maximum.x);
-    unit->acceleration[1].y = NumberUtility::signMin(unit->acceleration[1].y,maximum.y);
+    unit->acceleration[1].y = NumberUtility::signMin(unit->acceleration[1].y,maximum.y);*/
 }
 
 /** NOTICE:

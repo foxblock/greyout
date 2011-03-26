@@ -30,6 +30,7 @@ class CollisionObject
 
         /// Analysing functions
         bool isBeingSquashed() const;
+        bool isHealthy(const Vector2df& vel);
 
         // Contains the checked pixels
         vector<CollisionEntry> entries;
@@ -39,6 +40,11 @@ class CollisionObject
         // cycle directly and is usually caused by vertical/slope correction to
         // avoid rocketing the player in the air
         Vector2df positionCorrection;
+
+        // count the ticks in which the unit is being squashed here
+        // if that value reaches a certain value the unit will explode
+        int squashCounter;
+        int squashThreshold;
     protected:
 
     private:

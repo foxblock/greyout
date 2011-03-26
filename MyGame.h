@@ -8,6 +8,9 @@
 
 #define ENGINE MyGame::getMyGame()
 
+#define DEFAULT_CHAPTER "chapters/_default/info.txt"
+#define BENCHMARK_LEVEL "debug/benchmark.txt"
+
 class Level;
 
 class MyGame : public Engine

@@ -13,6 +13,7 @@
 
 #include "SimpleFlags.h"
 #include "Camera.h"
+#include "fileTypeDefines.h"
 
 /**
 Base level class interacting with the Penjin framwork through userInput,update and render
@@ -32,20 +33,16 @@ public:
     // Loads the classes parameters from the passed map of key=value pairs
     // passes each pair to processParameter
     // returns true on success and false otherwise
-    virtual bool load(const list<pair<string,string> >& params);
+    virtual bool load(const PARAMETER_TYPE& params);
 
     // framework related
     virtual void init();
     virtual void userInput();
     virtual void update();
+    // draws everything
     virtual void render();
+    // draws level data onto passed surface and passed surface onto collisionLayer
     virtual void render(SDL_Surface* screen);
-
-    // this is a second pause mode, where only the game logic is paused
-    //(movement, input, etc.), but no pause sceen is shown and the screen updates normally
-    void logicPauseToggle();
-    void logicPause(CRint time);
-    void logicPauseUpdate();
 
     // size of the level in pixels
     virtual int getWidth() const;
@@ -104,6 +101,7 @@ public:
 
     // essentially counts how many players have left through exits
     int winCounter;
+    bool isEnding;
 
 protected:
     // deletes the passed unit from the collision surface (to avoid checking
@@ -146,8 +144,6 @@ protected:
     #endif
     SDL_Surface* collisionLayer;
     Rectangle unitRect; // used to clear units from the collision layer
-    vector<Rectangle*> mouseRects; // temp
-    SDL_Surface* rectangleLayer; // temp
     CountDown logicTimer; // used in logicPause
     CountDown eventTimer;
 };

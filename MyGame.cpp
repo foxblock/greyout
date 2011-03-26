@@ -240,10 +240,10 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
 #ifdef _DEBUG
         cout << "Benchmark started" << endl;
 #endif
-        nextState = LEVEL_LOADER->loadLevelFromFile("levels/benchmark.txt");
+        nextState = LEVEL_LOADER->loadLevelFromFile(BENCHMARK_LEVEL);
         if (not nextState)
         {
-            string e = "Error: " + LEVEL_LOADER->errorString + "\n" +
+            string e = LEVEL_LOADER->errorString + "\n" +
                         "Don't play around with the benchmark level file! :<";
             return createState(STATE_ERROR,e);
         }

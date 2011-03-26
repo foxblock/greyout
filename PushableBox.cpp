@@ -7,10 +7,10 @@
 
 PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 {
-    width = 24;
-    height = 24;
+    width = 32;
+    height = 32;
     col = BLACK;
-    setRectangle();
+    collisionInfo.squashThreshold = 2;
 
     stringToProp["size"] = bpSize;
 }
@@ -114,7 +114,7 @@ void PushableBox::explode()
             {
                 vel.x = Random::nextFloat(-10,10);
                 vel.y = Random::nextFloat(-15,-5);
-                parent->addParticle(this,col,position + Vector2df(X,Y),vel,500);
+                parent->addParticle(this,col,position + Vector2df(X,Y),vel,750);
             }
         }
     }

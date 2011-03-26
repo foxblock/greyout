@@ -5,6 +5,7 @@ SolidBox::SolidBox(Level* newParent) : PushableBox(newParent)
     flags.addFlag(ufNoGravity);
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoUnitCollision);
+    flags.addFlag(ufInvincible);
 }
 
 SolidBox::~SolidBox()

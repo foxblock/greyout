@@ -9,14 +9,13 @@
 #include "MyGame.h"
 #include "userStates.h"
 #include "SurfaceCache.h"
-#include "LevelLoader.h"
+#include "effects/Hollywood.h"
 
 Level::Level()
 {
     noCollision = MAGENTA;
     levelImage = NULL;
     unitRect.setColour(noCollision);
-    rectangleLayer = NULL;
     collisionLayer = NULL;
     logicTimer.setRewind(STOP);
     levelFileName = "";
@@ -27,6 +26,7 @@ Level::Level()
     eventTimer.init(1000,MILLI_SECONDS);
     eventTimer.setRewind(STOP);
     winCounter = 0;
+    isEnding = false;
 
     stringToFlag["repeatx"] = lfRepeatX;
     stringToFlag["repeaty"] = lfRepeatY;
@@ -60,8 +60,6 @@ Level::~Level()
 {
     delete levelImage;
     SDL_FreeSurface(collisionLayer);
-    if (rectangleLayer)
-        SDL_FreeSurface(rectangleLayer);
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
         delete (*curr);
@@ -72,11 +70,6 @@ Level::~Level()
         delete (*curr);
     }
     units.clear();
-    for (vector<Rectangle*>::iterator curr = mouseRects.begin(); curr != mouseRects.end(); ++curr)
-    {
-        delete (*curr);
-    }
-    mouseRects.clear();
     for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
     {
         delete (*curr);
@@ -116,12 +109,6 @@ bool Level::load(const PARAMETER_TYPE& params)
 
 void Level::init()
 {
-    // The rectangles will be painted to this surface
-    rectangleLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-    // Fill it with magenta and apply a colour key to make it transparent
-    SDL_FillRect(rectangleLayer, NULL, SDL_MapRGB(rectangleLayer->format,255,0,255));
-    SDL_SetColorKey(rectangleLayer, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(rectangleLayer->format,255,0,255));
-
     if (players.size() == 0)
         winCounter = 1; // never win
     else
@@ -144,31 +131,6 @@ void Level::userInput()
         setNextState(STATE_MAIN);
         return;
     }
-    if (input->isY())
-    {
-        list<pair<string,string> > params;
-        params.push_back(make_pair("class","pushablebox"));
-        params.push_back(make_pair("collision","0,255"));
-        params.push_back(make_pair("size","32,32"));
-        BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
-        box->position = drawOffset + input->getMouse() - Vector2df(16,16);
-        units.push_back(box);
-
-        input->resetY();
-    }
-    if (input->isX())
-    {
-        list<pair<string,string> > params;
-        params.push_back(make_pair("class","pushablebox"));
-        params.push_back(make_pair("collision","white,255"));
-        params.push_back(make_pair("size","32,32"));
-        params.push_back(make_pair("colour","white"));
-        BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
-        box->position = drawOffset + input->getMouse() - Vector2df(16,16);
-        units.push_back(box);
-
-        input->resetX();
-    }
     if (input->isB())
     {
         for (list<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
@@ -189,23 +151,6 @@ void Level::userInput()
         }
         input->resetL();
         input->resetR();
-    }
-
-    if (input->isLeftClick())
-    {
-        Rectangle* temp = new Rectangle;
-        temp->setColour(BLACK);
-        temp->setDimensions(24,24);
-        temp->setPosition(input->getMouse() - Vector2df(12,12));
-        mouseRects.push_back(temp);
-    }
-    else if (input->isRightClick())
-    {
-        Rectangle* temp = new Rectangle;
-        temp->setColour(WHITE);
-        temp->setDimensions(24,24);
-        temp->setPosition(input->getMouse() - Vector2df(12,12));
-        mouseRects.push_back(temp);
     }
 
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -303,6 +248,7 @@ void Level::update()
         }
     }
 
+    // player-map collision
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
         // players should always have map collision enabled, so don't check for that here
@@ -312,6 +258,7 @@ void Level::update()
         // unit-map collision testing
     }
 
+    // particle-map collision
     for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
     {
         PHYSICS->applyPhysics((*curr));
@@ -324,13 +271,86 @@ void Level::update()
         cam.centerOnUnit(getFirstActivePlayer());
     eventTimer.update();
 
-    if (winCounter <= 0)
+    if (winCounter <= 0 && not isEnding)
+    {
         win();
+        isEnding = true;
+    }
+
+    if (isEnding)
+        EFFECTS->update();
 }
 
 void Level::render()
 {
+    GFX::clearScreen();
+
     render(GFX::getVideoSurface());
+
+    // scaling (very unoptimized and slow!)
+#ifdef _DEBUG_COL
+    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution() / 2.0f))
+#else
+    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution()))
+#endif
+    {
+        float fx = (float)GFX::getXResolution() / (float)getWidth();
+#ifdef _DEBUG_COL
+        float fy = (float)GFX::getYResolution() / 2.0f / (float)getHeight();
+#else
+        float fy = (float)GFX::getYResolution() / (float)getHeight();
+#endif
+        SDL_Surface* scaled = rotozoomSurfaceXY(GFX::getVideoSurface(),0,fx,fy,SMOOTHING_OFF);
+        SDL_Rect scaleRect;
+        scaleRect.x = (float)-drawOffset.x * fx;
+        scaleRect.y = (float)-drawOffset.y * fy;
+        scaleRect.w = GFX::getXResolution();
+#ifdef _DEBUG_COL
+        scaleRect.h = GFX::getYResolution() / 2.0f;
+#else
+        scaleRect.h = GFX::getYResolution();
+#endif
+        SDL_BlitSurface(scaled,&scaleRect,GFX::getVideoSurface(),NULL);
+        SDL_FreeSurface(scaled);
+    }
+
+    // draw collision surface to lower half of the screen in special debug mode
+#ifdef _DEBUG_COL
+    SDL_Rect dest;
+    dest.x = 0;
+    dest.y = 480;
+    float factorX = (float)GFX::getXResolution() / (float)collisionLayer->w;
+    float factorY = (float)GFX::getYResolution() / 2.0f / (float)collisionLayer->h;
+    SDL_Surface* draw = rotozoomSurfaceXY(collisionLayer,0,factorX,factorY,SMOOTHING_OFF);
+    for (list<ControlUnit*>::const_iterator iter = players.begin(); iter != players.end(); ++iter)
+    {
+        // draw rectangles for players
+        Rectangle foo;
+        foo.setDimensions((float)((*iter)->getWidth()) * factorX, (float)((*iter)->getHeight()) * factorY);
+        Vector2df rectPos = (*iter)->getPixel(diTOPLEFT);
+        rectPos.x *= factorX;
+        rectPos.y *= factorY;
+        foo.setPosition(rectPos);
+        foo.setColour(GREEN);
+        foo.render(draw);
+    }
+    if (getWidth() > GFX::getXResolution() || getHeight() > GFX::getYResolution())
+    {
+        // draw outlined rectangle for screen
+        Rectangle scr;
+        scr.setDimensions((float)GFX::getXResolution() * factorX,(float)GFX::getYResolution() / 2.0f * factorY);
+        scr.setColour(GREEN);
+        scr.setThickness(1);
+        scr.setPosition(drawOffset.x * factorX, drawOffset.y * factorY);
+        scr.render(draw);
+    }
+    SDL_BlitSurface(draw,NULL,GFX::getVideoSurface(),&dest);
+    SDL_FreeSurface(draw);
+#endif
+
+    if (isEnding)
+        EFFECTS->render();
+
     // draw the cursor
     Vector2df pos = input->getMouse();
     GFX::setPixel(pos,RED);
@@ -339,25 +359,20 @@ void Level::render()
     GFX::setPixel(pos+Vector2df(1,-1),RED);
     GFX::setPixel(pos+Vector2df(-1,-1),RED);
     GFX::renderPixelBuffer();
+
+#ifdef _DEBUG
+    debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
+    debugString += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
+    debugString += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
+    debugText.setPosition(10,10);
+    debugText.print(debugString);
+    fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
+#endif
 }
 
 void Level::render(SDL_Surface* screen)
 {
-    GFX::clearScreen(screen);
-
     levelImage->renderImage(screen,-drawOffset);
-
-    if (rectangleLayer)
-    {
-        for (vector<Rectangle*>::iterator curr = mouseRects.begin(); curr != mouseRects.end(); ++curr)
-        {
-            (*curr)->render(rectangleLayer);
-            delete (*curr);
-        }
-        mouseRects.clear();
-        SDL_BlitSurface(rectangleLayer,NULL,screen,NULL);
-    }
-
 
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
@@ -384,112 +399,14 @@ void Level::render(SDL_Surface* screen)
         renderUnit(screen,(*curr),drawOffset);
     }
 
-#ifdef _DEBUG_COL
-    SDL_Rect dest;
-    dest.x = 0;
-    dest.y = 480;
-    float factorX = (float)GFX::getXResolution() / (float)collisionLayer->w;
-    float factorY = (float)GFX::getYResolution() / 2.0f / (float)collisionLayer->h;
-    SDL_Surface* draw = rotozoomSurfaceXY(collisionLayer,0,factorX,factorY,SMOOTHING_OFF);
-    for (list<ControlUnit*>::const_iterator iter = players.begin(); iter != players.end(); ++iter)
-    {
-        Rectangle foo;
-        foo.setDimensions((float)((*iter)->getWidth()) * factorX, (float)((*iter)->getHeight()) * factorY);
-        Vector2df rectPos = (*iter)->getPixel(diTOPLEFT);
-        rectPos.x *= factorX;
-        rectPos.y *= factorY;
-        foo.setPosition(rectPos);
-        foo.setColour(GREEN);
-        foo.render(draw);
-    }
-    if (getWidth() > GFX::getXResolution() || getHeight() > GFX::getYResolution())
-    {
-        Rectangle scr;
-        scr.setDimensions((float)GFX::getXResolution() * factorX,(float)GFX::getYResolution() / 2.0f * factorY);
-        scr.setColour(GREEN);
-        scr.setThickness(1);
-        scr.setPosition(drawOffset.x * factorX, drawOffset.y * factorY);
-        scr.render(draw);
-    }
-    SDL_BlitSurface(draw,NULL,screen,&dest);
-    SDL_FreeSurface(draw);
-#endif
-
+    // particles
     for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
     {
         (*curr)->updateScreenPosition(drawOffset);
         (*curr)->render(screen);
         GFX::renderPixelBuffer();
     }
-
-#ifdef _DEBUG_COL
-    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution() / 2.0f))
-#else
-    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution()))
-#endif
-    {
-        float fx = (float)GFX::getXResolution() / (float)getWidth();
-#ifdef _DEBUG_COL
-        float fy = (float)GFX::getYResolution() / 2.0f / (float)getHeight();
-#else
-        float fy = (float)GFX::getYResolution() / (float)getHeight();
-#endif
-        SDL_Surface* scaled = rotozoomSurfaceXY(screen,0,fx,fy,SMOOTHING_OFF);
-        SDL_Rect scaleRect;
-        scaleRect.x = (float)-drawOffset.x * fx;
-        scaleRect.y = (float)-drawOffset.y * fy;
-        scaleRect.w = GFX::getXResolution();
-#ifdef _DEBUG_COL
-        scaleRect.h = GFX::getYResolution() / 2.0f;
-#else
-        scaleRect.h = GFX::getYResolution();
-#endif
-        SDL_BlitSurface(scaled,&scaleRect,screen,NULL);
-        SDL_FreeSurface(scaled);
-    }
-
-#ifdef _DEBUG
-    debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
-    debugString += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
-    debugString += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
-    debugText.setPosition(10,10);
-    debugText.print(screen,debugString);
-    fpsDisplay.print(screen,StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
-#endif
-
 }
-
-void Level::logicPauseToggle()
-{
-    //
-}
-
-void Level::logicPause(CRint time)
-{
-    logicTimer.start(time);
-    while (not logicTimer.hasFinished())
-    {
-        logicPauseUpdate();
-        render();
-        GFX::forceBlit();
-    }
-}
-
-void Level::logicPauseUpdate()
-{
-    logicTimer.update();
-
-    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
-    {
-        PHYSICS->applyPhysics((*curr));
-        PHYSICS->particleMapCollision(this,collisionLayer,(*curr));
-        (*curr)->update();
-        (*curr)->updateScreenPosition(drawOffset);
-        (*curr)->render(GFX::getVideoSurface());
-        GFX::renderPixelBuffer();
-    }
-}
-
 
 int Level::getWidth() const
 {
@@ -543,14 +460,14 @@ Vector2df Level::boundsCheck(const BaseUnit* const unit) const
     {
         if (result.x < 0)
             result.x += width;
-        else if (result.x + unit->getWidth() >= width)
+        else if (result.x + unit->getWidth() > width)
             result.x -= width;
     }
     if (flags.hasFlag(lfRepeatY))
     {
         if (result.y < 0)
             result.y += height;
-        else if (result.y + unit->getHeight() >= height)
+        else if (result.y + unit->getHeight() > height)
             result.y -= height;
     }
     return result;
@@ -587,6 +504,7 @@ void Level::win()
     {
         eventTimer.setCallback(this,Level::winCallback);
         eventTimer.start(1000);
+        EFFECTS->fadeOut(1000);
     }
 }
 

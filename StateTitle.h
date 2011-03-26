@@ -6,6 +6,10 @@
 #include "Sprite.h"
 #include "Timer.h"
 
+/**
+Intro screen showing logos
+**/
+
 class StateTitle : public BaseState
 {
     public:

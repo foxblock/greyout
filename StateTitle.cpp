@@ -34,6 +34,7 @@ StateTitle::~StateTitle()
     //
 }
 
+///---public---
 
 void StateTitle::userInput()
 {
