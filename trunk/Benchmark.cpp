@@ -9,9 +9,7 @@
 #include "BaseUnit.h"
 #include "ControlUnit.h"
 #include "LevelLoader.h"
-#ifdef _DEBUG
 #include "MyGame.h"
-#endif
 
 #include "StringUtility.h"
 
@@ -19,7 +17,7 @@ using namespace StringUtility;
 
 Benchmark::Benchmark() : Level()
 {
-    //
+    ENGINE->setFrameRate(250);
 }
 
 Benchmark::~Benchmark()
@@ -27,6 +25,7 @@ Benchmark::~Benchmark()
     fpsData.clear();
     secondData.clear();
     secondAverage.clear();
+    ENGINE->setFrameRate(30);
 }
 
 void Benchmark::init()

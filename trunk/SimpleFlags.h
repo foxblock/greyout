@@ -8,12 +8,14 @@ Combining several binary values in one for clarity
 class SimpleFlags
 {
 public:
-    SimpleFlags() {flags = 0;};
-    ~SimpleFlags() {};
+    SimpleFlags() {flags = 0;}
+    ~SimpleFlags() {}
 
     int flags;
 
-    /// All of the following function also work with multiple (combined) flags passed as "var"
+    void clear() {flags = 0;}
+
+    /// All of the following functions also work with multiple (combined) flags passed as "var"
     // Checks whether the passed flag is in flags
     bool hasFlag(const int &var) const
     {

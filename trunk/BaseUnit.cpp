@@ -28,6 +28,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["nogravity"] = ufNoGravity;
     stringToFlag["invincible"] = ufInvincible;
     stringToFlag["nocollisiondraw"] = ufNoCollisionDraw;
+    stringToFlag["missionobjective"] = ufMissionObjective;
 
     stringToProp["class"] = upClass;
     stringToProp["position"] = upPosition;
@@ -156,7 +157,13 @@ void BaseUnit::setStartingVelocity(const Vector2df& vel)
 void BaseUnit::update()
 {
     if (not flags.hasFlag(ufInvincible) && not collisionInfo.isHealthy(velocity))
+    {
         explode();
+        if (flags.hasFlag(ufMissionObjective))
+        {
+            parent->lose();
+        }
+    }
     else
     {
         move();
@@ -301,6 +308,7 @@ bool BaseUnit::processParameter(const pair<string,string>& value)
     }
     case upFlags:
     {
+        flags.clear();
         vector<string> token;
         StringUtility::tokenize(value.second,token,DELIMIT_STRING);
         for (vector<string>::const_iterator flag = token.begin(); flag != token.end(); ++flag)

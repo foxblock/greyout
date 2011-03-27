@@ -7,6 +7,8 @@
 #include "MyGame.h"
 #include "SurfaceCache.h"
 #include "effects/Hollywood.h"
+#include "MusicCache.h"
+#include "Music.h"
 
 #define DEFAULT_SELECTION 0
 #define MENU_ITEM_COUNT 4
@@ -61,6 +63,8 @@ void TitleMenu::init()
 {
     input->resetKeys(); // avoid sticky keys when returning from level
     EFFECTS->fadeIn(1000);
+
+    MUSIC_CACHE->playMusic("music/Town.mp3");
 }
 
 void TitleMenu::userInput()

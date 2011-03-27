@@ -71,8 +71,6 @@ void Physics::applyPhysics(BaseUnit* const unit) const
     // Gravity
     if (not unit->flags.hasFlag(BaseUnit::ufNoGravity))
     {
-        // gravity is directly added to velocity to give a more arcade-style movement
-        // this obviously is not realistic or physically correct
         unit->velocity += gravity;
     }
 
@@ -164,8 +162,6 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
         if (entryPtr == collisionDir.entries.end()) // all pixel have been checked, so no new collision has been found
             stillColliding = false;
     }
-    if (abs(correctionX) > maximum.x) // correction is out of bounds -> disregard
-        correctionX = 0;
 
     correction.x = correctionX;
     unit->collisionInfo.entries.insert(unit->collisionInfo.entries.end(),collisionDir.entries.begin(),collisionDir.entries.end());
@@ -233,9 +229,6 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
         if (entryPtr == collisionDir.entries.end()) // all pixel have been checked, so no new collision has been found
             stillColliding = false;
     }
-
-    if (abs(correctionY) > maximum.y) // correction is out of bounds -> disregard
-        correctionY = 0;
 
     correction.y = correctionY;
     unit->collisionInfo.entries.insert(unit->collisionInfo.entries.end(),collisionDir.entries.begin(),collisionDir.entries.end());
@@ -317,7 +310,7 @@ function with the one below to see how this changes things.
 Feel free to use for anything or ask me questions about it (as it is not as well
 commented as the above function).
 **/
-/// TODO: Implement latest changes with pixel transformation
+/// TODO: Implement latest changes (the function is not up-to-date)
 /*
 void Physics::unitMapCollision(SDL_Surface* const colImage, BaseUnit* const unit, const Vector2df& mapOffset) const
 {
@@ -423,6 +416,7 @@ void Physics::playerUnitCollision(const Level* const level, BaseUnit* const play
         else
             dir = diRIGHT;
         unit->hitUnit(make_pair(dir,Vector2df(diffX,diffY)),player);
+        return;
     }
 
     Vector2df pos2 = level->boundsCheck(player);
