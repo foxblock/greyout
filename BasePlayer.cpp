@@ -5,6 +5,7 @@
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
 {
     canJump = false;
+    flags.addFlag(ufMissionObjective);
 }
 
 BasePlayer::~BasePlayer()
@@ -34,12 +35,7 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
 
 void BasePlayer::update()
 {
-    bool isExploding = not toBeRemoved;
-
     BaseUnit::update();
-
-    if (toBeRemoved && isExploding)
-        parent->lose();
 
     #ifdef _DEBUG
     parent->debugString += "P: " + StringUtility::vecToString(position) + "\n" +

@@ -2,6 +2,7 @@
 
 #include "userStateList.h"
 #include "SurfaceCache.h"
+#include "MusicCache.h"
 #include "LevelLoader.h"
 #include "Savegame.h"
 
@@ -58,6 +59,7 @@ void MyGame::stateManagement()
         delete state;
         state = NULL;
         SURFACE_CACHE->clear(); // clear all images loaded by previous state
+        MUSIC_CACHE->clear(false); // clear all unused music and sounds
     }
     else // first normal call of the game
     {

@@ -203,6 +203,15 @@ void Level::update()
         }
     }
 
+    // particle-map collision
+    // and update (velocity, gravity, etc.)
+    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
+    {
+        PHYSICS->applyPhysics((*curr));
+        PHYSICS->particleMapCollision(this,collisionLayer,(*curr));
+        (*curr)->update();
+    }
+
     // physics (acceleration, friction, etc)
     // and unit collision
     for (list<BaseUnit*>::iterator unit = units.begin();  unit != units.end(); ++unit)
@@ -256,14 +265,6 @@ void Level::update()
         (*curr)->update();
         // players are never drawn to the collision surface to not interfere with
         // unit-map collision testing
-    }
-
-    // particle-map collision
-    for (list<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
-    {
-        PHYSICS->applyPhysics((*curr));
-        PHYSICS->particleMapCollision(this,collisionLayer,(*curr));
-        (*curr)->update();
     }
 
     // other update stuff

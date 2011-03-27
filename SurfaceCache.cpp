@@ -86,12 +86,11 @@ void SurfaceCache::clear()
     std::map<string,SDL_Surface*>::iterator I;
     for (I = cachedSurfaces.begin(); I != cachedSurfaces.end(); ++I)
     {
-        std::cout << "Clearing: " << (*I).first << std::endl;
         SDL_FreeSurface((*I).second);
         (*I).second = NULL;
     }
     cachedSurfaces.clear();
-    std::cout << "Cache cleared - deleted " << size << " images!" << std::endl;
+    std::cout << "Surface cache cleared - deleted " << size << " images!" << std::endl;
 }
 
 void SurfaceCache::removeSurface(CRstring filename, CRbool destroy)
