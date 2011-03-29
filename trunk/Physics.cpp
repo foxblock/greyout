@@ -14,7 +14,7 @@
 // you can do funky x-gravity, but the collision checking would need some tinkering to make it work
 // it currently checks the y-directions last for a reason...
 #define DEFAULT_GRAVITY Vector2df(0,2)
-#define DEFAULT_MAXIMUM Vector2df(24,24) // this should be the size of a tile if that's applicable
+#define DEFAULT_MAXIMUM Vector2df(20,20) // this should be the size of a tile if that's applicable
 
 Physics* Physics::self = 0;
 

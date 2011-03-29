@@ -10,7 +10,6 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
     width = 32;
     height = 32;
     col = BLACK;
-    collisionInfo.squashThreshold = 2;
 
     stringToProp["size"] = bpSize;
 }
@@ -92,6 +91,10 @@ void PushableBox::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* c
             {
                 velocity.x += collision.second.x * collision.first.xDirection() * -1 - diff;
                 unit->velocity.x = vel;
+                if (unit->direction > 0)
+                    unit->setSpriteState("pushRight");
+                else
+                    unit->setSpriteState("pushLeft");
             }
         }
         else if (unit->position.y > position.y)

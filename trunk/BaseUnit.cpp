@@ -21,6 +21,8 @@ BaseUnit::BaseUnit(Level* newParent)
     tag = "";
     imageOverwrite = "";
     col = WHITE;
+    currentState = "";
+    direction = 0;
 
     // set-up conversion maps
     stringToFlag["nomapcollision"] = ufNoMapCollision;
@@ -167,6 +169,11 @@ void BaseUnit::update()
     else
     {
         move();
+        if (velocity.x > 0)
+            direction = 1;
+        else if (velocity.x < 0)
+            direction = -1;
+
         if (currentSprite)
             currentSprite->update();
     }
@@ -192,19 +199,32 @@ void BaseUnit::render(SDL_Surface* surf)
 #endif
 }
 
-AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRstring fallbackState)
+AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRbool reset, CRstring fallbackState)
 {
     map<string,AnimatedSprite*>::const_iterator state = states.find(newState);
     if (state != states.end()) // set to desired state
     {
         currentSprite = state->second;
+        currentState = newState;
     }
     else if (fallbackState[0] != 0) // set to fallback or keep the current one
     {
         state = states.find(fallbackState);
         if (state != states.end())
+        {
             currentSprite = state->second;
+            currentState = fallbackState;
+        }
+        else
+        {
+            cout << "Unrecognized sprite state \"" << newState << "\" and fallback \"" <<
+            fallbackState << "\" on unit \"" << tag << "\"" << endl;
+        }
     }
+    else
+        cout << "Unrecognized sprite state \"" << newState << "\" on unit \"" << tag << "\"" << endl;
+    if (reset)
+        currentSprite->rewind();
     return currentSprite;
 }
 

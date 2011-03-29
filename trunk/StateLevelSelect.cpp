@@ -498,7 +498,7 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
     SDL_Surface* img = SURFACE_CACHE->getSurface("images/general/levelfolder.png",fromCache,true);
     if (img->w != size.x || img->h != size.y)
     {
-        img = rotozoomSurfaceXY(img,0,(float)size.x / (float)img->w , (float)size.y / (float)img->h, SMOOTHING_OFF);
+        img = zoomSurface(img,(float)size.x / (float)img->w , (float)size.y / (float)img->h, SMOOTHING_OFF);
     }
     else
     {
@@ -640,7 +640,7 @@ int StateLevelSelect::loadLevelPreviews(void* data)
             level->update(); // update once to properly position units
             level->render(temp); // render at full resolution
             // scale down, then delete full resolution copy
-            SDL_Surface* surf = rotozoomSurfaceXY(temp,0,(float)self->size.x / GFX::getXResolution(), (float)self->size.y / GFX::getYResolution(), SMOOTHING_OFF);
+            SDL_Surface* surf = zoomSurface(temp,(float)self->size.x / GFX::getXResolution(), (float)self->size.y / GFX::getYResolution(), SMOOTHING_OFF);
             SDL_FreeSurface(temp);
             SDL_mutexP(self->levelLock);
             // set results for drawing
@@ -708,7 +708,7 @@ int StateLevelSelect::loadChapterPreviews(void* data)
             {
                 if (img->w != self->size.x || img->h != self->size.y) // scale if needed
                 {
-                    img = rotozoomSurfaceXY(img,0,(float)self->size.x / (float)img->w , (float)self->size.y / (float)img->h, SMOOTHING_OFF);
+                    img = zoomSurface(img,(float)self->size.x / (float)img->w , (float)self->size.y / (float)img->h, SMOOTHING_OFF);
                 }
                 else // remove the surface from the cache to prevent double freeing
                 {
