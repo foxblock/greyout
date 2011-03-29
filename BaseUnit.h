@@ -58,8 +58,9 @@ public:
 
     // sets the currently displayed sprite to a state linked in the map
     // sets to fallbackState if newState is not found, does not set anything if that is not found either
+    // if reset is true the new sprite will be set to the first frame before returning
     // returns the new currentSprite
-    AnimatedSprite* setSpriteState(CRstring newState, CRstring fallbackState="");
+    AnimatedSprite* setSpriteState(CRstring newState, CRbool reset=false, CRstring fallbackState="");
 
     // called after a collision check with the map
     virtual void hitMap(const Vector2df& correctionOverride);
@@ -77,6 +78,7 @@ public:
     Vector2df startingVelocity;
     Vector2df gravity;  // velocity caused by gravity
     Vector2df acceleration[2]; // 0 - increment, 1 - maximum
+    int direction; // the direction the unit is facing (use for sprite orientation)
     list<Colour> collisionColours;
     CollisionObject collisionInfo; // contains colliding pixels, correction, etc.
     SimpleFlags flags;
@@ -85,9 +87,9 @@ public:
 
     // this is only a "working" pointer, it will not get deleted
     AnimatedSprite* currentSprite;
+    string currentState;
 
     bool toBeRemoved; // if true, this unit will be deleted by Level on the next tick
-
     Level* parent; // the unit is currently owned by this Level class
 
     string tag; // Delphi programmers will know what this is about

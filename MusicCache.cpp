@@ -12,7 +12,7 @@ MusicCache* MusicCache::self = NULL;
 
 MusicCache::MusicCache()
 {
-    fadeDuration = 0;
+    fadeDuration = 1000;
     musicPlaying = "";
     soundVolume = MIX_MAX_VOLUME;
     musicVolume = MIX_MAX_VOLUME;

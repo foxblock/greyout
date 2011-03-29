@@ -11,13 +11,14 @@
 #include "SurfaceCache.h"
 #include "effects/Hollywood.h"
 
+#define NAME_TEXT_SIZE 48
+#define NAME_RECT_HEIGHT 35
+
 Level::Level()
 {
     noCollision = MAGENTA;
     levelImage = NULL;
-    unitRect.setColour(noCollision);
     collisionLayer = NULL;
-    logicTimer.setRewind(STOP);
     levelFileName = "";
     chapterPath = "";
     errorString = "";
@@ -27,6 +28,7 @@ Level::Level()
     eventTimer.setRewind(STOP);
     winCounter = 0;
     isEnding = false;
+    firstLoad = true;
 
     stringToFlag["repeatx"] = lfRepeatX;
     stringToFlag["repeaty"] = lfRepeatY;
@@ -34,7 +36,8 @@ Level::Level()
     stringToFlag["scrolly"] = lfScrollY;
     stringToFlag["disableswap"] = lfDisableSwap;
     stringToFlag["keepcentred"] = lfKeepCentred;
-    stringToFlag["scale"] = lfScale;
+    stringToFlag["scalex"] = lfScaleX;
+    stringToFlag["scaley"] = lfScaleY;
 
     stringToProp["image"] = lpImage;
     stringToProp["flags"] = lpFlags;
@@ -42,6 +45,7 @@ Level::Level()
     stringToProp["offset"] = lpOffset;
     stringToProp["background"] = lpBackground;
     stringToProp["boundaries"] = lpBoundaries;
+    stringToProp["name"] = lpName;
 
 #ifdef _DEBUG
     debugText.loadFont("fonts/unispace.ttf",12);
@@ -52,13 +56,21 @@ Level::Level()
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
 #endif
+    nameText.loadFont("fonts/Lato-bold.ttf",48);
+    nameText.setColour(WHITE);
+    nameText.setAlignment(CENTRED);
+    nameText.setUpBoundary(Vector2di(GFX::getXResolution(),NAME_RECT_HEIGHT));
+    nameText.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
+    nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+    nameRect.setColour(BLACK);
+    nameRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
+    nameTimer.init(2000,MILLI_SECONDS);
 
     cam.parent = this;
 }
 
 Level::~Level()
 {
-    delete levelImage;
     SDL_FreeSurface(collisionLayer);
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
@@ -100,8 +112,8 @@ bool Level::load(const PARAMETER_TYPE& params)
     }
     else
     {
-        collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->getWidth(),levelImage->getHeight(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-        levelImage->renderImage(collisionLayer,Vector2di(0,0));
+        collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->w,levelImage->h,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+        SDL_BlitSurface(levelImage,NULL,collisionLayer,NULL);
     }
 
     return true;
@@ -113,6 +125,9 @@ void Level::init()
         winCounter = 1; // never win
     else
         winCounter = players.size();
+
+    if (firstLoad)
+        nameTimer.start(2000);
 }
 
 void Level::userInput()
@@ -289,22 +304,41 @@ void Level::render()
     render(GFX::getVideoSurface());
 
     // scaling (very unoptimized and slow!)
+    // TODO: Implement properly
 #ifdef _DEBUG_COL
-    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution() / 2.0f))
+    if (flags.hasFlag(lfScaleX) && getWidth() != GFX::getXResolution() ||
+        flags.hasFlag(lfScaleY) && getHeight() != GFX::getYResolution() / 2.0f)
 #else
-    if (flags.hasFlag(lfScale) && (getWidth() != GFX::getXResolution() || getHeight() != GFX::getYResolution()))
+    if (flags.hasFlag(lfScaleX) && getWidth() != GFX::getXResolution() ||
+        flags.hasFlag(lfScaleY) && getHeight() != GFX::getYResolution())
 #endif
     {
-        float fx = (float)GFX::getXResolution() / (float)getWidth();
+        static float fx = (float)GFX::getXResolution() / (float)getWidth();
 #ifdef _DEBUG_COL
-        float fy = (float)GFX::getYResolution() / 2.0f / (float)getHeight();
+        static float fy = (float)GFX::getYResolution() / 2.0f / (float)getHeight();
 #else
-        float fy = (float)GFX::getYResolution() / (float)getHeight();
+        static float fy = (float)GFX::getYResolution() / (float)getHeight();
 #endif
-        SDL_Surface* scaled = rotozoomSurfaceXY(GFX::getVideoSurface(),0,fx,fy,SMOOTHING_OFF);
+        SDL_Surface* scaled;
         SDL_Rect scaleRect;
-        scaleRect.x = (float)-drawOffset.x * fx;
-        scaleRect.y = (float)-drawOffset.y * fy;
+        if (not flags.hasFlag(lfScaleX))
+        {
+            scaled = zoomSurface(GFX::getVideoSurface(),fy,fy,SMOOTHING_OFF);
+            scaleRect.x = (float)-drawOffset.x * fy;
+            scaleRect.y = (float)-drawOffset.y * fy;
+        }
+        else if (not flags.hasFlag(lfScaleY))
+        {
+            scaled = zoomSurface(GFX::getVideoSurface(),fx,fx,SMOOTHING_OFF);
+            scaleRect.x = (float)-drawOffset.x * fx;
+            scaleRect.y = (float)-drawOffset.y * fx + (scaled->h - GFX::getYResolution());
+        }
+        else
+        {
+            scaled = zoomSurface(GFX::getVideoSurface(),fx,fy,SMOOTHING_OFF);
+            scaleRect.x = (float)-drawOffset.x * fx;
+            scaleRect.y = (float)-drawOffset.y * fy;
+        }
         scaleRect.w = GFX::getXResolution();
 #ifdef _DEBUG_COL
         scaleRect.h = GFX::getYResolution() / 2.0f;
@@ -315,6 +349,16 @@ void Level::render()
         SDL_FreeSurface(scaled);
     }
 
+    // draw level name overlay
+    if (firstLoad)
+    {
+        if (name[0] != 0 && not nameTimer.hasFinished())
+        {
+            nameRect.render();
+            nameText.print(name);
+        }
+    }
+
     // draw collision surface to lower half of the screen in special debug mode
 #ifdef _DEBUG_COL
     SDL_Rect dest;
@@ -322,7 +366,7 @@ void Level::render()
     dest.y = 480;
     float factorX = (float)GFX::getXResolution() / (float)collisionLayer->w;
     float factorY = (float)GFX::getYResolution() / 2.0f / (float)collisionLayer->h;
-    SDL_Surface* draw = rotozoomSurfaceXY(collisionLayer,0,factorX,factorY,SMOOTHING_OFF);
+    SDL_Surface* draw = zoomSurface(collisionLayer,factorX,factorY,SMOOTHING_OFF);
     for (list<ControlUnit*>::const_iterator iter = players.begin(); iter != players.end(); ++iter)
     {
         // draw rectangles for players
@@ -373,28 +417,41 @@ void Level::render()
 
 void Level::render(SDL_Surface* screen)
 {
-    levelImage->renderImage(screen,-drawOffset);
+    SDL_Rect src;
+    SDL_Rect dst;
+    dst.x = max(-drawOffset.x,0.0f);
+    dst.y = max(-drawOffset.y,0.0f);
+    src.x = max(drawOffset.x,0.0f);
+    src.y = max(drawOffset.y,0.0f);
+    src.w = min((int)GFX::getXResolution(),getWidth() - src.x);
+#ifdef _DEBUG_COL
+    src.h = min((int)GFX::getYResolution() / 2,getHeight() - src.y);
+#else
+    src.h = min((int)GFX::getYResolution(),getHeight() - src.y);
+#endif
+
+    SDL_BlitSurface(levelImage,&src,screen,&dst);
 
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
         renderUnit(screen,(*curr),drawOffset);
     }
 
-    // draw to image used for collision testing before players get drawn
-    SDL_Rect temp;
-    temp.x = drawOffset.x;
-    temp.y = drawOffset.y;
+    dst.x = max(drawOffset.x,0.0f);
+    dst.y = max(drawOffset.y,0.0f);
+    src.x = max(-drawOffset.x,0.0f);
+    src.y = max(-drawOffset.y,0.0f);
+    src.w = min((int)GFX::getXResolution(),getWidth());
 #ifdef _DEBUG_COL
-    SDL_Rect temp2;
-    temp2.x = 0;
-    temp2.y = 0;
-    temp2.w = GFX::getXResolution();
-    temp2.h = GFX::getYResolution() / 2.0f;
-    SDL_BlitSurface(screen,&temp2,collisionLayer,&temp);
+    src.h = min((int)GFX::getYResolution() / 2,getHeight());
 #else
-    SDL_BlitSurface(screen,NULL,collisionLayer,&temp);
+    src.h = min((int)GFX::getYResolution(),getHeight());
 #endif
 
+    // draw to image used for collision testing before players get drawn
+    SDL_BlitSurface(screen,&src,collisionLayer,&dst);
+
+    // players don't get drawn to the collision surface
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
         renderUnit(screen,(*curr),drawOffset);
@@ -412,14 +469,14 @@ void Level::render(SDL_Surface* screen)
 int Level::getWidth() const
 {
     if (levelImage)
-        return levelImage->getWidth();
+        return levelImage->w;
     return -1;
 }
 
 int Level::getHeight() const
 {
     if (levelImage)
-        return levelImage->getHeight();
+        return levelImage->h;
     return -1;
 }
 
@@ -525,15 +582,24 @@ void Level::addParticle(const BaseUnit* const caller, const Colour& col, const V
 
 void Level::clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const unit)
 {
-    unitRect.setDimensions(unit->getSize());
-    unitRect.setPosition(unit->position);
-    unitRect.render(surface);
+    clearRectangle(surface,unit->position.x,unit->position.y,unit->getWidth(),unit->getHeight());
+
     Vector2df pos2 = boundsCheck(unit);
     if (pos2 != unit->position)
     {
-        unitRect.setPosition(pos2);
-        unitRect.render(surface);
+        clearRectangle(surface,pos2.x,pos2.y,unit->getWidth(),unit->getHeight());
     }
+}
+
+void Level::clearRectangle(SDL_Surface* const surface, CRfloat posX, CRfloat posY, CRint width, CRint height)
+{
+    SDL_Rect unitRect;
+    unitRect.x = max(posX,0.0f);
+    unitRect.y = max(posY,0.0f);
+    unitRect.w = min(surface->w - unitRect.x,width - max((int)-posX,0));
+    unitRect.h = min(surface->h - unitRect.y,height - max((int)-posY,0));
+
+    SDL_BlitSurface(levelImage,&unitRect,surface,&unitRect);
 }
 
 void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset)
@@ -584,20 +650,17 @@ bool Level::processParameter(const pair<string,string>& value)
     case lpImage:
     {
         bool fromCache;
-        SDL_Surface* surf = SURFACE_CACHE->getSurface(value.second,chapterPath,fromCache);
-        if (surf)
+        levelImage = SURFACE_CACHE->getSurface(value.second,chapterPath,fromCache);
+        if (levelImage)
         {
-            levelImage = new Image;
-            levelImage->loadImage(surf);
-            levelImage->setSurfaceSharing(true);
-            if (levelImage->getWidth() < GFX::getXResolution())
-                drawOffset.x = ((int)levelImage->getWidth() - (int)GFX::getXResolution()) / 2.0f;
+            if (levelImage->w < GFX::getXResolution())
+                drawOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
 #ifdef _DEBUG_COL
-            if (levelImage->getHeight() < GFX::getYResolution() / 2)
-                drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution() / 2.0f) / 2.0f;
+            if (levelImage->h < GFX::getYResolution() / 2)
+                drawOffset.y = ((int)levelImage->h - (int)GFX::getYResolution() / 2.0f) / 2.0f;
 #else
-            if (levelImage->getHeight() < GFX::getYResolution())
-                drawOffset.y = ((int)levelImage->getHeight() - (int)GFX::getYResolution()) / 2.0f;
+            if (levelImage->h < GFX::getYResolution())
+                drawOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2.0f;
 #endif
         }
         else
@@ -642,6 +705,11 @@ bool Level::processParameter(const pair<string,string>& value)
     case lpBoundaries:
     {
         cam.disregardBoundaries = not StringUtility::stringToBool(value.second);
+        break;
+    }
+    case lpName:
+    {
+        name = value.second;
         break;
     }
     default:

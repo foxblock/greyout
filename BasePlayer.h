@@ -1,6 +1,8 @@
 #ifndef BASEPLAYER_H
 #define BASEPLAYER_H
 
+#include "CountDown.h"
+
 #include "ControlUnit.h"
 
 /**
@@ -18,13 +20,18 @@ class BasePlayer : public ControlUnit
         virtual bool load(const PARAMETER_TYPE& params);
 
         virtual void update();
+        virtual void render(SDL_Surface* screen);
 
         virtual void hitMap(const Vector2df& correctionOverride);
 
         virtual void control(SimpleJoy* input);
 
     protected:
+        AnimatedSprite* loadFrames(SDL_Surface* const surf, CRint skip, CRint num, CRbool loop, CRstring state);
+
         bool canJump;
+        CountDown fallCounter;
+
     private:
 
 };

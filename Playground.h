@@ -9,14 +9,11 @@ public:
     Playground();
     virtual ~Playground();
 
-    virtual bool load(const PARAMETER_TYPE& params);
-
     virtual void userInput();
     virtual void render(SDL_Surface* screen);
 
 protected:
     vector<Rectangle*> mouseRects;
-    SDL_Surface* rectangleLayer;
 private:
 
 };

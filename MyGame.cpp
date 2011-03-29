@@ -102,7 +102,10 @@ void MyGame::stateManagement()
     }
     else if (next == STATE_THIS)
     {
-        next = STATE_LEVEL;
+        currentState = STATE_LEVEL;
+        state = createState(currentState,stateParameter);
+        ((Level*)state)->firstLoad = false;
+        return;
     }
 
     currentState = next;

@@ -45,8 +45,8 @@ public:
     virtual void render(SDL_Surface* screen);
 
     // size of the level in pixels
-    virtual int getWidth() const;
-    virtual int getHeight() const;
+    int getWidth() const;
+    int getHeight() const;
 
     // this transforms a passed coordinate to conform to the level flags
     // so for example if the level repeats, this will get applied here
@@ -71,12 +71,13 @@ public:
     list<ControlUnit*> players;
     list<BaseUnit*> units;
     list<PixelParticle*> effects;
-    Image* levelImage;
+    SDL_Surface* levelImage;
     Colour noCollision; // used to clear units in clearUnitFromCollision
     SimpleFlags flags;
 
     string levelFileName;
     string chapterPath;
+    string name;
 
     #ifdef _DEBUG
     string debugString;
@@ -92,7 +93,9 @@ public:
         lfRepeatY = 8,
         lfDisableSwap = 16,
         lfKeepCentred = 32,
-        lfScale = 64
+        lfScaleX = 64,
+        lfScaleY = 128,
+        lfEOL = 256
     };
     map<string,int> stringToFlag;
 
@@ -103,10 +106,15 @@ public:
     int winCounter;
     bool isEnding;
 
+    // get set to false by MyGame on level restart
+    bool firstLoad;
+
 protected:
     // deletes the passed unit from the collision surface (to avoid checking
     // the unit agains itself)
     void clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const unit);
+
+    inline void clearRectangle(SDL_Surface* const surface, CRfloat posX, CRfloat posY, CRint width, CRint height);
 
     // this renders a unit taking into account the flags, so if a unit moves out
     // of bounds and the level is set to repeat it will also get drawn on the
@@ -134,6 +142,7 @@ protected:
         lpOffset,
         lpBackground,
         lpBoundaries,
+        lpName,
         lpEOL
     };
     map<string,int> stringToProp;
@@ -143,9 +152,11 @@ protected:
     Text fpsDisplay;
     #endif
     SDL_Surface* collisionLayer;
-    Rectangle unitRect; // used to clear units from the collision layer
-    CountDown logicTimer; // used in logicPause
     CountDown eventTimer;
+
+    Text nameText;
+    Rectangle nameRect;
+    CountDown nameTimer;
 };
 
 #endif

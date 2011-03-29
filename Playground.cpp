@@ -8,7 +8,7 @@
 
 Playground::Playground()
 {
-    rectangleLayer = NULL;
+    //
 }
 
 Playground::~Playground()
@@ -18,27 +18,9 @@ Playground::~Playground()
         delete (*curr);
     }
     mouseRects.clear();
-    if (rectangleLayer)
-        SDL_FreeSurface(rectangleLayer);
 }
 
 ///---public---
-
-bool Playground::load(const PARAMETER_TYPE& params)
-{
-    if (Level::load(params))
-    {
-        // The rectangles will be painted to this surface
-        rectangleLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,getWidth(),getHeight(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-
-        // Fill it with magenta and apply a colour key to make it transparent
-        SDL_FillRect(rectangleLayer, NULL, SDL_MapRGB(rectangleLayer->format,255,0,255));
-        SDL_SetColorKey(rectangleLayer, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(rectangleLayer->format,255,0,255));
-        return true;
-    }
-    else
-        return false;
-}
 
 void Playground::userInput()
 {
@@ -131,40 +113,37 @@ void Playground::userInput()
 
 void Playground::render(SDL_Surface* screen)
 {
-    levelImage->renderImage(screen,-drawOffset);
+    SDL_Rect src;
+    SDL_Rect dst;
+    dst.x = max(drawOffset.x,0.0f);
+    dst.y = max(drawOffset.y,0.0f);
+    src.x = max(-drawOffset.x,0.0f);
+    src.y = max(-drawOffset.y,0.0f);
+    src.w = min((int)GFX::getXResolution(),getWidth());
+#ifdef _DEBUG_COL
+    src.h = min((int)GFX::getYResolution() / 2,getHeight());
+#else
+    src.h = min((int)GFX::getYResolution(),getHeight());
+#endif
 
-    if (rectangleLayer)
+    SDL_BlitSurface(levelImage,&src,screen,&dst);
+
+    for (vector<Rectangle*>::iterator curr = mouseRects.begin(); curr != mouseRects.end(); ++curr)
     {
-        for (vector<Rectangle*>::iterator curr = mouseRects.begin(); curr != mouseRects.end(); ++curr)
-        {
-            (*curr)->render(rectangleLayer);
-            delete (*curr);
-        }
-        mouseRects.clear();
-        SDL_BlitSurface(rectangleLayer,NULL,screen,NULL);
+        (*curr)->render(levelImage);
+        delete (*curr);
     }
+    mouseRects.clear();
 
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
         renderUnit(screen,(*curr),drawOffset);
     }
 
-
     // draw to image used for collision testing before players get drawn
-    SDL_Rect temp;
-    temp.x = drawOffset.x;
-    temp.y = drawOffset.y;
-#ifdef _DEBUG_COL
-    SDL_Rect temp2;
-    temp2.x = 0;
-    temp2.y = 0;
-    temp2.w = GFX::getXResolution();
-    temp2.h = GFX::getYResolution() / 2.0f;
-    SDL_BlitSurface(screen,&temp2,collisionLayer,&temp);
-#else
-    SDL_BlitSurface(screen,NULL,collisionLayer,&temp);
-#endif
+    SDL_BlitSurface(screen,&src,collisionLayer,&dst);
 
+    // players don't get drawn to the collision surface
     for (list<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
         renderUnit(screen,(*curr),drawOffset);
