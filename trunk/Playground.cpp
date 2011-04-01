@@ -35,7 +35,7 @@ void Playground::userInput()
 #endif
     if (input->isStart())
     {
-        setNextState(STATE_MAIN);
+        pauseToggle();
         return;
     }
     if (input->isY())
@@ -80,8 +80,7 @@ void Playground::userInput()
     {
         if (players.size() > 1)
         {
-            for (list<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
-                (*unit)->takesControl = not (*unit)->takesControl;
+            swapControl();
         }
         input->resetL();
         input->resetR();
@@ -109,6 +108,7 @@ void Playground::userInput()
         if ((*curr)->takesControl)
             (*curr)->control(input);
     }
+    input->resetA();
 }
 
 void Playground::render(SDL_Surface* screen)

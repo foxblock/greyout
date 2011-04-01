@@ -25,6 +25,8 @@ class StateTitle : public BaseState
         Sprite pandora;
         Sprite penjin;
         Timer counter;
+        int state;
+        bool once;
 };
 
 #endif

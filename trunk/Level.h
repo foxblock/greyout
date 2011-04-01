@@ -43,6 +43,11 @@ public:
     virtual void render();
     // draws level data onto passed surface and passed surface onto collisionLayer
     virtual void render(SDL_Surface* screen);
+    virtual void onPause();
+    virtual void onResume();
+    virtual void pauseInput();
+    virtual void pauseUpdate();
+    virtual void pauseScreen();
 
     // size of the level in pixels
     int getWidth() const;
@@ -143,6 +148,8 @@ protected:
         lpBackground,
         lpBoundaries,
         lpName,
+        lpMusic,
+        lpDialogue,
         lpEOL
     };
     map<string,int> stringToProp;
@@ -157,6 +164,13 @@ protected:
     Text nameText;
     Rectangle nameRect;
     CountDown nameTimer;
+
+    SDL_Surface* pauseSurf;
+    int pauseSelection;
+    Rectangle overlay;
+
+    Rectangle* hidex;
+    Rectangle* hidey;
 };
 
 #endif

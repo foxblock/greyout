@@ -23,6 +23,7 @@
 #include "PushableBox.h"
 #include "SolidBox.h"
 #include "Exit.h"
+#include "DialogueTrigger.h"
 
 using namespace std;
 
@@ -55,7 +56,8 @@ enum UnitIdent
     ucUnknown,
     ucPushableBox,
     ucSolidBox,
-    ucExit
+    ucExit,
+    ucDialogueTrigger
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -82,6 +84,7 @@ void createIdentMaps()
     unitClasses["pushablebox"] = ucPushableBox;
     unitClasses["solidbox"] = ucSolidBox;
     unitClasses["exit"] = ucExit;
+    unitClasses["dialoguetrigger"] = ucDialogueTrigger;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -410,6 +413,11 @@ BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, C
     case ucExit:
     {
         result = new Exit(parent);
+        break;
+    }
+    case ucDialogueTrigger:
+    {
+        result = new DialogueTrigger(parent);
         break;
     }
     default:

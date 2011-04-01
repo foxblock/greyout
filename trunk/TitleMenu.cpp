@@ -64,7 +64,7 @@ void TitleMenu::init()
     input->resetKeys(); // avoid sticky keys when returning from level
     EFFECTS->fadeIn(1000);
 
-    MUSIC_CACHE->playMusic("music/Town.mp3");
+    MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
 
 void TitleMenu::userInput()
@@ -84,7 +84,7 @@ void TitleMenu::userInput()
     else if (input->isDown())
         incSelection();
 
-    if (input->isA() || input->isStart())
+    if (input->isA())
         doSelection();
 
     input->resetKeys();
@@ -135,6 +135,7 @@ void TitleMenu::incSelection()
     if (selection >= MENU_ITEM_COUNT)
         selection = 0;
     setSelection(false);
+    MUSIC_CACHE->playSound("sounds/menu.wav");
 }
 
 void TitleMenu::decSelection()
@@ -143,6 +144,7 @@ void TitleMenu::decSelection()
     if (selection < 0)
         selection = MENU_ITEM_COUNT - 1;
     setSelection(false);
+    MUSIC_CACHE->playSound("sounds/menu.wav");
 }
 
 void TitleMenu::doSelection()
@@ -153,7 +155,11 @@ void TitleMenu::doSelection()
         ENGINE->playChapter(DEFAULT_CHAPTER);
         break;
     case 1:
+        #ifdef _DEBUG
         setNextState(STATE_BENCHMARK);
+        #else
+        ENGINE->playSingleLevel(PLAYGROUND_LEVEL,STATE_MAIN);
+        #endif
         break;
     case 2:
         setNextState(STATE_LEVELSELECT);

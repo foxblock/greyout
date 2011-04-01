@@ -3,7 +3,7 @@
 #include "Level.h"
 
 #define SPRITESHEET_W 8
-#define SPRITESHEET_H 6
+#define SPRITESHEET_H 7
 #define FRAMERATE DECI_SECONDS
 
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
@@ -32,24 +32,35 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
     SDL_Surface* surf = getSurface(imageOverwrite);
     AnimatedSprite* temp;
     loadFrames(surf,0,1,false,"stand");
-    loadFrames(surf,1,7,true,"fallRight");
-    loadFrames(surf,8,3,false,"turnRight");
+    temp = loadFrames(surf,1,7,true,"fallRight");
+    temp->setPlayMode(pmReverse);
+    temp = loadFrames(surf,8,3,false,"turnRight");
+    temp->setFrameRate(FIFTEEN_FRAMES);
     temp = loadFrames(surf,12,4,true,"pushRight");
     temp->setPlayMode(pmPulse);
     temp = loadFrames(surf,16,6,true,"runRight");
     temp->setPlayMode(pmPulse);
     loadFrames(surf,22,2,false,"jumpRight");
     loadFrames(surf,23,1,false,"flyRight");
-    loadFrames(surf,25,7,true,"fallLeft");
-    loadFrames(surf,32,3,false,"turnLeft");
+    temp = loadFrames(surf,25,7,true,"fallLeft");
+    temp->setPlayMode(pmReverse);
+    temp = loadFrames(surf,32,3,false,"turnLeft");
+    temp->setFrameRate(FIFTEEN_FRAMES);
     temp = loadFrames(surf,36,4,true,"pushLeft");
     temp->setPlayMode(pmPulse);
     temp = loadFrames(surf,40,6,true,"runLeft");
     temp->setPlayMode(pmPulse);
     loadFrames(surf,46,2,false,"jumpLeft");
     loadFrames(surf,47,1,false,"flyLeft");
+    temp = loadFrames(surf,48,3,false,"wave");
+    temp->setLooping(2);
+    temp->setPlayMode(pmPulse);
+    temp->setFrameRate(FIFTEEN_FRAMES);
 
-    setSpriteState("stand");
+    if (takesControl)
+        setSpriteState("wave",true);
+    else
+        setSpriteState("stand");
 
     return result;
 }
@@ -105,7 +116,7 @@ void BasePlayer::render(SDL_Surface* screen)
 {
     BaseUnit::render(screen);
 
-    if (currentSprite->getLooping() || currentSprite->hasFinished())
+    if (currentSprite->getLoops() == -1 || currentSprite->hasFinished())
     {
         setSpriteState("stand");
     }
@@ -127,7 +138,6 @@ void BasePlayer::control(SimpleJoy* input)
         if (direction > 0 || (int)velocity.x == 0)
         {
             setSpriteState("turnLeft",true);
-            states["runLeft"]->setCurrentFrame(0);
         }
         acceleration[0].x = -2;
         acceleration[1].x = -8;
@@ -137,15 +147,16 @@ void BasePlayer::control(SimpleJoy* input)
         if (direction < 0 || (int)velocity.x == 0)
         {
             setSpriteState("turnRight",true);
-            states["runRight"]->setCurrentFrame(0);
         }
         acceleration[0].x = 2;
         acceleration[1].x = 8;
     }
     else
     {
-        if (canJump)
+        if (canJump && currentState != "wave")
+        {
             setSpriteState("stand");
+        }
         acceleration[0].x = 0;
         acceleration[1].x = 0;
         velocity.x = 0;
@@ -166,7 +177,7 @@ void BasePlayer::control(SimpleJoy* input)
         acceleration[1].y = 0;
         velocity.y = 0;
     }*/
-    if (input->isA() && canJump)
+    if ((input->isA() || input->isX()) && canJump)
     {
         velocity.y = -14;
         canJump = false;
@@ -175,7 +186,6 @@ void BasePlayer::control(SimpleJoy* input)
         else
             setSpriteState("jumpLeft",true);
         fallCounter.start();
-        input->resetA();
     }
 }
 

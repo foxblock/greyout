@@ -73,6 +73,11 @@ void Benchmark::update()
     counter.update();
 }
 
+void Benchmark::pauseUpdate()
+{
+    update();
+}
+
 void Benchmark::generateFPSData()
 {
     int minFPS = 2147483647;

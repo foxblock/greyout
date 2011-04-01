@@ -14,7 +14,7 @@
 // you can do funky x-gravity, but the collision checking would need some tinkering to make it work
 // it currently checks the y-directions last for a reason...
 #define DEFAULT_GRAVITY Vector2df(0,2)
-#define DEFAULT_MAXIMUM Vector2df(20,20) // this should be the size of a tile if that's applicable
+#define DEFAULT_MAXIMUM Vector2df(16,16) // this should be the size of a tile if that's applicable
 
 Physics* Physics::self = 0;
 
@@ -419,10 +419,12 @@ void Physics::playerUnitCollision(const Level* const level, BaseUnit* const play
         return;
     }
 
-    Vector2df pos2 = level->boundsCheck(player);
-    if (pos2 != player->position)
+    Vector2df pos2p = level->boundsCheck(player);
+    Vector2df pos2u = level->boundsCheck(unit);
+    if (pos2p != player->position || pos2u != unit->position)
     {
-        Vector2df proPosPlayer = pos2 + player->velocity;
+        proPosPlayer = pos2p + player->velocity;
+        proPosUnit = pos2u + unit->velocity;
         float xPos = max(proPosPlayer.x, proPosUnit.x);
         float yPos = max(proPosPlayer.y, proPosUnit.y);
         float xPosMax = min(proPosPlayer.x + player->getWidth(), proPosUnit.x + unit->getWidth());
@@ -432,7 +434,7 @@ void Physics::playerUnitCollision(const Level* const level, BaseUnit* const play
             float diffX = min(proPosPlayer.x + player->getWidth(), proPosUnit.x + unit->getWidth()) - max(proPosPlayer.x, proPosUnit.x);
             float diffY = min(proPosPlayer.y + player->getHeight(), proPosUnit.y + unit->getHeight()) - max(proPosPlayer.y, proPosUnit.y);
             SimpleDirection dir;
-            if (pos2.x < unit->position.x)
+            if (pos2p.x < pos2u.x)
                 dir = diLEFT;
             else
                 dir = diRIGHT;

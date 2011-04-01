@@ -2,6 +2,7 @@
 
 #include "fileTypeDefines.h"
 #include "Level.h"
+#include "MusicCache.h"
 
 #define PUSHING_SPEED 3.0f
 
@@ -97,12 +98,13 @@ void PushableBox::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* c
                     unit->setSpriteState("pushLeft");
             }
         }
+        /*
         else if (unit->position.y > position.y)
         {
             // vertical collision
             position.y -= collision.second.y;
             velocity.y = 0;
-        }
+        }*/
     }
 }
 
@@ -120,6 +122,7 @@ void PushableBox::explode()
                 parent->addParticle(this,col,position + Vector2df(X,Y),vel,750);
             }
         }
+        MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);
     }
     toBeRemoved = true;
 }

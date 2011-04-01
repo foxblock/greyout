@@ -83,6 +83,7 @@ class StateLevelSelect : public BaseState
         AnimatedSprite arrows;
         Rectangle cursor;
         Rectangle menu;
+        Rectangle overlay;
         // preview images will be drawn onto this surface for less redraws needed
         // TODO: Or do they? Think about that!
         SDL_Surface* previewDraw;

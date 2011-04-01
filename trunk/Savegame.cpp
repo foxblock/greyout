@@ -40,7 +40,7 @@ bool Savegame::setFile(CRstring filename)
         cout << "Failed to open file for read: \"" << filename << "\"" << endl;
         // file does not exists -> try to open for write
         ofstream file2(filename.c_str());
-        if (file.fail())
+        if (file2.fail())
         {
             cout << "Failed to reserve savegame file!" << endl;
             return false;
@@ -110,6 +110,7 @@ bool Savegame::save()
 bool Savegame::clear()
 {
     data.clear();
+    tempData.clear();
 
     if (autoSave)
         return save();
@@ -140,6 +141,42 @@ bool Savegame::writeData(CRstring key, CRstring value, CRbool overwrite)
         return save();
 
     return true;
+}
+
+bool Savegame::hasData(CRstring key) const
+{
+    map<string,string>::const_iterator iter = data.find(key);
+
+    return (iter != data.end());
+}
+
+string Savegame::getTempData(CRstring key) const
+{
+    map<string,string>::const_iterator iter = tempData.find(key);
+
+    if (iter != tempData.end())
+        return iter->second;
+    return "";
+}
+
+bool Savegame::writeTempData(CRstring key, CRstring value, CRbool overwrite)
+{
+    if (not overwrite)
+    {
+        map<string,string>::const_iterator iter = tempData.find(key);
+        if (iter != tempData.end())
+            return false;
+    }
+    tempData[key] = value;
+
+    return true;
+}
+
+bool Savegame::hasTempData(CRstring key) const
+{
+    map<string,string>::const_iterator iter = tempData.find(key);
+
+    return (iter != tempData.end());
 }
 
 int Savegame::getChapterProgress(CRstring chapterFile) const

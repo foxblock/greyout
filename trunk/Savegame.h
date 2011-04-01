@@ -37,6 +37,12 @@ public:
     // written without prior check of existance of the key
     virtual string getData(CRstring key) const;
     virtual bool writeData(CRstring key, CRstring value, CRbool overwrite=true);
+    virtual bool hasData(CRstring key) const;
+
+    // temporary data will not be saved to disk and can be used without calling setFile
+    virtual string getTempData(CRstring key) const;
+    virtual bool writeTempData(CRstring key, CRstring value, CRbool overwrite=true);
+    virtual bool hasTempData(CRstring key) const;
 
     // wrappers for getData and writeData
     // will check whether passed progress is greater than loaded if overwrite is false
@@ -47,6 +53,7 @@ public:
     bool autoSave;
 protected:
     map<string,string> data;
+    map<string,string> tempData;
     string filename;
 
     Encryption crypt;

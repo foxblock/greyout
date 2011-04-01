@@ -14,13 +14,18 @@ MusicCache::MusicCache()
 {
     fadeDuration = 1000;
     musicPlaying = "";
+    nextTrack = "";
     soundVolume = MIX_MAX_VOLUME;
     musicVolume = MIX_MAX_VOLUME;
     setMusicVolume(musicVolume);
+    fadeThread = NULL;
 }
 
 MusicCache::~MusicCache()
 {
+    int* result = NULL;
+    if (fadeThread)
+        SDL_WaitThread(fadeThread,result);
     stopMusic();
     stopSounds();
     clear();
@@ -39,25 +44,26 @@ bool MusicCache::playMusic(CRstring filename, CRbool suppressOutput)
 {
     map<string,Music*>::iterator iter = music.find(filename);
 
+    int* result = NULL;
+    if (fadeThread)
+    {
+        SDL_WaitThread(fadeThread,result);
+        fadeThread = NULL;
+    }
+
     if (iter != music.end()) // found in cache
     {
         if (musicPlaying[0] == 0) // nothing is currently playing
         {
-            play(iter->second,filename);
-            if (not suppressOutput)
-                cout << "Now playing: \"" << filename << "\"" << endl;
+            nextTrack = filename;
+            fadeThread = SDL_CreateThread(MusicCache::fadeMusic, iter->second);
         }
         else
         {
             if (musicPlaying != filename)
             {
-                // stop playing music
-                Music* temp = music.find(musicPlaying)->second;
-                stop(temp);
-                // start new one
-                play(iter->second,filename);
-                if (not suppressOutput)
-                    cout << "Now playing: \"" << filename << "\"" << endl;
+                nextTrack = filename;
+                fadeThread = SDL_CreateThread(MusicCache::fadeMusic, iter->second);
             }
             // else just continue playing of current music
         }
@@ -78,14 +84,9 @@ bool MusicCache::playMusic(CRstring filename, CRbool suppressOutput)
             delete temp;
             return false;
         }
-
-        if (musicPlaying[0] != 0) // stop currently playing music
-            stop(music.find(musicPlaying)->second);
-
         music[filename] = temp;
-        play(temp,filename);
-        if (not suppressOutput)
-            cout << "Now playing: \"" << filename << "\"" << endl;
+        nextTrack = filename;
+        fadeThread = SDL_CreateThread(MusicCache::fadeMusic, temp);
     }
     return true;
 }
@@ -126,6 +127,7 @@ bool MusicCache::playSound(CRstring filename, CRint numLoops, CRbool suppressOut
     if (iter != sounds.end()) // found in cache
     {
         iter->second->play(numLoops);
+        iter->second->setVolume(soundVolume);
     }
     else // load new
     {
@@ -144,8 +146,8 @@ bool MusicCache::playSound(CRstring filename, CRint numLoops, CRbool suppressOut
 
         sounds[filename] = temp;
         temp->setSimultaneousPlay(true);
-        temp->setVolume(soundVolume);
         temp->play(numLoops);
+        temp->setVolume(soundVolume);
     }
 
     return true;
@@ -190,8 +192,13 @@ int MusicCache::getMaxVolume() const
 
 void MusicCache::clear(CRbool clearPlaying)
 {
+    clearMusic(clearPlaying);
+    clearSounds(clearPlaying);
+}
+
+void MusicCache::clearMusic(CRbool clearPlaying)
+{
     int musicClear = music.size();
-    int soundClear = sounds.size();
 
     map<string,Music*> playingM;
     for (map<string,Music*>::iterator iter = music.begin(); iter != music.end(); ++iter)
@@ -208,6 +215,13 @@ void MusicCache::clear(CRbool clearPlaying)
         music.insert(playingM.begin(),playingM.end());
         playingM.clear();
     }
+    cout << "Cleared music cache - deleted " << (musicClear - music.size())
+    << " music tracks (" << music.size() << " still playing)." << endl;
+}
+
+void MusicCache::clearSounds(CRbool clearPlaying)
+{
+    int soundClear = sounds.size();
 
     map<string,Sound*> playingS;
     for (map<string,Sound*>::iterator iter = sounds.begin(); iter != sounds.end(); ++iter)
@@ -223,11 +237,10 @@ void MusicCache::clear(CRbool clearPlaying)
         sounds.insert(playingS.begin(),playingS.end());
         playingS.clear();
     }
-
-    cout << "Cleared music and sound cache - deleted " << (musicClear - music.size())
-    << " music tracks (" << music.size() << " still playing), deleted " << (soundClear - sounds.size())
+    cout << "Cleared sound cache - deleted " << (soundClear - sounds.size())
     << " sounds (" << sounds.size() << " still playing)." << endl;
 }
+
 
 bool MusicCache::isLoaded(CRstring filename) const
 {
@@ -244,11 +257,13 @@ bool MusicCache::isLoaded(CRstring filename) const
 
 void MusicCache::play(Music* const item, CRstring file)
 {
+    item->setVolume(musicVolume);
     if (fadeDuration > 0)
         item->playFadeIn(fadeDuration);
     else
         item->play();
     musicPlaying = file;
+    cout << "Now playing: \"" << file << "\"" << endl;
 }
 
 void MusicCache::stop(Music* const item)
@@ -258,6 +273,18 @@ void MusicCache::stop(Music* const item)
     else
         item->stop();
     musicPlaying = "";
+}
+
+int MusicCache::fadeMusic(void* data)
+{
+    Music* track = (Music*)data;
+    if (MUSIC_CACHE->musicPlaying[0] != 0) // stop current
+    {
+        MUSIC_CACHE->stop(MUSIC_CACHE->music.find(MUSIC_CACHE->musicPlaying)->second);
+    }
+    // play next track
+    MUSIC_CACHE->play(track,MUSIC_CACHE->nextTrack);
+    return 0;
 }
 
 ///---private---
