@@ -7,6 +7,7 @@
 #include "userStates.h"
 #include "SurfaceCache.h"
 #include "LevelLoader.h"
+#include "MusicCache.h"
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
@@ -81,6 +82,10 @@ StateLevelSelect::StateLevelSelect()
     menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
     menu.setColour(BLACK);
     menu.setPosition(0,0);
+    overlay.setDimensions(GFX::getXResolution(),GFX::getYResolution());
+    overlay.setColour(BLACK);
+    overlay.setPosition(0,0);
+    overlay.setAlpha(100);
 #ifdef _DEBUG
     fpsDisplay.loadFont("fonts/unispace.ttf",24);
     fpsDisplay.setColour(GREEN);
@@ -117,7 +122,7 @@ StateLevelSelect::~StateLevelSelect()
 
 void StateLevelSelect::init()
 {
-
+    MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
 
 void StateLevelSelect::clear()
@@ -131,7 +136,10 @@ void StateLevelSelect::clearLevelListing()
     abortLevelLoading = true;
     int* status = NULL;
     if (levelThread)
+    {
         SDL_WaitThread(levelThread,status);
+        levelThread = NULL;
+    }
 
     vector<PreviewData>::iterator iter;
     for (iter = levelPreviews.begin(); iter != levelPreviews.end(); ++iter)
@@ -150,7 +158,10 @@ void StateLevelSelect::clearChapterListing()
     abortChapterLoading = true;
     int* status = NULL;
     if (chapterThread)
+    {
         SDL_WaitThread(chapterThread,status);
+        chapterThread = NULL;
+    }
 
     vector<PreviewData>::iterator iter;
     for (iter = chapterPreviews.begin(); iter != chapterPreviews.end(); ++iter)
@@ -178,18 +189,22 @@ void StateLevelSelect::userInput()
         if (input->isLeft())
         {
             --selection.x;
+            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
         else if (input->isRight())
         {
             ++selection.x;
+            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
         if (input->isUp())
         {
             --selection.y;
+            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
         if (input->isDown())
         {
             ++selection.y;
+            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
     }
     else // intermediate menu navigation
@@ -197,12 +212,16 @@ void StateLevelSelect::userInput()
         if (input->isUp())
         {
             if (intermediateSelection > 0)
+            {
                 --intermediateSelection;
+            }
         }
         else if (input->isDown())
         {
             if (intermediateSelection < INTERMEDIATE_MENU_ITEM_COUNT-1)
+            {
                 ++intermediateSelection;
+            }
         }
 
         if (input->isA())
@@ -212,6 +231,7 @@ void StateLevelSelect::userInput()
             {
             case 0: // play
                 ENGINE->playChapter(chapterPreviews.at(value).filename);
+                MUSIC_CACHE->playSound("sounds/drip.wav");
                 break;
             case 1: // explore
                 exploreChapter(chapterPreviews.at(value).filename);
@@ -230,7 +250,7 @@ void StateLevelSelect::userInput()
 
     if (state == lsLevel)
     {
-        if (input->isStart() || input->isB()) // return to chapter selection
+        if (input->isB()) // return to chapter selection
         {
             abortLevelLoading = true;
             switchState(lsChapter);
@@ -248,17 +268,19 @@ void StateLevelSelect::userInput()
                     ENGINE->playSingleLevel(levelPreviews.at(value).filename,STATE_LEVELSELECT);
                 else // exploring chapter -> start chapter at selected level
                     ENGINE->playChapter(exChapter->filename,value);
+                MUSIC_CACHE->playSound("sounds/drip.wav");
             }
         }
         checkSelection(levelPreviews,selection);
     }
     else if (state == lsChapter)
     {
-        if (input->isStart() || input->isB()) // return to menu
+        if (input->isB()) // return to menu
         {
             abortLevelLoading = true;
             setNextState(STATE_MAIN);
             input->resetKeys();
+            MUSIC_CACHE->playSound("sounds/menu_back.wav");
             return;
         }
         if (input->isA())
@@ -438,7 +460,8 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
                     error.render(target);
                 }
             }
-            lastDraw = I;
+            if (not reachedLoaded)
+                lastDraw = I;
         }
         else // render loading image
         {
@@ -560,12 +583,8 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
     }
     else if (toState == lsIntermediate)
     {
-        menu.setDimensions(GFX::getXResolution(),GFX::getYResolution());
-        menu.setAlpha(100);
-        menu.render();
+        overlay.render();
         SDL_BlitSurface(GFX::getVideoSurface(),NULL,previewDraw,NULL);
-        menu.setAlpha(255);
-        menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
         intermediateSelection = 0;
         title.setAlignment(CENTRED);
     }
@@ -615,7 +634,12 @@ int StateLevelSelect::loadLevelPreviews(void* data)
     cout << "Generating level previews images" << endl;
     StateLevelSelect* self = (StateLevelSelect*)data;
     vector<PreviewData>::iterator iter = self->levelPreviews.begin();
-    int levelNumber, maxUnlocked = 0;
+    int levelNumber = 0;
+    #ifdef _DEBUG
+    int maxUnlocked = 2147483647;
+    #else
+    int maxUnlocked = 0;
+    #endif
     if (self->exChapter)
         maxUnlocked = self->exChapter->getProgress();
 
@@ -652,6 +676,7 @@ int StateLevelSelect::loadLevelPreviews(void* data)
         {
             SDL_mutexP(self->levelLock);
             // set loaded to true, but keep surface == NULL indicating an error
+            (*iter).surface = NULL;
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->levelLock);
             if (LEVEL_LOADER->errorString[0] != 0)

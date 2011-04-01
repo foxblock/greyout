@@ -5,6 +5,7 @@
 
 #include "Level.h"
 #include "SurfaceCache.h"
+#include "MusicCache.h"
 
 BaseUnit::BaseUnit(Level* newParent)
 {
@@ -281,6 +282,7 @@ void BaseUnit::explode()
                 }
             }
         }
+        MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);
     }
     toBeRemoved = true;
 }

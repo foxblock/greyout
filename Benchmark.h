@@ -15,6 +15,7 @@ class Benchmark : public Level
         virtual void init();
         virtual void userInput();
         virtual void update();
+        virtual void pauseUpdate();
     protected:
         virtual void generateFPSData();
         virtual void secondUpdate();

@@ -10,9 +10,17 @@
 #include "userStates.h"
 #include "SurfaceCache.h"
 #include "effects/Hollywood.h"
+#include "MusicCache.h"
+#include "Dialogue.h"
 
 #define NAME_TEXT_SIZE 48
 #define NAME_RECT_HEIGHT 35
+
+#define PAUSE_MENU_ITEM_COUNT 5
+#define PAUSE_MENU_SPACING 10
+#define PAUSE_MENU_OFFSET_Y 0
+#define PAUSE_MENU_OFFSET_X 20
+#define PAUSE_VOLUME_SLIDER_SIZE 400
 
 Level::Level()
 {
@@ -27,7 +35,6 @@ Level::Level()
     eventTimer.init(1000,MILLI_SECONDS);
     eventTimer.setRewind(STOP);
     winCounter = 0;
-    isEnding = false;
     firstLoad = true;
 
     stringToFlag["repeatx"] = lfRepeatX;
@@ -46,6 +53,8 @@ Level::Level()
     stringToProp["background"] = lpBackground;
     stringToProp["boundaries"] = lpBoundaries;
     stringToProp["name"] = lpName;
+    stringToProp["music"] = lpMusic;
+    stringToProp["dialogue"] = lpDialogue;
 
 #ifdef _DEBUG
     debugText.loadFont("fonts/unispace.ttf",12);
@@ -56,17 +65,27 @@ Level::Level()
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
 #endif
-    nameText.loadFont("fonts/Lato-bold.ttf",48);
+    nameText.loadFont("fonts/Lato-Bold.ttf",48);
     nameText.setColour(WHITE);
     nameText.setAlignment(CENTRED);
-    nameText.setUpBoundary(Vector2di(GFX::getXResolution(),NAME_RECT_HEIGHT));
+    nameText.setUpBoundary(Vector2di(GFX::getXResolution(),GFX::getYResolution()));
     nameText.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
     nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
-    nameRect.setColour(BLACK);
     nameRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
+    nameRect.setColour(BLACK);
     nameTimer.init(2000,MILLI_SECONDS);
 
     cam.parent = this;
+
+    pauseSurf = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+    pauseSelection = 0;
+    overlay.setDimensions(GFX::getXResolution(),GFX::getYResolution());
+    overlay.setPosition(0,0);
+    overlay.setColour(BLACK);
+    overlay.setAlpha(100);
+
+    hidex = NULL;
+    hidey = NULL;
 }
 
 Level::~Level()
@@ -87,6 +106,8 @@ Level::~Level()
         delete (*curr);
     }
     effects.clear();
+    delete hidex;
+    delete hidey;
 
     // reset background colour
     GFX::setClearColour(BLACK);
@@ -115,6 +136,18 @@ bool Level::load(const PARAMETER_TYPE& params)
         collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->w,levelImage->h,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
         SDL_BlitSurface(levelImage,NULL,collisionLayer,NULL);
     }
+    if (getWidth() < GFX::getXResolution())
+    {
+        hidex = new Rectangle;
+        hidex->setDimensions((GFX::getXResolution() - getWidth()) / 2.0f,GFX::getYResolution());
+        hidex->setColour(GFX::getClearColour());
+    }
+    if (getHeight() < GFX::getYResolution())
+    {
+        hidey = new Rectangle;
+        hidey->setDimensions(GFX::getXResolution() - max((int)GFX::getXResolution() - getWidth(),0),(GFX::getYResolution() - getHeight()) / 2.0f);
+        hidey->setColour(GFX::getClearColour());
+    }
 
     return true;
 }
@@ -127,7 +160,11 @@ void Level::init()
         winCounter = players.size();
 
     if (firstLoad)
+    {
         nameTimer.start(2000);
+        if (ENGINE->currentState != STATE_LEVELSELECT)
+            EFFECTS->fadeIn(1000);
+    }
 }
 
 void Level::userInput()
@@ -143,10 +180,10 @@ void Level::userInput()
 #endif
     if (input->isStart())
     {
-        setNextState(STATE_MAIN);
+        pauseToggle();
         return;
     }
-    if (input->isB())
+    if (input->isB() && input->isY())
     {
         for (list<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
         {
@@ -161,8 +198,7 @@ void Level::userInput()
     {
         if (players.size() > 1)
         {
-            for (list<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
-                (*unit)->takesControl = not (*unit)->takesControl;
+            swapControl();
         }
         input->resetL();
         input->resetR();
@@ -173,6 +209,8 @@ void Level::userInput()
         if ((*curr)->takesControl)
             (*curr)->control(input);
     }
+    input->resetA();
+    input->resetX();
 }
 
 void Level::update()
@@ -264,7 +302,6 @@ void Level::update()
             // else still update unit on collision surface for player-map collision
             (*curr)->update();
             renderUnit(collisionLayer,(*curr),Vector2df(0,0));
-
         }
         else
         {
@@ -286,15 +323,14 @@ void Level::update()
     if (flags.hasFlag(lfKeepCentred))
         cam.centerOnUnit(getFirstActivePlayer());
     eventTimer.update();
+    DIALOGUE->update();
 
-    if (winCounter <= 0 && not isEnding)
+    if (winCounter <= 0)
     {
         win();
-        isEnding = true;
     }
 
-    if (isEnding)
-        EFFECTS->update();
+    EFFECTS->update();
 }
 
 void Level::render()
@@ -303,14 +339,30 @@ void Level::render()
 
     render(GFX::getVideoSurface());
 
+    // if level is smaller hide outside area
+    if (hidex)
+    {
+        hidex->setPosition(0,0);
+        hidex->render();
+        hidex->setPosition(getWidth() - drawOffset.x,0.0f);
+        hidex->render();
+    }
+    if (hidey)
+    {
+        hidey->setPosition(max(-drawOffset.x,0.0f),0.0f);
+        hidey->render();
+        hidey->setPosition(max(-drawOffset.x,0.0f),getHeight() - drawOffset.y);
+        hidey->render();
+    }
+
     // scaling (very unoptimized and slow!)
     // TODO: Implement properly
 #ifdef _DEBUG_COL
     if (flags.hasFlag(lfScaleX) && getWidth() != GFX::getXResolution() ||
-        flags.hasFlag(lfScaleY) && getHeight() != GFX::getYResolution() / 2.0f)
+            flags.hasFlag(lfScaleY) && getHeight() != GFX::getYResolution() / 2.0f)
 #else
     if (flags.hasFlag(lfScaleX) && getWidth() != GFX::getXResolution() ||
-        flags.hasFlag(lfScaleY) && getHeight() != GFX::getYResolution())
+            flags.hasFlag(lfScaleY) && getHeight() != GFX::getYResolution())
 #endif
     {
         static float fx = (float)GFX::getXResolution() / (float)getWidth();
@@ -349,16 +401,6 @@ void Level::render()
         SDL_FreeSurface(scaled);
     }
 
-    // draw level name overlay
-    if (firstLoad)
-    {
-        if (name[0] != 0 && not nameTimer.hasFinished())
-        {
-            nameRect.render();
-            nameText.print(name);
-        }
-    }
-
     // draw collision surface to lower half of the screen in special debug mode
 #ifdef _DEBUG_COL
     SDL_Rect dest;
@@ -392,9 +434,19 @@ void Level::render()
     SDL_BlitSurface(draw,NULL,GFX::getVideoSurface(),&dest);
     SDL_FreeSurface(draw);
 #endif
+    // draw level name overlay
+    if (firstLoad)
+    {
+        if (name[0] != 0 && not nameTimer.hasFinished())
+        {
+            nameRect.render();
+            nameText.print(name);
+        }
+    }
 
-    if (isEnding)
-        EFFECTS->render();
+    DIALOGUE->render();
+
+    EFFECTS->render();
 
     // draw the cursor
     Vector2df pos = input->getMouse();
@@ -464,6 +516,161 @@ void Level::render(SDL_Surface* screen)
         (*curr)->render(screen);
         GFX::renderPixelBuffer();
     }
+}
+
+void Level::onPause()
+{
+    SDL_BlitSurface(GFX::getVideoSurface(),NULL,pauseSurf,NULL);
+    overlay.render(pauseSurf);
+    pauseSelection = 2;
+    nameText.setAlignment(LEFT_JUSTIFIED);
+    input->resetKeys();
+}
+
+void Level::onResume()
+{
+    nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+    nameRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
+    nameRect.setColour(BLACK);
+    nameText.setAlignment(CENTRED);
+    nameText.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
+    nameText.setColour(WHITE);
+    input->resetKeys();
+}
+
+void Level::pauseInput()
+{
+    input->update();
+
+    if (input->isUp() && pauseSelection > 0)
+    {
+        --pauseSelection;
+        input->resetUp();
+    }
+    if (input->isDown() && pauseSelection < PAUSE_MENU_ITEM_COUNT-1)
+    {
+        ++pauseSelection;
+        input->resetDown();
+    }
+
+    if (input->isLeft())
+    {
+        if (pauseSelection == 0)
+        {
+            int vol = MUSIC_CACHE->getMusicVolume();
+            if (vol > 0)
+                MUSIC_CACHE->setMusicVolume(vol-8);
+        }
+        else if (pauseSelection == 1)
+        {
+            int vol = MUSIC_CACHE->getSoundVolume();
+            if (vol > 0)
+                MUSIC_CACHE->setSoundVolume(vol-8);
+        }
+    }
+    else if (input->isRight())
+    {
+        if (pauseSelection == 0)
+        {
+            int vol = MUSIC_CACHE->getMusicVolume();
+            if (vol < MUSIC_CACHE->getMaxVolume())
+                MUSIC_CACHE->setMusicVolume(vol+8);
+        }
+        else if (pauseSelection == 1)
+        {
+            int vol = MUSIC_CACHE->getSoundVolume();
+            if (vol < MUSIC_CACHE->getMaxVolume())
+                MUSIC_CACHE->setSoundVolume(vol+8);
+        }
+    }
+
+    if (input->isA() || input->isX())
+    {
+        if (pauseSelection == 2)
+            pauseToggle();
+        else if (pauseSelection == 3)
+        {
+            pauseToggle();
+            for (list<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
+            {
+                (*iter)->explode();
+            }
+            lose();
+        }
+        else if (pauseSelection == 4)
+        {
+            setNextState(STATE_MAIN);
+            MUSIC_CACHE->playSound("sounds/menu_back.wav");
+        }
+    }
+
+    if (input->isStart())
+        pauseToggle();
+}
+
+void Level::pauseUpdate()
+{
+    //
+}
+
+void Level::pauseScreen()
+{
+    SDL_BlitSurface(pauseSurf,NULL,GFX::getVideoSurface(),NULL);
+
+    string pauseItems[PAUSE_MENU_ITEM_COUNT] = {"MUSIC VOL:","SOUND VOL:","RETURN","SUICIDE","EXIT"};
+    int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (PAUSE_MENU_ITEM_COUNT-1)) / 2 + PAUSE_MENU_OFFSET_Y;
+
+    // render text and selection
+    for (int I = 0; I < PAUSE_MENU_ITEM_COUNT; ++I)
+    {
+        nameRect.setPosition(0,pos);
+        nameText.setPosition(PAUSE_MENU_OFFSET_X,pos + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
+        if (I == pauseSelection)
+        {
+            nameRect.setColour(WHITE);
+            nameText.setColour(BLACK);
+        }
+        else
+        {
+            nameRect.setColour(BLACK);
+            nameText.setColour(WHITE);
+        }
+        nameRect.render();
+        nameText.print(pauseItems[I]);
+
+        if (I == 0)
+        {
+            // render volume sliders
+            float factor = (float)MUSIC_CACHE->getMusicVolume() / (float)MUSIC_CACHE->getMaxVolume();
+            nameRect.setDimensions((float)PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
+            nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
+            if (pauseSelection == 0)
+                nameRect.setColour(BLACK);
+            else
+                nameRect.setColour(WHITE);
+            nameRect.render();
+            nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+        }
+        else if (I == 1)
+        {
+            float factor = (float)MUSIC_CACHE->getSoundVolume() / (float)MUSIC_CACHE->getMaxVolume();
+            nameRect.setDimensions(PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
+            nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
+            if (pauseSelection == 1)
+                nameRect.setColour(BLACK);
+            else
+                nameRect.setColour(WHITE);
+            nameRect.render();
+            nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+            pos += 20; // extra offset
+        }
+
+        pos += NAME_RECT_HEIGHT + PAUSE_MENU_SPACING;
+    }
+
+#ifdef _DEBUG
+    fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
+#endif
 }
 
 int Level::getWidth() const
@@ -543,8 +750,26 @@ ControlUnit* Level::getFirstActivePlayer() const
 
 void Level::swapControl()
 {
+    bool valid = false;
+    // check whether there is a player without control
     for (list<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
-        (*unit)->takesControl = not (*unit)->takesControl;
+    {
+        if (not (*unit)->takesControl)
+        {
+            valid = true;
+            break;
+        }
+    }
+
+    if (valid)
+    {
+        for (list<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
+        {
+            (*unit)->takesControl = not (*unit)->takesControl;
+            if ((*unit)->takesControl)
+                (*unit)->setSpriteState("wave",true);
+        }
+    }
 }
 
 void Level::lose()
@@ -709,7 +934,19 @@ bool Level::processParameter(const pair<string,string>& value)
     }
     case lpName:
     {
-        name = value.second;
+        name = StringUtility::upper(value.second);
+        break;
+    }
+    case lpMusic:
+    {
+        if (ENGINE->currentState != STATE_LEVELSELECT)
+            MUSIC_CACHE->playMusic(value.second,chapterPath);
+        break;
+    }
+    case lpDialogue:
+    {
+        if (ENGINE->currentState != STATE_LEVELSELECT)
+            DIALOGUE->loadFromFile(chapterPath + value.second);
         break;
     }
     default:

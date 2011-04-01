@@ -29,19 +29,18 @@ void Camera::centerOnUnit(const BaseUnit* const unit, CRint time)
 
 void Camera::centerOnPos(const Vector2df& pos, CRint time)
 {
-    Vector2df result(0,0);
-    result.x = pos.x - (GFX::getXResolution() / 2.0f);
-    #ifdef _DEBUG_COL
-    result.y = pos.y - (GFX::getYResolution() / 4.0f);
-    #else
-    result.y = pos.y - (GFX::getYResolution() / 2.0f);
-    #endif
+    Vector2df result = parent->drawOffset;
 
-    #ifdef _DEBUG_COL
+    if (parent->getWidth() > GFX::getXResolution())
+        result.x = pos.x - (GFX::getXResolution() / 2.0f);
+    if (parent->getHeight() > GFX::getYResolution())
+        #ifdef _DEBUG_COL
+        result.y = pos.y - (GFX::getYResolution() / 4.0f);
+        #else
+        result.y = pos.y - (GFX::getYResolution() / 2.0f);
+        #endif
+
     if (not disregardBoundaries)
-    #else
-    if (not disregardBoundaries )
-    #endif
     {
         // make sure not moving past the levels boundaries
         if (parent->getWidth() >= GFX::getXResolution())

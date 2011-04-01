@@ -41,9 +41,14 @@ bool Exit::load(const PARAMETER_TYPE& params)
 
 void Exit::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
 {
-    unit->toBeRemoved = true;
-    parent->swapControl();
-    parent->winCounter--;
+    // standing still on the ground
+    if ((int)unit->velocity.x == 0 && (int)(unit->velocity.y + unit->collisionInfo.correction.y) == 0
+        && unit->collisionInfo.correction.y < 0 && collision.second.x > 10)
+    {
+        unit->toBeRemoved = true;
+        parent->swapControl();
+        parent->winCounter--;
+    }
 }
 
 ///---protected---

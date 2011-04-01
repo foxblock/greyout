@@ -23,7 +23,10 @@ MyGame::MyGame()
 
 MyGame::~MyGame()
 {
+    SAVEGAME->writeData("musicvolume",StringUtility::intToString(MUSIC_CACHE->getMusicVolume()),true);
+    SAVEGAME->writeData("soundvolume",StringUtility::intToString(MUSIC_CACHE->getSoundVolume()),true);
     SURFACE_CACHE->clear();
+    MUSIC_CACHE->clear();
 }
 
 MyGame *MyGame::getMyGame()
@@ -47,6 +50,10 @@ PENJIN_ERRORS MyGame::init()
     #endif
     setFrameRate(30);
     SAVEGAME->setFile(SAVE_FILE);
+    if (SAVEGAME->hasData("musicvolume"))
+        MUSIC_CACHE->setMusicVolume(StringUtility::stringToInt(SAVEGAME->getData("musicvolume")));
+    if (SAVEGAME->hasData("soundvolume"))
+        MUSIC_CACHE->setSoundVolume(StringUtility::stringToInt(SAVEGAME->getData("soundvolume")));
     return PENJIN_OK;
 }
 
@@ -59,7 +66,7 @@ void MyGame::stateManagement()
         delete state;
         state = NULL;
         SURFACE_CACHE->clear(); // clear all images loaded by previous state
-        MUSIC_CACHE->clear(false); // clear all unused music and sounds
+        MUSIC_CACHE->clearMusic(false); // clear all unused music
     }
     else // first normal call of the game
     {

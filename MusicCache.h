@@ -2,6 +2,7 @@
 #define MUSICCACHE_H
 
 #include <map>
+#include <SDL/SDL_thread.h>
 
 #include "PenjinTypes.h"
 class Music;
@@ -42,6 +43,8 @@ public:
     int getMaxVolume() const;
 
     void clear(CRbool clearPlaying=true);
+    void clearMusic(CRbool clearPlaying=true);
+    void clearSounds(CRbool clearPlaying=true);
 
     int sizeMusic() const {return music.size();}
     int sizeSounds() const {return sounds.size();}
@@ -53,12 +56,17 @@ protected:
     void play(Music* const item, CRstring file);
     void stop(Music* const item);
 
+    // passed data is next music object
+    static int fadeMusic(void* data);
+
     std::map<string,Music*> music;
     std::map<string,Sound*> sounds;
 
     string musicPlaying;
     int soundVolume;
     int musicVolume;
+    SDL_Thread* fadeThread;
+    string nextTrack;
 private:
 
 };
