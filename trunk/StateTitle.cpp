@@ -75,10 +75,12 @@ void StateTitle::render()
     }
     else if (state == 3)
     {
-        text.setPosition(0,200);
+        text.setPosition(0,150);
         text.print("A game by");
-        text.print("\n");
+        text.print("\n\n");
         text.print("Janek Schaefer");
+        text.print("\n");
+        text.print("foxblock@gmail.com");
     }
     else if (state == 4)
     {
@@ -90,17 +92,17 @@ void StateTitle::render()
         text.setPosition(0,50);
         text.print("Heavily inspired by");
         text.print("\n\n");
-        text.print("Shift");
-        text.print("\n");
-        text.print("by Tony");
-        text.print("\n");
-        text.print("http://armorgames.com/play/751/shift");
-        text.print("\n\n");
         text.print("Three Hundred Mechanics (#1,2,114)");
         text.print("\n");
         text.print("by Sean Howard");
         text.print("\n");
         text.print("http://www.squidi.net/three/index.php");
+        text.print("\n\n");
+        text.print("Shift");
+        text.print("\n");
+        text.print("by Tony");
+        text.print("\n");
+        text.print("http://armorgames.com/play/751/shift");
     }
 
     else if (state == 5)

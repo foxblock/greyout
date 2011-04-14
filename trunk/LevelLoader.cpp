@@ -56,6 +56,7 @@ enum UnitIdent
     ucUnknown,
     ucPushableBox,
     ucSolidBox,
+    ucSolidPlatform,
     ucExit,
     ucDialogueTrigger
 };
@@ -83,6 +84,7 @@ void createIdentMaps()
 
     unitClasses["pushablebox"] = ucPushableBox;
     unitClasses["solidbox"] = ucSolidBox;
+    unitClasses["solidplatform"] = ucSolidPlatform;
     unitClasses["exit"] = ucExit;
     unitClasses["dialoguetrigger"] = ucDialogueTrigger;
 }
@@ -270,6 +272,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
             cout << "Warning: No controlable unit found! Push the buttons...(nothing happens)" << endl;
             error = ecWarning;
         }
+        cout << "Level has " << level->players.size() << " players and " << level->units.size() << " units." << endl;
     }
 
     switch (error)
@@ -408,6 +411,12 @@ BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, C
     case ucSolidBox:
     {
         result = new SolidBox(parent);
+        break;
+    }
+    case ucSolidPlatform:
+    {
+        result = new SolidBox(parent);
+        params.push_back(make_pair("flags","nogravity,nomapcollision,invincible"));
         break;
     }
     case ucExit:

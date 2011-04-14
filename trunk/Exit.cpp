@@ -6,9 +6,10 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
 {
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoCollisionDraw);
 
     col = Colour(50,217,54);
+    collisionColours.push_back(WHITE);
+    collisionColours.push_back(BLACK);
 }
 
 Exit::~Exit()

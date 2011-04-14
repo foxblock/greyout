@@ -30,7 +30,6 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["nounitcollision"] = ufNoUnitCollision;
     stringToFlag["nogravity"] = ufNoGravity;
     stringToFlag["invincible"] = ufInvincible;
-    stringToFlag["nocollisiondraw"] = ufNoCollisionDraw;
     stringToFlag["missionobjective"] = ufMissionObjective;
 
     stringToProp["class"] = upClass;

@@ -15,7 +15,12 @@ SolidBox::~SolidBox()
 
 void SolidBox::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
 {
-    // on collision: just sit there, don't even think about moving!
+    // this moves a carried player unit when moving horizontally
+    // this also only is called when the noUnitCollision flag is removed, use SolidPlatform for that purpose
+    if (collision.second.x > collision.second.y && unit->position.y < position.y && velocity.x != 0)
+    {
+        unit->position.x += velocity.x;
+    }
 }
 
 void SolidBox::move()

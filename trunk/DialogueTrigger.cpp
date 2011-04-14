@@ -13,6 +13,10 @@ DialogueTrigger::DialogueTrigger(Level* newParent) : BaseUnit(newParent)
     textKey = "";
     time = 1000;
     triggered = false;
+    collisionColours.push_back(BLACK);
+    collisionColours.push_back(WHITE);
+    flags.addFlag(ufNoMapCollision);
+    flags.addFlag(ufNoGravity);
 }
 
 DialogueTrigger::~DialogueTrigger()
@@ -40,9 +44,6 @@ void DialogueTrigger::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUni
 
 bool DialogueTrigger::processParameter(const pair<string,string>& value)
 {
-    if (BaseUnit::processParameter(value))
-        return true;
-
     bool parsed = true;
 
     switch (stringToProp[value.first])
@@ -73,6 +74,9 @@ bool DialogueTrigger::processParameter(const pair<string,string>& value)
     default:
         parsed = false;
     }
+
+    if (not parsed)
+        return BaseUnit::processParameter(value);
 
     return parsed;
 }
