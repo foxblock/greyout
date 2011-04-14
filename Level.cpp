@@ -139,13 +139,25 @@ bool Level::load(const PARAMETER_TYPE& params)
     if (getWidth() < GFX::getXResolution())
     {
         hidex = new Rectangle;
+        #ifdef _DEBUG_COL
+        hidex->setDimensions((GFX::getXResolution() - getWidth()) / 2.0f,GFX::getYResolution() / 2.0f);
+        #else
         hidex->setDimensions((GFX::getXResolution() - getWidth()) / 2.0f,GFX::getYResolution());
+        #endif
         hidex->setColour(GFX::getClearColour());
     }
+    #ifdef _DEBUG_COL
+    if (getHeight() < GFX::getYResolution() / 2.0f)
+    #else
     if (getHeight() < GFX::getYResolution())
+    #endif
     {
         hidey = new Rectangle;
+        #ifdef _DEBUG_COL
+        hidey->setDimensions(GFX::getXResolution() - max((int)GFX::getXResolution() - getWidth(),0),(GFX::getYResolution() / 2.0f - getHeight()) / 2.0f);
+        #else
         hidey->setDimensions(GFX::getXResolution() - max((int)GFX::getXResolution() - getWidth(),0),(GFX::getYResolution() - getHeight()) / 2.0f);
+        #endif
         hidey->setColour(GFX::getClearColour());
     }
 
@@ -286,7 +298,7 @@ void Level::update()
     // map collision
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
-        if (not (*curr)->flags.hasFlag(BaseUnit::ufNoCollisionDraw))
+        if ((*curr)->velocity != Vector2df(0,0))
         {
             clearUnitFromCollision(collisionLayer,(*curr));
             if (not (*curr)->flags.hasFlag(BaseUnit::ufNoMapCollision))
