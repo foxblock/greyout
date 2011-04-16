@@ -21,6 +21,10 @@ void SolidBox::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* cons
     {
         unit->position.x += velocity.x;
     }
+    if (collision.second.x > collision.second.y && velocity.y != 0)
+    {
+        unit->velocity.y -= collision.second.y;
+    }
 }
 
 void SolidBox::move()

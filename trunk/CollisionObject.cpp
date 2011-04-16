@@ -35,6 +35,8 @@ bool CollisionObject::isBeingSquashed() const
 
 bool CollisionObject::isHealthy(const Vector2df& vel)
 {
+    int temp = squashCounter;
+
     // red = death
     for (vector<CollisionEntry>::const_iterator iter = entries.begin(); iter != entries.end(); ++iter)
     {
@@ -42,7 +44,7 @@ bool CollisionObject::isHealthy(const Vector2df& vel)
             return false;
     }
 
-    if (isBeingSquashed())
+    if (correction != Vector2df(0,0) && isBeingSquashed())
         ++squashCounter;
     else
         squashCounter = 0;
@@ -56,6 +58,9 @@ bool CollisionObject::isHealthy(const Vector2df& vel)
 
     if (squashCounter > squashThreshold)
         return false;
+
+    if (squashCounter == temp) // has not changed
+        max(--squashCounter,0);
 
     return true;
 }

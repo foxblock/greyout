@@ -163,7 +163,8 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
             stillColliding = false;
     }
 
-    correction.x = correctionX;
+    if (abs(correctionX) < maximum.x)
+        correction.x = correctionX;
     unit->collisionInfo.entries.insert(unit->collisionInfo.entries.end(),collisionDir.entries.begin(),collisionDir.entries.end());
 
 
@@ -183,7 +184,7 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
     {
         pixel = unit->getPixel((*dir));
         pixel += unit->velocity;
-        pixel.x += correctionX;
+        pixel.x += correction.x;
         pixel = level->transformCoordinate(pixel);
 
         if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)

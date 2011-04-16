@@ -512,9 +512,13 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
     files = dirLister.getListing();
 
     // erase dir, . and ..
-    files.erase(files.begin());
-    files.erase(files.begin());
-    files.erase(files.begin());
+    for (vector<string>::iterator iter = files.begin(); iter != files.end();)
+    {
+        if ((*iter) == "." || (*iter) == ".." || (*iter) == dir)
+            iter = files.erase(iter);
+        else
+            ++iter;
+    }
 
     // add single level folder
     bool fromCache;
