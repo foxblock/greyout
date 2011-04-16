@@ -81,19 +81,25 @@ void BasePlayer::update()
     {
         if (currentState == "stand")
         {
-            if (fallCounter.hasFinished() || not fallCounter.isStarted())
+            if (true)
             {
-                if (direction > 0)
-                    setSpriteState("fallRight");
-                else
-                    setSpriteState("fallLeft");
-            }
-            else if (not canJump)
-            {
-                if (direction > 0)
-                    setSpriteState("flyRight");
-                else
-                    setSpriteState("flyLeft");
+                if (fallCounter.hasFinished() || not fallCounter.isStarted())
+                {
+                    if (velocity.y > 3)
+                    {
+                        if (direction > 0)
+                            setSpriteState("fallRight");
+                        else
+                            setSpriteState("fallLeft");
+                    }
+                }
+                else if (not canJump)
+                {
+                    if (direction > 0)
+                        setSpriteState("flyRight");
+                    else
+                        setSpriteState("flyLeft");
+                }
             }
         }
     }

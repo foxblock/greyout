@@ -101,7 +101,8 @@ public:
         ufNoGravity=4,
         ufInvincible=8,
         ufMissionObjective=16,
-        ufEOL=32
+        ufNoCollisionUpdate=32,
+        ufEOL=64
     };
     // converts a string from a level file to a usable flag
     // you can simply add unit-specific flags in child classes

@@ -33,12 +33,13 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
 
     if (parent->getWidth() > GFX::getXResolution())
         result.x = pos.x - (GFX::getXResolution() / 2.0f);
-    if (parent->getHeight() > GFX::getYResolution())
-        #ifdef _DEBUG_COL
+    #ifdef _DEBUG_COL
+    if (parent->getHeight() > GFX::getYResolution() / 2.0f)
         result.y = pos.y - (GFX::getYResolution() / 4.0f);
-        #else
+    #else
+    if (parent->getHeight() > GFX::getYResolution())
         result.y = pos.y - (GFX::getYResolution() / 2.0f);
-        #endif
+    #endif
 
     if (not disregardBoundaries)
     {

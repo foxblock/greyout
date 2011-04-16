@@ -298,7 +298,7 @@ void Level::update()
     // map collision
     for (list<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
     {
-        if ((*curr)->velocity != Vector2df(0,0))
+        if (not (*curr)->flags.hasFlag(BaseUnit::ufNoCollisionUpdate))
         {
             clearUnitFromCollision(collisionLayer,(*curr));
             if (not (*curr)->flags.hasFlag(BaseUnit::ufNoMapCollision))
@@ -413,39 +413,6 @@ void Level::render()
         SDL_FreeSurface(scaled);
     }
 
-    // draw collision surface to lower half of the screen in special debug mode
-#ifdef _DEBUG_COL
-    SDL_Rect dest;
-    dest.x = 0;
-    dest.y = 480;
-    float factorX = (float)GFX::getXResolution() / (float)collisionLayer->w;
-    float factorY = (float)GFX::getYResolution() / 2.0f / (float)collisionLayer->h;
-    SDL_Surface* draw = zoomSurface(collisionLayer,factorX,factorY,SMOOTHING_OFF);
-    for (list<ControlUnit*>::const_iterator iter = players.begin(); iter != players.end(); ++iter)
-    {
-        // draw rectangles for players
-        Rectangle foo;
-        foo.setDimensions((float)((*iter)->getWidth()) * factorX, (float)((*iter)->getHeight()) * factorY);
-        Vector2df rectPos = (*iter)->getPixel(diTOPLEFT);
-        rectPos.x *= factorX;
-        rectPos.y *= factorY;
-        foo.setPosition(rectPos);
-        foo.setColour(GREEN);
-        foo.render(draw);
-    }
-    if (getWidth() > GFX::getXResolution() || getHeight() > GFX::getYResolution())
-    {
-        // draw outlined rectangle for screen
-        Rectangle scr;
-        scr.setDimensions((float)GFX::getXResolution() * factorX,(float)GFX::getYResolution() / 2.0f * factorY);
-        scr.setColour(GREEN);
-        scr.setThickness(1);
-        scr.setPosition(drawOffset.x * factorX, drawOffset.y * factorY);
-        scr.render(draw);
-    }
-    SDL_BlitSurface(draw,NULL,GFX::getVideoSurface(),&dest);
-    SDL_FreeSurface(draw);
-#endif
     // draw level name overlay
     if (firstLoad)
     {
@@ -510,6 +477,40 @@ void Level::render(SDL_Surface* screen)
     src.h = min((int)GFX::getYResolution() / 2,getHeight());
 #else
     src.h = min((int)GFX::getYResolution(),getHeight());
+#endif
+
+    // draw collision surface to lower half of the screen in special debug mode
+#ifdef _DEBUG_COL
+    SDL_Rect dest;
+    dest.x = 0;
+    dest.y = 480;
+    float factorX = (float)GFX::getXResolution() / (float)collisionLayer->w;
+    float factorY = (float)GFX::getYResolution() / 2.0f / (float)collisionLayer->h;
+    SDL_Surface* draw = zoomSurface(collisionLayer,factorX,factorY,SMOOTHING_OFF);
+    for (list<ControlUnit*>::const_iterator iter = players.begin(); iter != players.end(); ++iter)
+    {
+        // draw rectangles for players
+        Rectangle foo;
+        foo.setDimensions((float)((*iter)->getWidth()) * factorX, (float)((*iter)->getHeight()) * factorY);
+        Vector2df rectPos = (*iter)->getPixel(diTOPLEFT);
+        rectPos.x *= factorX;
+        rectPos.y *= factorY;
+        foo.setPosition(rectPos);
+        foo.setColour(GREEN);
+        foo.render(draw);
+    }
+    if (getWidth() > GFX::getXResolution() || getHeight() > GFX::getYResolution())
+    {
+        // draw outlined rectangle for screen
+        Rectangle scr;
+        scr.setDimensions((float)GFX::getXResolution() * factorX,(float)GFX::getYResolution() / 2.0f * factorY);
+        scr.setColour(GREEN);
+        scr.setThickness(1);
+        scr.setPosition(drawOffset.x * factorX, drawOffset.y * factorY);
+        scr.render(draw);
+    }
+    SDL_BlitSurface(draw,NULL,GFX::getVideoSurface(),&dest);
+    SDL_FreeSurface(draw);
 #endif
 
     // draw to image used for collision testing before players get drawn

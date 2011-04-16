@@ -103,6 +103,8 @@ void StateTitle::render()
         text.print("by Tony");
         text.print("\n");
         text.print("http://armorgames.com/play/751/shift");
+        text.print("\n\n");
+        text.print("Also: Super Mario, Braid, VVVVVV, Portal, NIDHOGG");
     }
 
     else if (state == 5)
@@ -127,6 +129,21 @@ void StateTitle::render()
         text.print("by Ailad");
         text.print("\n\n");
         text.print("All from the Newgrounds.com Audio portal");
+    }
+    else if (state == 6)
+    {
+        text.setPosition(0,20);
+        text.print("Sounds:");
+        text.print("\n\n");
+        text.print("http://www.freesound.org/samplesViewSingle.php?id=114789");
+        text.print("\n");
+        text.print("http://www.freesound.org/samplesViewSingle.php?id=25879");
+        text.print("\n\n");
+        text.print("Fun fact:");
+        text.print("\n");
+        text.print("All sounds in the menu actually have");
+        text.print("\n");
+        text.print("been made from the same base file.");
     }
 }
 
@@ -195,7 +212,18 @@ void StateTitle::update()
             int value = 5500 + 255 - ticks;
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 5800)
+        else if (ticks > 5800 && ticks <= (5800 + 255))
+        {
+            int value = ticks - 5800;
+            text.setColour(Colour(value,value,value));
+            state = 6;
+        }
+        else if (ticks > 6800 && ticks <= (6800 + 255))
+        {
+            int value = 6800 + 255 - ticks;
+            text.setColour(Colour(value,value,value));
+        }
+        else if (ticks > 7100)
             setNextState(STATE_MAIN);
     }
 }
