@@ -49,6 +49,7 @@ public:
     string path; // path to chapter folder (where info.txt is in)
     string name; // name of the chapter (mandatory)
     string imageFile; // image displayed in the chapter menu
+    string dialogueFile; // file containing the strings loaded as dialogue
 
     // used for error output
     string errorString;
@@ -60,7 +61,8 @@ public:
         cpUnknown,
         cpName,
         cpImage,
-        cpLevel
+        cpLevel,
+        cpDialogue
     };
     map<string,int> stringToProp;
 protected:

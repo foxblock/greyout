@@ -5,6 +5,7 @@
 #include "MusicCache.h"
 #include "LevelLoader.h"
 #include "Savegame.h"
+#include "Dialogue.h"
 
 #define SAVE_FILE "save.me"
 
@@ -141,6 +142,7 @@ PENJIN_ERRORS MyGame::argHandler(int argc, char **argv)
                 switch(argv[arg][1])
                 {
                     //	Set Fullscreen
+                case 'f':
                 case 'F':
                 {
                     GFX::setFullscreen(true);
@@ -201,6 +203,8 @@ void MyGame::playChapter(CRstring filename, CRint startLevel)
         }
         else
             stateParameter = currentChapter->getLevelFilename(startLevel-1);
+        if (currentChapter->dialogueFile[0] != 0)
+            DIALOGUE->loadFromFile(currentChapter->path + currentChapter->dialogueFile);
 
         state->setNextState(STATE_NEXT);
     }

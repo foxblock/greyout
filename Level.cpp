@@ -12,6 +12,7 @@
 #include "effects/Hollywood.h"
 #include "MusicCache.h"
 #include "Dialogue.h"
+#include "Savegame.h"
 
 #define NAME_TEXT_SIZE 48
 #define NAME_RECT_HEIGHT 35
@@ -38,6 +39,8 @@ Level::Level()
     winCounter = 0;
     firstLoad = true;
     idCounter = 0;
+    timeCounter = 0;
+    restartCounter = 0;
 
     stringToFlag["repeatx"] = lfRepeatX;
     stringToFlag["repeaty"] = lfRepeatY;
@@ -203,6 +206,7 @@ void Level::reset()
     effects.clear();
 
     firstLoad = false;
+    ++restartCounter;
 
     init();
 }
@@ -277,6 +281,8 @@ void Level::update()
 #ifdef _DEBUG
     debugString = "";
 #endif
+    ++timeCounter;
+
     // Check for units to be removed, also reset temporary data
     for (list<ControlUnit*>::iterator player = players.begin(); player != players.end();)
     {
@@ -1054,5 +1060,7 @@ void Level::lose2Callback(void* data)
 
 void Level::winCallback(void* data)
 {
+    Level* self = (Level*)data;
+    SAVEGAME->setLevelStats(self->chapterPath + self->levelFileName,self->timeCounter,self->restartCounter);
     ((Level*)data)->setNextState(STATE_NEXT);
 }

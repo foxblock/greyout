@@ -451,6 +451,9 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
                 SDL_mutexV(levelLock);
                 if (state == lsLevel && exChapter && (I > maxUnlocked)) // locked
                 {
+                    // actually we need to add an offset here as we need to preserver the top-left
+                    // corner (Penjin scales centred), but I rather scale the images properly
+                    // than add code to compensate for my stupidity in that regard
                     locked.setPosition(pos);
                     locked.render(target);
                 }
@@ -665,6 +668,7 @@ int StateLevelSelect::loadLevelPreviews(void* data)
         if (level)
         {
             SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+            level->init();
             level->update(); // update once to properly position units
             level->render(temp); // render at full resolution
             // scale down, then delete full resolution copy
