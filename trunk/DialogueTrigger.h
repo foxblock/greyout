@@ -11,7 +11,8 @@ public:
 
     virtual void render(SDL_Surface* surf);
 
-    virtual void hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit);
+    virtual bool hitUnitCheck(const BaseUnit* const caller) const;
+    virtual void hitUnit(const UnitCollisionEntry& entry);
 
     int getWidth() const {return width;}
     int getHeight() const {return height;}

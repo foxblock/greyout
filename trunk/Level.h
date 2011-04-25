@@ -35,6 +35,9 @@ public:
     // returns true on success and false otherwise
     virtual bool load(const PARAMETER_TYPE& params);
 
+    // reset level to initial state
+    virtual void reset();
+
     // framework related
     virtual void init();
     virtual void userInput();
@@ -105,14 +108,17 @@ public:
     map<string,int> stringToFlag;
 
     Vector2df drawOffset;
+    Vector2df startingOffset;
     Camera cam;
 
     // essentially counts how many players have left through exits
     int winCounter;
     bool isEnding;
 
-    // get set to false by MyGame on level restart
+    // set to false by MyGame on level restart
     bool firstLoad;
+
+    int idCounter;
 
 protected:
     // deletes the passed unit from the collision surface (to avoid checking
@@ -135,7 +141,8 @@ protected:
     // return true if the data has been successfully processed, false otherwise
     virtual bool processParameter(const pair<string,string>& value);
 
-    static void loseCallback(void* data);
+    static void loseCallback(void* data); // fades out
+    static void lose2Callback(void* data); // fades in and resets the level
     static void winCallback(void* data);
 
     enum LevelProp
@@ -154,12 +161,15 @@ protected:
     };
     map<string,int> stringToProp;
 
+    list<ControlUnit*> removedPlayers;
+    list<BaseUnit*> removedUnits;
+
     #ifdef _DEBUG
     Text debugText;
     Text fpsDisplay;
     #endif
     SDL_Surface* collisionLayer;
-    CountDown eventTimer;
+    CountDown eventTimer; // used for fading in and out
 
     Text nameText;
     Rectangle nameRect;

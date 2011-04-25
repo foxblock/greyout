@@ -93,9 +93,9 @@ bool Dialogue::loadFromFile(CRstring filename)
 void Dialogue::clear()
 {
     lines.clear();
-    for (vector<pair<SDL_Surface*,int> >::iterator iter = queue.begin(); iter != queue.end(); ++iter)
+    for (vector<DialogueItem>::iterator iter = queue.begin(); iter != queue.end(); ++iter)
     {
-        SDL_FreeSurface(iter->first);
+        SDL_FreeSurface(iter->surf);
     }
     queue.clear();
 }
@@ -105,11 +105,12 @@ void Dialogue::update()
     timer.update();
     if (timer.hasFinished() && queue.size() > 0)
     {
-        SDL_FreeSurface(queue.front().first);
+        SDL_FreeSurface(queue.front().surf);
+        SAVEGAME->writeTempData(queue.front().key,"true",true);
         queue.erase(queue.begin());
         if (queue.size() > 0)
         {
-            timer.start(queue.front().second);
+            timer.start(queue.front().time);
         }
     }
 }
@@ -119,7 +120,7 @@ void Dialogue::render()
     if (queue.size() > 0)
     {
         SDL_Rect temp = {0,GFX::getYResolution()-DIALOGUE_HEIGHT,0,0};
-        SDL_BlitSurface(queue.front().first,NULL,GFX::getVideoSurface(),&temp);
+        SDL_BlitSurface(queue.front().surf,NULL,GFX::getVideoSurface(),&temp);
     }
 }
 
@@ -148,10 +149,10 @@ void Dialogue::queueLine(CRstring key, const BaseUnit* const unit, CRint time)
         text.setColour(WHITE);
     rect.render(temp);
     text.print(temp,line);
-    queue.push_back(make_pair(temp,time));
+    DialogueItem item = {temp,time,key};
+    queue.push_back(item);
     if (queue.size() == 1)
         timer.start(time);
-    SAVEGAME->writeTempData(key,"true",true);
 }
 
 ///---protected---

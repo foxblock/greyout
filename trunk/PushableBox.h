@@ -17,27 +17,20 @@ class PushableBox : public BaseUnit
 {
     public:
         PushableBox(Level* newParent);
-        PushableBox(Level* newParent, CRint newWidth, CRint newHeight, const Colour& newCol);
         virtual ~PushableBox();
 
-        virtual bool load(const PARAMETER_TYPE& params);
-
-        virtual int getHeight() const;
-        virtual int getWidth() const;
+        virtual inline int getHeight() const;
+        virtual inline int getWidth() const;
         virtual Vector2df getPixel(const SimpleDirection& dir) const;
 
         virtual void updateScreenPosition(const Vector2di& offset);
         virtual void render(SDL_Surface* surf);
 
-        virtual void hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit);
+        virtual void hitUnit(const UnitCollisionEntry& entry);
 
         virtual void explode();
 
-        void setRectangle();
-
-        int width;
-        int height;
-        Rectangle rect;
+        SDL_Rect rect;
     protected:
         virtual bool processParameter(const pair<string,string>& value);
 

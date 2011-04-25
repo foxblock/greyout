@@ -6,11 +6,12 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
 {
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoCollisionUpdate);
+    flags.addFlag(ufNoUnitCollision);
+    //flags.addFlag(ufNoCollisionUpdate);
 
     col = Colour(50,217,54);
-    collisionColours.push_back(WHITE);
-    collisionColours.push_back(BLACK);
+    collisionColours.insert(Colour(BLACK).getIntColour());
+    collisionColours.insert(Colour(WHITE).getIntColour());
 }
 
 Exit::~Exit()
@@ -41,13 +42,17 @@ bool Exit::load(const PARAMETER_TYPE& params)
     return result;
 }
 
-void Exit::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
+bool Exit::hitUnitCheck(const BaseUnit* const caller) const
+{
+    return false;
+}
+
+void Exit::hitUnit(const UnitCollisionEntry& entry)
 {
     // standing still on the ground
-    if ((int)unit->velocity.x == 0 && (int)(unit->velocity.y + unit->collisionInfo.correction.y) == 0
-        && unit->collisionInfo.correction.y < 0 && collision.second.x > 10)
+    if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 && entry.overlap.x > 10)
     {
-        unit->toBeRemoved = true;
+        entry.unit->toBeRemoved = true;
         parent->swapControl();
         parent->winCounter--;
     }

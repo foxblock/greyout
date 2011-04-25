@@ -23,7 +23,6 @@ class Benchmark : public Level
         vector<int> fpsData;
         vector<int> secondData;
         vector<float> secondAverage;
-        int distance;
         CountDown counter;
         CountDown second;
     private:

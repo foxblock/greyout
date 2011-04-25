@@ -17,7 +17,7 @@ using namespace StringUtility;
 
 Benchmark::Benchmark() : Level()
 {
-    ENGINE->setFrameRate(250);
+    ENGINE->setFrameRate(1000);
 }
 
 Benchmark::~Benchmark()
@@ -30,8 +30,6 @@ Benchmark::~Benchmark()
 
 void Benchmark::init()
 {
-    distance = 0;
-
     second.init(GRAPH_UPDATE,MILLI_SECONDS,this,Benchmark::secondCallback);
     second.setRewind(REWIND);
     second.start();
@@ -40,6 +38,7 @@ void Benchmark::init()
     counter.start();
 
     winCounter = 1;
+    SDL_BlitSurface(levelImage,NULL,collisionLayer,NULL);
 }
 
 void Benchmark::userInput()
@@ -61,7 +60,6 @@ void Benchmark::userInput()
 void Benchmark::update()
 {
     Level::update();
-    distance += players.back()->velocity.y;
     #ifdef _DEBUG
     int value = MyGame::getMyGame()->getFPS();
     #else
@@ -97,7 +95,6 @@ void Benchmark::generateFPSData()
     cout << "----------" << endl;
     cout << "Duration (ms): " << intToString(counter.getLimit()) << endl;
     cout << "Graph update (ms): " << intToString(second.getLimit()) << endl;
-    cout << "Distance travelled (pixels): " << intToString(distance) << endl;
     cout << "FPS (min): " << intToString(minFPS) << endl;
     cout << "FPS (max): " << intToString(maxFPS) << endl;
     cout << "FPS (avg): " << doubleToString(averageFPS) << endl;
@@ -154,7 +151,7 @@ void Benchmark::timerCallback(void* object)
 {
     Benchmark* self = (Benchmark*) object;
     self->generateFPSData();
-    self->nullifyState();
+    self->setNextState(STATE_MAIN);
 }
 
 void Benchmark::secondCallback(void* object)

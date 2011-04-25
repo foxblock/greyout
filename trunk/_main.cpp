@@ -1,5 +1,11 @@
 #include "MyGame.h"
 
+// TODO: Story
+// TODO: "Connected" level type
+// TODO: More levels, organic levels, more assets (trees, gears)
+// TODO: Unit types (temporary platforms, timed platforms, keys, lasers)
+// TODO: Time-trial mode
+
 int main(int argc, char** argv)
 {
     Engine* game = NULL;
