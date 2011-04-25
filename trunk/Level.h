@@ -114,6 +114,8 @@ public:
     // essentially counts how many players have left through exits
     int winCounter;
     bool isEnding;
+    int timeCounter;
+    int restartCounter;
 
     // set to false by MyGame on level restart
     bool firstLoad;

@@ -18,6 +18,7 @@ Chapter::Chapter()
     stringToProp["name"] = cpName;
     stringToProp["image"] = cpImage;
     stringToProp["level"] = cpLevel;
+    stringToProp["dialogue"] = cpDialogue;
 }
 
 Chapter::~Chapter()
@@ -33,6 +34,7 @@ void Chapter::clear()
     errorString = "";
     name = "";
     imageFile = "";
+    dialogueFile = "";
 }
 
 bool Chapter::loadFromFile(CRstring filename)
@@ -194,6 +196,11 @@ bool Chapter::processParameter(const pair<string,string>& value)
     case cpLevel:
     {
         levels.push_back(value.second);
+        break;
+    }
+    case cpDialogue:
+    {
+        dialogueFile = value.second;
         break;
     }
     }

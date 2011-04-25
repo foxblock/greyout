@@ -197,6 +197,20 @@ bool Savegame::setChapterProgress(CRstring chapterFile, CRint progress, CRbool o
     return writeData(chapterFile,StringUtility::intToString(progress),true);
 }
 
+bool Savegame::setLevelStats(CRstring levelFile, CRint time, CRint restarts, CRbool overwrite)
+{
+    string value = getData(levelFile);
+    vector<string> tokens;
+    StringUtility::tokenize(value,tokens,",");
+
+    if (not overwrite && tokens.size() == 2)
+    {
+        if (time * (restarts + 1) > StringUtility::stringToInt(tokens.front()) * (StringUtility::stringToInt(tokens.back())+1))
+            return false;
+    }
+    return writeData(levelFile,StringUtility::intToString(time) + "," + StringUtility::intToString(restarts));
+}
+
 ///---protected---
 
 ///---private---

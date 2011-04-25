@@ -85,7 +85,6 @@ class StateLevelSelect : public BaseState
         Rectangle menu;
         Rectangle overlay;
         // preview images will be drawn onto this surface for less redraws needed
-        // TODO: Or do they? Think about that!
         SDL_Surface* previewDraw;
         #ifdef _DEBUG
         Text fpsDisplay;
