@@ -17,10 +17,18 @@ CollisionObject::~CollisionObject()
     clear();
 }
 
+void CollisionObject::clear()
+{
+    pixels.clear();
+    correction = Vector2df(0.0f,0.0f);
+    positionCorrection = Vector2df(0.0f,0.0f);
+    units.clear();
+}
+
 bool CollisionObject::isBeingSquashed() const
 {
     map<int,bool> table;
-    for (vector<CollisionEntry>::const_iterator iter = entries.begin(); iter != entries.end(); ++iter)
+    for (vector<MapCollisionEntry>::const_iterator iter = pixels.begin(); iter != pixels.end(); ++iter)
     {
         table[iter->dir.value] = true;
     }
@@ -38,7 +46,7 @@ bool CollisionObject::isHealthy(const Vector2df& vel)
     int temp = squashCounter;
 
     // red = death
-    for (vector<CollisionEntry>::const_iterator iter = entries.begin(); iter != entries.end(); ++iter)
+    for (vector<MapCollisionEntry>::const_iterator iter = pixels.begin(); iter != pixels.end(); ++iter)
     {
         if (iter->col == Colour(RED))
             return false;

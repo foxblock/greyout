@@ -12,12 +12,21 @@ Contains information about the last collision check, such as the collising pixel
 Also provides functions for analysing said data
 **/
 
-struct CollisionEntry
+struct MapCollisionEntry
 {
     SimpleDirection dir;
-    Vector2df pixel;
+    Vector2df pos;
     Colour col;
     Vector2df correction; // currently unused
+};
+
+class BaseUnit;
+
+struct UnitCollisionEntry
+{
+    SimpleDirection dir;
+    Vector2df overlap;
+    BaseUnit* unit;
 };
 
 class CollisionObject
@@ -26,14 +35,14 @@ class CollisionObject
         CollisionObject();
         virtual ~CollisionObject();
 
-        virtual void clear() {entries.clear();}
+        virtual void clear();
 
         /// Analysing functions
         bool isBeingSquashed() const;
         bool isHealthy(const Vector2df& vel);
 
         // Contains the checked pixels
-        vector<CollisionEntry> entries;
+        vector<MapCollisionEntry> pixels;
         // Total velocity correction, calculated by Physics
         Vector2df correction;
         // Total position correction - this correction will only affect the next
@@ -45,6 +54,9 @@ class CollisionObject
         // if that value reaches a certain value the unit will explode
         int squashCounter;
         int squashThreshold;
+
+        // Hold all units with which the unit collided
+        vector<UnitCollisionEntry> units;
     protected:
 
     private:

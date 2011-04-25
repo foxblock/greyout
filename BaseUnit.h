@@ -3,6 +3,7 @@
 
 #include <map>
 #include <list>
+#include <set>
 
 #include "Vector2di.h"
 #include "Vector2df.h"
@@ -14,8 +15,6 @@
 #include "AnimatedSprite.h"
 
 #include "fileTypeDefines.h"
-
-#define UNIT_COLLISION_DATA_TYPE pair<SimpleDirection, Vector2df>
 
 /**
 This is the base class for all units in the game
@@ -39,13 +38,15 @@ public:
 
     // resets the unit to its initial state (right after loading)
     virtual void reset();
+    // resets the unit temporary values like collisionInfo
+    virtual void resetTemporary();
 
     // loads an image file through the surface cache and returns the result
     SDL_Surface* getSurface(CRstring filename, CRbool optimize=false) const;
 
-    virtual int getHeight() const;
-    virtual int getWidth() const;
-    virtual Vector2di getSize() const;
+    virtual inline int getHeight() const;
+    virtual inline int getWidth() const;
+    virtual inline Vector2di getSize() const;
     // returns the coordinate of an edge pixel (edge indicated by passed direction)
     virtual Vector2df getPixel(const SimpleDirection& dir) const;
     void setStartingPosition(const Vector2df& pos);
@@ -66,8 +67,11 @@ public:
     virtual void hitMap(const Vector2df& correctionOverride);
     // checks whether the unit collides with the passed colour
     bool checkCollisionColour(const Colour& col) const;
-    // called after a successful collision check with another unit
-    virtual void hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit);
+    // called when a collision with another unit occurs, checks whether this unit
+    // wants to be affected by the other
+    virtual bool hitUnitCheck(const BaseUnit* const caller) const;
+    // this now actually does the effect this unit has on the other
+    virtual void hitUnit(const UnitCollisionEntry& entry);
 
     // kills the unit
     virtual void explode();
@@ -79,7 +83,7 @@ public:
     Vector2df gravity;  // velocity caused by gravity
     Vector2df acceleration[2]; // 0 - increment, 1 - maximum
     int direction; // the direction the unit is facing (use for sprite orientation)
-    list<Colour> collisionColours;
+    set<int> collisionColours;
     CollisionObject collisionInfo; // contains colliding pixels, correction, etc.
     SimpleFlags flags;
     string imageOverwrite; // used for level-specific customisation
@@ -88,11 +92,15 @@ public:
     // this is only a "working" pointer, it will not get deleted
     AnimatedSprite* currentSprite;
     string currentState;
+    string startingState;
 
     bool toBeRemoved; // if true, this unit will be deleted by Level on the next tick
     Level* parent; // the unit is currently owned by this Level class
 
-    string tag; // Delphi programmers will know what this is about
+    string tag; // class of the unit
+    bool isPlayer; // hacky, used in conditions in several hitUnit functions
+
+    string id;
 
     enum UnitFlag
     {
@@ -128,6 +136,8 @@ protected:
         upImageOverwrite,
         upColour,
         upHealth,
+        upID,
+        upOrder,
         upEOL // end of list value, starting point for child classes' lists
     };
     // converts a string from a level file to a propIdent usable in a switch statement
@@ -137,6 +147,29 @@ protected:
     // Store all the sprites in here along with an unique string for identifing
     // These sprites WILL get deleted on destruction of the unit
     map<string,AnimatedSprite*> states;
+
+    /// Order system
+    struct Order
+    {
+        int key;
+        string value; // consists of several items, mostly time and something like position, speed, etc.
+        void* data; // a data pointer which you can write something to for fast access in updateOrder without the need of re-parsing
+    };
+    enum OrderKey
+    {
+        okUnknown,
+        okIdle,
+        okPosition,
+        okRepeat
+    };
+    // processes the next order to start
+    virtual void processOrder(Order& next);
+    // periodically updates orders
+    virtual void updateOrder(const Order& curr);
+    map<string,OrderKey> stringToOrder;
+    vector<Order> orderList;
+    int currentOrder;
+    int orderTimer;
 
 private:
 };

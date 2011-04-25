@@ -8,19 +8,11 @@
 
 PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 {
-    width = 32;
-    height = 32;
+    rect.w = 32;
+    rect.h = 32;
     col = BLACK;
 
     stringToProp["size"] = bpSize;
-}
-
-PushableBox::PushableBox(Level* newParent, CRint newWidth, CRint newHeight, const Colour& newCol) : BaseUnit(newParent)
-{
-    width = newWidth;
-    height = newHeight;
-    col = newCol;
-    setRectangle();
 }
 
 PushableBox::~PushableBox()
@@ -30,25 +22,14 @@ PushableBox::~PushableBox()
 
 /// ---public---
 
-// Custom load function making sure the unit is properly initialized after loading
-bool PushableBox::load(const PARAMETER_TYPE& params)
-{
-    if (BaseUnit::load(params))
-    {
-        setRectangle();
-        return true;
-    }
-    return false;
-}
-
 int PushableBox::getHeight() const
 {
-    return height;
+    return rect.h;
 }
 
 int PushableBox::getWidth() const
 {
-    return width;
+    return rect.w;
 }
 
 Vector2df PushableBox::getPixel(const SimpleDirection& dir) const
@@ -67,44 +48,51 @@ Vector2df PushableBox::getPixel(const SimpleDirection& dir) const
 
 void PushableBox::updateScreenPosition(const Vector2di& offset)
 {
-    rect.setPosition(position - offset);
+    rect.x = position.x - offset.x;
+    rect.y = position.y - offset.y;
 }
 
 void PushableBox::render(SDL_Surface* surf)
 {
-    rect.render(surf);
+    // SDL_FillRect might sometimes change the passed rect which we don't want
+    int w = rect.w;
+    int h = rect.h;
+    SDL_FillRect(surf,&rect,col.getSDL_Uint32Colour(surf));
+    rect.w = w;
+    rect.h = h;
 
     BaseUnit::render(surf);
 }
 
-void PushableBox::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
+void PushableBox::hitUnit(const UnitCollisionEntry& entry)
 {
-    if (velocity.y < 4) // if not falling
+    if (velocity.y < 4 && entry.unit->isPlayer) // if not falling
     {
-        if (collision.second.y > unit->velocity.y && collision.second.y > collision.second.x)
+        if (entry.overlap.y > entry.unit->velocity.y && entry.overlap.y > entry.overlap.x)
         {
             // horizontal collision
-            float diff = unit->velocity.x;
+            float diff = entry.unit->velocity.x;
             // limit speed of pushing unit
-            float vel = PUSHING_SPEED * NumberUtility::sign(unit->velocity.x);
+            float vel = PUSHING_SPEED * NumberUtility::sign(entry.unit->velocity.x);
             diff -= vel;
-            if (abs(diff) <= abs(collision.second.x))
+            if (abs(diff) <= abs(entry.overlap.x))
             {
-                velocity.x += collision.second.x * collision.first.xDirection() * -1 - diff;
-                unit->velocity.x = vel;
-                if (unit->direction > 0)
-                    unit->setSpriteState("pushRight");
+                velocity.x += entry.overlap.x * entry.dir.xDirection() * -1 - diff;
+                entry.unit->velocity.x = vel;
+                if (entry.unit->direction > 0)
+                    entry.unit->setSpriteState("pushRight");
                 else
-                    unit->setSpriteState("pushLeft");
+                    entry.unit->setSpriteState("pushLeft");
             }
         }
-        /*
-        else if (unit->position.y > position.y)
-        {
-            // vertical collision
-            position.y -= collision.second.y;
-            velocity.y = 0;
-        }*/
+    }
+
+    if (entry.overlap.x > entry.overlap.y && entry.unit->position.y < position.y)
+    {
+        if (collisionInfo.positionCorrection.x != 0)
+            entry.unit->collisionInfo.positionCorrection.x += collisionInfo.positionCorrection.x;
+        if (velocity.y != 0 || collisionInfo.positionCorrection.y != 0)
+            entry.unit->collisionInfo.positionCorrection.y -= entry.overlap.y - NumberUtility::sign(entry.overlap.y);
     }
 }
 
@@ -125,13 +113,6 @@ void PushableBox::explode()
         MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);
     }
     toBeRemoved = true;
-}
-
-void PushableBox::setRectangle()
-{
-    rect.setDimensions(width,height);
-    rect.setPosition(position);
-    rect.setColour(col);
 }
 
 /// ---protected---
@@ -159,8 +140,8 @@ bool PushableBox::processParameter(const pair<string,string>& value)
             parsed = false;
             break;
         }
-        width = StringUtility::stringToInt(token.at(0));
-        height = StringUtility::stringToInt(token.at(1));
+        rect.w = StringUtility::stringToInt(token.at(0));
+        rect.h = StringUtility::stringToInt(token.at(1));
         break;
     }
     default:

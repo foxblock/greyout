@@ -18,9 +18,9 @@ class BasePlayer : public ControlUnit
         ~BasePlayer();
 
         virtual bool load(const PARAMETER_TYPE& params);
+        virtual void resetTemporary();
 
         virtual void update();
-        virtual void render(SDL_Surface* screen);
 
         virtual void hitMap(const Vector2df& correctionOverride);
 

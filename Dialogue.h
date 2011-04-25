@@ -34,11 +34,18 @@ public:
     string errorString;
 
 protected:
+    struct DialogueItem
+    {
+        SDL_Surface* surf;
+        int time;
+        string key;
+    };
+
     std::map<string,string> lines;
     CountDown timer;
     Rectangle rect;
     Text text;
-    vector<pair<SDL_Surface*,int> > queue;
+    vector<DialogueItem> queue;
 private:
 
 };

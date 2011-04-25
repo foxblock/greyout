@@ -61,8 +61,19 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
         setSpriteState("wave",true);
     else
         setSpriteState("stand");
+    startingState = "stand";
 
     return result;
+}
+
+void BasePlayer::resetTemporary()
+{
+    BaseUnit::resetTemporary();
+
+    if (currentSprite->getLoops() == -1 || currentSprite->hasFinished())
+    {
+        setSpriteState("stand");
+    }
 }
 
 void BasePlayer::update()
@@ -110,22 +121,12 @@ void BasePlayer::update()
     parent->debugString += "P: " + StringUtility::vecToString(position) + "\n" +
                            "V: " + StringUtility::vecToString(velocity) + "\n" +
                            "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
-                           "C: " + StringUtility::vecToString(collisionInfo.correction) + "\n" +
+                           "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + "\n" +
                            "S: " + currentState + " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
 #endif
 
     if ((int)velocity.y != 0)
         canJump = false;
-}
-
-void BasePlayer::render(SDL_Surface* screen)
-{
-    BaseUnit::render(screen);
-
-    if (currentSprite->getLoops() == -1 || currentSprite->hasFinished())
-    {
-        setSpriteState("stand");
-    }
 }
 
 void BasePlayer::hitMap(const Vector2df& correctionOverride)

@@ -3,6 +3,7 @@
 ControlUnit::ControlUnit(Level* newParent) : BaseUnit(newParent)
 {
     takesControl = true;
+    isPlayer = true;
 
     stringToProp["control"] = cpControl;
 }

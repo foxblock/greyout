@@ -13,8 +13,8 @@ DialogueTrigger::DialogueTrigger(Level* newParent) : BaseUnit(newParent)
     textKey = "";
     time = 1000;
     triggered = false;
-    collisionColours.push_back(BLACK);
-    collisionColours.push_back(WHITE);
+    collisionColours.insert(Colour(BLACK).getIntColour());
+    collisionColours.insert(Colour(WHITE).getIntColour());
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
 }
@@ -31,9 +31,14 @@ void DialogueTrigger::render(SDL_Surface* surf)
     // don't render anything
 }
 
-void DialogueTrigger::hitUnit(const UNIT_COLLISION_DATA_TYPE& collision, BaseUnit* const unit)
+bool DialogueTrigger::hitUnitCheck(const BaseUnit* const caller) const
 {
-    if (not triggered)
+    return false;
+}
+
+void DialogueTrigger::hitUnit(const UnitCollisionEntry& entry)
+{
+    if (entry.unit->isPlayer && not triggered)
     {
         DIALOGUE->queueLine(textKey,this,time);
         triggered = true;
