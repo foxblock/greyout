@@ -80,10 +80,9 @@ public:
     list<BaseUnit*> units;
     list<PixelParticle*> effects;
     SDL_Surface* levelImage;
-    Colour noCollision; // used to clear units in clearUnitFromCollision
     SimpleFlags flags;
 
-    string levelFileName;
+    string levelFileName; // chapterPath + filename
     string chapterPath;
     string name;
 
@@ -113,12 +112,7 @@ public:
 
     // essentially counts how many players have left through exits
     int winCounter;
-    bool isEnding;
     int timeCounter;
-    int restartCounter;
-
-    // set to false by MyGame on level restart
-    bool firstLoad;
 
     int idCounter;
 
@@ -143,6 +137,8 @@ protected:
     // return true if the data has been successfully processed, false otherwise
     virtual bool processParameter(const pair<string,string>& value);
 
+    string ticksToTimeString(CRint ticks) const;
+
     static void loseCallback(void* data); // fades out
     static void lose2Callback(void* data); // fades in and resets the level
     static void winCallback(void* data);
@@ -166,6 +162,10 @@ protected:
     list<ControlUnit*> removedPlayers;
     list<BaseUnit*> removedUnits;
 
+    // set to false on level restart
+    bool firstLoad;
+    bool trialEnd;
+
     #ifdef _DEBUG
     Text debugText;
     Text fpsDisplay;
@@ -177,9 +177,13 @@ protected:
     Rectangle nameRect;
     CountDown nameTimer;
 
+    // pause menu is also used for displaying time trial results
     SDL_Surface* pauseSurf;
     int pauseSelection;
     Rectangle overlay;
+    Text timeTrialText;
+    int timeDisplay;
+    bool newRecord;
 
     Rectangle* hidex;
     Rectangle* hidey;
