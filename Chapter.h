@@ -31,9 +31,6 @@ public:
     // Load a chapter from a file (name and at least one level are mandatory)
     // returns true on success, false otherwise (and sets errorString variable)
     virtual bool loadFromFile(CRstring filename);
-    // Get the next level after the passed one
-    //returns "" if not found, at the end of the chapter or on error
-    virtual string getNextLevel(CRstring current);
     // Get the level at index pos, returns "" if out of bounds
     virtual string getLevelFilename(CRint pos);
     // Get the index of the passed level, returns -1 if not found (or empty string)
@@ -41,6 +38,9 @@ public:
 
     // Load the user's progress in this chapter from the savegame file
     virtual int getProgress() const;
+    // Get the next level after the passed one
+    //returns "" if not found, at the end of the chapter or on error
+    virtual string getNextLevel(CRstring current);
     // returns the next level after the passed one and saves the progress to the savegame file
     // returns "" on error or ending of chapter
     virtual string getNextLevelAndSave(CRstring current);

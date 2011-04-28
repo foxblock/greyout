@@ -97,33 +97,6 @@ bool Chapter::loadFromFile(CRstring filename)
     return true;
 }
 
-string Chapter::getNextLevel(CRstring current)
-{
-    errorString = "";
-
-    if (levels.empty())
-    {
-        errorString = "No chapter file was loaded!";
-        return "";
-    }
-    if (current[0] == 0)
-        return path + levels.front();
-
-    for (int I = levels.size()-1; I >= 0; --I)
-    {
-        if (path + levels.at(I) == current)
-        {
-            if ((I+1) < levels.size())
-                return path + levels.at(I+1);
-            else // end of the chapter
-                return "";
-        }
-    }
-
-    errorString = "Current level not found in chapter!";
-    return "";
-}
-
 string Chapter::getLevelFilename(CRint pos)
 {
     errorString = "";
@@ -157,6 +130,33 @@ int Chapter::getProgress() const
     if (filename[0] != 0)
         return SAVEGAME->getChapterProgress(filename);
     return -1;
+}
+
+string Chapter::getNextLevel(CRstring current)
+{
+    errorString = "";
+
+    if (levels.empty())
+    {
+        errorString = "No chapter file was loaded!";
+        return "";
+    }
+    if (current[0] == 0)
+        return path + levels.front();
+
+    for (int I = levels.size()-1; I >= 0; --I)
+    {
+        if (path + levels.at(I) == current)
+        {
+            if ((I+1) < levels.size())
+                return path + levels.at(I+1);
+            else // end of the chapter
+                return "";
+        }
+    }
+
+    errorString = "Current level not found in chapter!";
+    return "";
 }
 
 string Chapter::getNextLevelAndSave(CRstring current)

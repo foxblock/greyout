@@ -48,7 +48,14 @@ public:
     // will check whether passed progress is greater than loaded if overwrite is false
     virtual int getChapterProgress(CRstring chapterFile) const;
     virtual bool setChapterProgress(CRstring chapterFile, CRint progress, CRbool overwrite=false);
-    virtual bool setLevelStats(CRstring levelFile, CRint time, CRint deaths, CRbool overwrite=false);
+
+    struct LevelStats
+    {
+        int time;
+    };
+
+    virtual bool setLevelStats(CRstring levelFile, const LevelStats& newStats, CRbool overwrite=false);
+    virtual LevelStats getLevelStats(CRstring levelFile) const;
 
     // set this to false to disable saving after data operation
     bool autoSave;

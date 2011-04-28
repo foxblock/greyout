@@ -20,12 +20,17 @@ MyGame::MyGame()
     currentState = 0;
     currentChapter = NULL;
     returnState = STATE_MAIN;
+    timeTrial = false;
+    restartCounter = 0;
 }
 
 MyGame::~MyGame()
 {
+    SAVEGAME->autoSave = false;
+    SAVEGAME->writeData("restarts",StringUtility::intToString(restartCounter));
     SAVEGAME->writeData("musicvolume",StringUtility::intToString(MUSIC_CACHE->getMusicVolume()),true);
     SAVEGAME->writeData("soundvolume",StringUtility::intToString(MUSIC_CACHE->getSoundVolume()),true);
+    SAVEGAME->save();
     SURFACE_CACHE->clear();
     MUSIC_CACHE->clear();
 }
@@ -55,6 +60,7 @@ PENJIN_ERRORS MyGame::init()
         MUSIC_CACHE->setMusicVolume(StringUtility::stringToInt(SAVEGAME->getData("musicvolume")));
     if (SAVEGAME->hasData("soundvolume"))
         MUSIC_CACHE->setSoundVolume(StringUtility::stringToInt(SAVEGAME->getData("soundvolume")));
+    restartCounter = StringUtility::stringToInt(SAVEGAME->getData("restarts"));
     return PENJIN_OK;
 }
 
@@ -78,6 +84,8 @@ void MyGame::stateManagement()
     {
         if (currentChapter) // we are playing a chapter
         {
+            // TODO: Find a clean way to save progress when completing a level
+            // in time trial mode and then restarting it
             stateParameter = currentChapter->getNextLevelAndSave(stateParameter);
 
             if (stateParameter == "") // no next level found
@@ -107,13 +115,6 @@ void MyGame::stateManagement()
             next = returnState;
             returnState = STATE_MAIN; // reset return state
         }
-    }
-    else if (next == STATE_THIS)
-    {
-        currentState = STATE_LEVEL;
-        state = createState(currentState,stateParameter);
-        ((Level*)state)->firstLoad = false;
-        return;
     }
 
     currentState = next;

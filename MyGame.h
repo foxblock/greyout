@@ -40,6 +40,8 @@ class MyGame : public Engine
         Chapter* currentChapter;
         uint currentState;
         uint returnState;
+        bool timeTrial; // whether to start a level in time trial mode or normal mode
+        uint restartCounter;
     private:
         // creates a state from a defined set, gets called by MyGame::stateManangement()
         BaseState* createState(CRuint stateID, CRstring parameter="");

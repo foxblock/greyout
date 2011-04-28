@@ -1,7 +1,5 @@
 #include "Physics.h"
 
-#include <vector>
-
 #include "SimpleDirection.h"
 #include "Colour.h"
 #include "NumberUtility.h"
@@ -22,6 +20,18 @@ Physics::Physics()
 {
     gravity = DEFAULT_GRAVITY;
     maximum = DEFAULT_MAXIMUM;
+
+    checkPointsX.push_back(diTOPLEFT);
+    checkPointsX.push_back(diTOPRIGHT);
+    checkPointsX.push_back(diLEFT);
+    checkPointsX.push_back(diRIGHT);
+
+    checkPointsY.push_back(diTOP);
+    checkPointsY.push_back(diBOTTOMLEFT);
+    checkPointsY.push_back(diBOTTOM);
+    checkPointsY.push_back(diBOTTOMRIGHT);
+    checkPointsY.push_back(diTOPLEFT);
+    checkPointsY.push_back(diTOPRIGHT);
 }
 
 Physics::~Physics()
@@ -93,21 +103,15 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
     /// TODO: Implement step-size and check diBOTTOMLEFT and -RIGHT in x-direction, too
     /// compare to y-correction values and step-size
 
-    CollisionObject collisionDir;
+    vector<MapCollisionEntry> collisionDir;
     Vector2df correction(0,0);
     Vector2di pixelCorrection(0,0); // unit will be moved by this step until no collision occurs
-    vector<SimpleDirection> checkPoints; // the points being checked
     Colour colColour; // the colour taken from the collision surface at the tested point
     Vector2df pixel(0,0); // currently tested pixel
 
     /// x-direction
-    checkPoints.push_back(diTOPLEFT);
-    checkPoints.push_back(diTOPRIGHT);
-    checkPoints.push_back(diLEFT);
-    checkPoints.push_back(diRIGHT);
-
     // check which pixels are colliding
-    for (vector<SimpleDirection>::const_iterator dir = checkPoints.begin(); dir != checkPoints.end(); ++dir)
+    for (vector<SimpleDirection>::const_iterator dir = checkPointsX.begin(); dir != checkPointsX.end(); ++dir)
     {
         pixel = unit->getPixel((*dir));
         pixel.x += unit->velocity.x;
@@ -128,7 +132,7 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
             entry.pos = pixel;
             entry.col = colColour;
             entry.correction = Vector2df(0,0);
-            collisionDir.pixels.push_back(entry);
+            collisionDir.push_back(entry);
             int temp = dir->xDirection();
             // only use direction if not set before or aiming in the same direction as velocity
             if (pixelCorrection.x == 0 || NumberUtility::sign(unit->velocity.x) == temp)
@@ -138,14 +142,14 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
 
     // move unit until the collision is solved (maximum by unit's velocity as we
     // are assuming the unit was in a no-collision state before)
-    bool stillColliding = (collisionDir.pixels.size() > 0); // don't check when there are no colliding pixels
+    bool stillColliding = (collisionDir.size() > 0); // don't check when there are no colliding pixels
     int correctionX = 0; // total correction to solve collision in this direction
     while (stillColliding && abs(correctionX) <= maximum.x)
     {
         correctionX += pixelCorrection.x;
 
         vector<MapCollisionEntry>::const_iterator entryPtr;
-        for (entryPtr = collisionDir.pixels.begin(); entryPtr != collisionDir.pixels.end(); ++entryPtr)
+        for (entryPtr = collisionDir.begin(); entryPtr != collisionDir.end(); ++entryPtr)
         {
             pixel = entryPtr->pos;
             pixel.x += correctionX;
@@ -157,28 +161,20 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
             if (unit->checkCollisionColour(colColour))
                 break;
         }
-        if (entryPtr == collisionDir.pixels.end()) // all pixel have been checked, so no new collision has been found
+        if (entryPtr == collisionDir.end()) // all pixel have been checked, so no new collision has been found
             stillColliding = false;
     }
 
     if (abs(correctionX) < maximum.x)
         correction.x = correctionX;
-    unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.pixels.begin(),collisionDir.pixels.end());
+    unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
 
 
     /// y-direction
-
     pixelCorrection = Vector2di(0,0);
-    checkPoints.clear();
     collisionDir.clear();
-    checkPoints.push_back(diTOP);
-    checkPoints.push_back(diBOTTOMLEFT);
-    checkPoints.push_back(diBOTTOM);
-    checkPoints.push_back(diBOTTOMRIGHT);
-    checkPoints.push_back(diTOPLEFT);
-    checkPoints.push_back(diTOPRIGHT);
 
-    for (vector<SimpleDirection>::const_iterator dir = checkPoints.begin(); dir != checkPoints.end(); ++dir)
+    for (vector<SimpleDirection>::const_iterator dir = checkPointsY.begin(); dir != checkPointsY.end(); ++dir)
     {
         pixel = unit->getPixel((*dir));
         pixel += unit->velocity;
@@ -199,7 +195,7 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
             entry.pos = pixel;
             entry.col = colColour;
             entry.correction = Vector2df(0,0);
-            collisionDir.pixels.push_back(entry);
+            collisionDir.push_back(entry);
             int temp = dir->yDirection();
             // only use direction if not set before or aiming in the same direction as velocity
             if (pixelCorrection.y == 0 || NumberUtility::sign(unit->velocity.y) == temp)
@@ -207,14 +203,14 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
         }
     }
 
-    stillColliding = (collisionDir.pixels.size() > 0); // don't check when there are no colliding pixels
+    stillColliding = (collisionDir.size() > 0); // don't check when there are no colliding pixels
     int correctionY = 0; // total correction to solve collision in this direction
     while (stillColliding && abs(correctionY) <= maximum.y)
     {
         correctionY += pixelCorrection.y;
 
         vector<MapCollisionEntry>::const_iterator entryPtr;
-        for (entryPtr = collisionDir.pixels.begin(); entryPtr != collisionDir.pixels.end(); ++entryPtr)
+        for (entryPtr = collisionDir.begin(); entryPtr != collisionDir.end(); ++entryPtr)
         {
             pixel = entryPtr->pos;
             pixel.y += correctionY;
@@ -226,12 +222,13 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
             if (unit->checkCollisionColour(colColour))
                 break;
         }
-        if (entryPtr == collisionDir.pixels.end()) // all pixel have been checked, so no new collision has been found
+        if (entryPtr == collisionDir.end()) // all pixel have been checked, so no new collision has been found
             stillColliding = false;
     }
 
     correction.y = correctionY;
-    unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.pixels.begin(),collisionDir.pixels.end());
+    unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
+    collisionDir.clear();
 
     unit->collisionInfo.correction = correction;
 

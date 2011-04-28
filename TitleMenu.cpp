@@ -63,6 +63,7 @@ void TitleMenu::init()
 {
     input->resetKeys(); // avoid sticky keys when returning from level
     EFFECTS->fadeIn(1000);
+    ENGINE->timeTrial = false; // reset time trial mode
 
     MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
@@ -155,11 +156,8 @@ void TitleMenu::doSelection()
         ENGINE->playChapter(DEFAULT_CHAPTER);
         break;
     case 1:
-        #ifdef _DEBUG
-        setNextState(STATE_BENCHMARK);
-        #else
-        ENGINE->playSingleLevel(PLAYGROUND_LEVEL,STATE_MAIN);
-        #endif
+        ENGINE->timeTrial = true;
+        setNextState(STATE_LEVELSELECT);
         break;
     case 2:
         setNextState(STATE_LEVELSELECT);
