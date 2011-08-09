@@ -11,12 +11,22 @@
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
+#ifdef _MEOW
+#define SPACING_X 10
+#define OFFSET_Y 18
+#define TITLE_FONT_SIZE 24
+#define IMAGE_FONT_SIZE 12
+
+#define CURSOR_BORDER 2
+#else
 #define SPACING_X 20
 #define OFFSET_Y 35
 #define TITLE_FONT_SIZE 48
 #define IMAGE_FONT_SIZE 24
 
 #define CURSOR_BORDER 5
+#endif
+
 
 #define INTERMEDIATE_MENU_ITEM_COUNT 2
 #define INTERMEDIATE_MENU_SPACING 20
@@ -47,6 +57,7 @@ StateLevelSelect::StateLevelSelect()
     intermediateSelection = 0;
 
     // graphic stuff
+    // TODO: Use 320x240 bg here (and make that)
     bool fromCache;
     bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/error_bg_800_480.png",fromCache),1,1,0,0);
     bg.disableTransparentColour();

@@ -38,13 +38,15 @@ class SurfaceCache
         // the reference from the map and not actually free the surface
         void removeSurface(CRstring filename,CRbool destroy=true);
 
-        int size() const {return cachedSurfaces.size();}
+        size_t size() const {return cachedSurfaces.size();}
 
         bool isCached(CRstring filename) const;
     protected:
     private:
-        // map<filename, surface>
+        SDL_Surface* createErrorSurface(const Uint32 width, const Uint32 height) const;
+
         std::map<string, SDL_Surface*> cachedSurfaces;
+        SDL_Surface* errorSurface;
 };
 
 

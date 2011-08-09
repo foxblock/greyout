@@ -16,7 +16,6 @@ int main(int argc, char** argv)
 
 	cout << error.getErrorString(game->argHandler(argc,argv));
 	cout << error.getErrorString(game->penjinInit());
-
 	while(game->stateLoop());	//	Perform main loop until shutdown
 	cout << error.getErrorString(PENJIN_SHUTDOWN);
 

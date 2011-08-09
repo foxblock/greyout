@@ -7,7 +7,6 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
     flags.addFlag(ufNoUnitCollision);
-    //flags.addFlag(ufNoCollisionUpdate);
 
     col = Colour(50,217,54);
     collisionColours.insert(Colour(BLACK).getIntColour());
@@ -32,12 +31,12 @@ bool Exit::load(const PARAMETER_TYPE& params)
     AnimatedSprite* temp = new AnimatedSprite;
     temp->loadFrames(getSurface(imageOverwrite),2,1,0,1);
     temp->setTransparentColour(MAGENTA);
-    currentSprite = temp;
     states["open"] = temp;
     temp = new AnimatedSprite;
     temp->loadFrames(getSurface(imageOverwrite),2,1,1,1);
     temp->setTransparentColour(MAGENTA);
     states["close"] = temp;
+    startingState = "open";
 
     return result;
 }
@@ -54,7 +53,8 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
     {
         entry.unit->toBeRemoved = true;
         parent->swapControl();
-        parent->winCounter--;
+        if (entry.unit->flags.hasFlag(ufMissionObjective))
+            parent->winCounter--;
     }
 }
 

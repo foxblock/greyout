@@ -45,15 +45,15 @@ PENJIN_ERRORS MyGame::init()
     //Set up first level password and filename
     setInitialState(STATE_TITLE);
     gameTimer->start();
-    #ifdef _DEBUG_COL
-    GFX::setResolution(800,960);
+    SDL_WM_SetIcon(IMG_Load("images/general/icon_win.png"),NULL);
+    #ifdef _MEOW
+    GFX::setResolution(320,240);
+    #elif defined(PLATFORM_PANDORA)
+    GFX::setResolution(800,480);
     #else
     GFX::setResolution(800,480);
     #endif
     GFX::resetScreen();
-    #ifdef _DEBUG
-    GFX::showCursor(true);
-    #endif
     setFrameRate(30);
     SAVEGAME->setFile(SAVE_FILE);
     if (SAVEGAME->hasData("musicvolume"))

@@ -27,6 +27,7 @@ class StateTitle : public BaseState
         Timer counter;
         int state;
         bool once;
+        string tagline;
 };
 
 #endif

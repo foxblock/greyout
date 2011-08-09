@@ -76,9 +76,9 @@ public:
     // adds a formatted particle to the list
     void addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime);
 
-    list<ControlUnit*> players;
-    list<BaseUnit*> units;
-    list<PixelParticle*> effects;
+    vector<ControlUnit*> players;
+    vector<BaseUnit*> units;
+    vector<PixelParticle*> effects;
     SDL_Surface* levelImage;
     SimpleFlags flags;
 
@@ -102,7 +102,10 @@ public:
         lfKeepCentred = 32,
         lfScaleX = 64,
         lfScaleY = 128,
-        lfEOL = 256
+        lfSplitX = 256,
+        lfSplitY = 512,
+        lfDrawPattern = 1024,
+        lfEOL = 2048
     };
     map<string,int> stringToFlag;
 
@@ -143,6 +146,8 @@ protected:
     static void lose2Callback(void* data); // fades in and resets the level
     static void winCallback(void* data);
 
+    bool playersVisible() const;
+
     enum LevelProp
     {
         lpUnknown,
@@ -159,8 +164,8 @@ protected:
     };
     map<string,int> stringToProp;
 
-    list<ControlUnit*> removedPlayers;
-    list<BaseUnit*> removedUnits;
+    vector<ControlUnit*> removedPlayers;
+    vector<BaseUnit*> removedUnits;
 
     // set to false on level restart
     bool firstLoad;
@@ -179,6 +184,7 @@ protected:
 
     // pause menu is also used for displaying time trial results
     SDL_Surface* pauseSurf;
+    vector<string> pauseItems;
     int pauseSelection;
     Rectangle overlay;
     Text timeTrialText;

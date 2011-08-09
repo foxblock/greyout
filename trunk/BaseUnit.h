@@ -104,12 +104,12 @@ public:
 
     enum UnitFlag
     {
-        ufNoMapCollision=1,
-        ufNoUnitCollision=2,
+        ufNoMapCollision=1, // no map collision check for this unit
+        ufNoUnitCollision=2, // does not let other units affect this unit
         ufNoGravity=4,
-        ufInvincible=8,
-        ufMissionObjective=16,
-        ufNoCollisionUpdate=32,
+        ufInvincible=8, // will not explode by environmental hazards
+        ufMissionObjective=16, // level will restart when this unit is killed (also winCounter increases for ControlUnits)
+        ufNoUpdate=32, // update won't be called for this unit (effectively freezing it in place)
         ufEOL=64
     };
     // converts a string from a level file to a usable flag
@@ -129,6 +129,7 @@ protected:
     {
         upUnknown,
         upClass,
+        upState,
         upPosition,
         upVelocity,
         upFlags,
@@ -160,16 +161,18 @@ protected:
         okUnknown,
         okIdle,
         okPosition,
-        okRepeat
+        okRepeat,
+        okEOL
     };
     // processes the next order to start
-    virtual void processOrder(Order& next);
+    virtual bool processOrder(Order& next);
     // periodically updates orders
-    virtual void updateOrder(const Order& curr);
+    virtual bool updateOrder(const Order& curr);
     map<string,OrderKey> stringToOrder;
     vector<Order> orderList;
     int currentOrder;
     int orderTimer;
+    bool orderRunning; // is this unit currently executing orders?
 
 private:
 };

@@ -18,6 +18,7 @@ class BasePlayer : public ControlUnit
         ~BasePlayer();
 
         virtual bool load(const PARAMETER_TYPE& params);
+        virtual void reset();
         virtual void resetTemporary();
 
         virtual void update();

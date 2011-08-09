@@ -27,6 +27,7 @@ BaseUnit::BaseUnit(Level* newParent)
     startingState = "";
     direction = 0;
     isPlayer = false;
+    orderRunning = false;
 
     // set-up conversion maps
     stringToFlag["nomapcollision"] = ufNoMapCollision;
@@ -34,9 +35,10 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["nogravity"] = ufNoGravity;
     stringToFlag["invincible"] = ufInvincible;
     stringToFlag["missionobjective"] = ufMissionObjective;
-    stringToFlag["nocollisionupdate"] = ufNoCollisionUpdate;
+    stringToFlag["noupdate"] = ufNoUpdate;
 
     stringToProp["class"] = upClass;
+    stringToProp["state"] = upState;
     stringToProp["position"] = upPosition;
     stringToProp["velocity"] = upVelocity;
     stringToProp["flags"] = upFlags;
@@ -82,7 +84,8 @@ bool BaseUnit::load(const PARAMETER_TYPE& params)
         if (not processParameter(make_pair(value->first,value->second)))
         {
             string className = params.front().second;
-            cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit \"" << className << "\"" << endl;
+            cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit with id \""
+                << id << "\" (" << className << "\")" << endl;
         }
     }
 
@@ -91,16 +94,15 @@ bool BaseUnit::load(const PARAMETER_TYPE& params)
 
     if (orderList.size() > 0)
     {
-        Order temp = {okIdle,"-1"};
+        Order temp = {okIdle,"-1",NULL};
         orderList.push_back(temp); // make unit stop after last order (unless a repeat order is specified)
-        processOrder(orderList.front());
     }
 
 #ifdef _DEBUG
     collisionColours.insert(Colour(GREEN).getIntColour()); // collision indicator pixels else messing things up
 #endif
 
-    return true; // Currently returns always true as no critical error checking is done
+    return true; // Currently returns always true as no critical error checking is done here
 }
 
 void BaseUnit::reset()
@@ -112,7 +114,8 @@ void BaseUnit::reset()
     acceleration[1] = Vector2df(0,0);
     collisionInfo.clear();
     toBeRemoved = false;
-    currentState = startingState;
+    if (startingState[0] != 0)
+        setSpriteState(startingState,true);
     if (orderList.size() > 0)
     {
         currentOrder = 0;
@@ -209,17 +212,17 @@ void BaseUnit::update()
 
         if (currentSprite)
             currentSprite->update();
-        if (orderList.size() > 0)
+        if (orderRunning && orderTimer > 0 && orderList.size() > 0)
         {
             updateOrder(orderList.at(currentOrder));
-            if (--orderTimer == 0)
+            if (--orderTimer <= 0)
             {
                 ++currentOrder;
-                if (currentOrder <= orderList.size())
+                if (currentOrder < orderList.size())
                     processOrder(orderList.at(currentOrder));
                 else
                 {
-                    orderTimer = -1; // equals stopped
+                    orderRunning = false;
                 }
             }
         }
@@ -351,6 +354,11 @@ bool BaseUnit::processParameter(const pair<string,string>& value)
         tag = value.second;
         break;
     }
+    case upState:
+    {
+        startingState = value.second;
+        break;
+    }
     case upPosition:
     {
         vector<string> token;
@@ -438,7 +446,7 @@ bool BaseUnit::processParameter(const pair<string,string>& value)
         {
             if (stringToOrder[token.front()] != okRepeat)
             {
-                cout << "Error: Bad order parameter \"" << value.second << "\"" << endl;
+                cout << "Error: Bad order parameter \"" << value.second << "\" on unit id \"" << id << "\"" << endl;
             }
             else
             {
@@ -463,15 +471,18 @@ void BaseUnit::move()
     position += velocity + gravity;
 }
 
-void BaseUnit::processOrder(Order& next)
+bool BaseUnit::processOrder(Order& next)
 {
+    bool parsed = true;
+
     vector<string> tokens;
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
     int ticks = 1;
-    if (tokens.size() > 0 && StringUtility::stringToInt(tokens.front()) > 0)
+    if (tokens.size() > 0)
     {
         ticks = float(StringUtility::stringToInt(tokens.front())) / 30.0f;
     }
+
     switch (next.key)
     {
     case okIdle:
@@ -479,18 +490,16 @@ void BaseUnit::processOrder(Order& next)
         velocity = Vector2df(0,0);
         acceleration[0] = Vector2df(0,0);
         acceleration[1] = Vector2df(0,0);
-        if (StringUtility::stringToInt(tokens.front()) < 0)
-            return;
         break;
     }
     case okPosition:
     {
         if (tokens.size() < 3)
         {
-            cout << "Error: Bad order parameter \"" << next.value << "\"" << endl;
+            cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
             orderList.erase(orderList.begin() + currentOrder);
             orderTimer = 1; // process next order in next cycle
-            return;
+            return false;
         }
         Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens.at(1)),StringUtility::stringToFloat(tokens.at(2)));
         velocity = (dest - position) / (float)ticks; // set speed to pixels per framerate
@@ -506,17 +515,21 @@ void BaseUnit::processOrder(Order& next)
             currentOrder = 0;
             processOrder(orderList.front());
         }
-        return;
+        return true;
     }
     default:
-        return;
+        return false;
     }
 
     orderTimer = ticks;
+    orderRunning = true;
+    return parsed;
 }
 
-void BaseUnit::updateOrder(const Order& curr)
+bool BaseUnit::updateOrder(const Order& curr)
 {
+    bool parsed = true;
+
     switch (curr.key)
     {
     case okPosition:
@@ -524,6 +537,8 @@ void BaseUnit::updateOrder(const Order& curr)
         Vector2df diff = *((Vector2df*)(curr.data)) - position;
     }
     default:
-        return;
+        parsed = false;
     }
+
+    return parsed;
 }
