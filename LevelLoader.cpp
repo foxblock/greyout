@@ -24,6 +24,8 @@
 #include "SolidBox.h"
 #include "Exit.h"
 #include "DialogueTrigger.h"
+#include "Gear.h"
+#include "Switch.h"
 
 using namespace std;
 
@@ -57,7 +59,9 @@ enum UnitIdent
     ucPushableBox,
     ucSolidBox,
     ucExit,
-    ucDialogueTrigger
+    ucDialogueTrigger,
+    ucGear,
+    ucSwitch
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -85,6 +89,8 @@ void createIdentMaps()
     unitClasses["solidbox"] = ucSolidBox;
     unitClasses["exit"] = ucExit;
     unitClasses["dialoguetrigger"] = ucDialogueTrigger;
+    unitClasses["gear"] = ucGear;
+    unitClasses["switch"] = ucSwitch;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -259,7 +265,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
             cout << "Error: No player unit has been specified in the map, what did you plan to play with?" << endl;
             error = ecWarning;
         }
-        list<ControlUnit*>::const_iterator unit;
+        vector<ControlUnit*>::const_iterator unit;
         for (unit = level->players.begin(); unit != level->players.end(); ++unit)
         {
             if ((*unit)->takesControl)
@@ -381,9 +387,11 @@ ControlUnit* LevelLoader::createPlayer(PARAMETER_TYPE& params, Level* const pare
 
     if (not result->load(params))
     {
+        cout << "Error loading unit id \"" << result->id << "\"" << endl;
         delete result;
         result = NULL;
     }
+    result->reset();
 
     return result;
 }
@@ -421,6 +429,16 @@ BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, C
         result = new DialogueTrigger(parent);
         break;
     }
+    case ucGear:
+    {
+        result = new Gear(parent);
+        break;
+    }
+    case ucSwitch:
+    {
+        result = new Switch(parent);
+        break;
+    }
     default:
         cout << "Error: Unknown unit class \"" << params.front().second << "\" on line " << lineNumber << endl;
         return NULL;
@@ -428,9 +446,11 @@ BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, C
 
     if (not result->load(params))
     {
+        cout << "Error loading unit id \"" << result->id << "\"" << endl;
         delete result;
         result = NULL;
     }
+    result->reset();
 
     return result;
 }

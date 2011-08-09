@@ -12,11 +12,19 @@
 
 #define DEFAULT_SELECTION 0
 #define MENU_ITEM_COUNT 4
+
+#ifdef _MEOW
+#define MENU_OFFSET_X 101
+#define MENU_ITEM_HEIGHT 27
+#define MENU_ITEM_SPACING 0
+#define MARKER_SPEED 5
+#else
 #define MENU_OFFSET_X 173
 #define MENU_ITEM_HEIGHT 61
 #define MENU_ITEM_SPACING 0
-
 #define MARKER_SPEED 10
+#endif
+
 
 TitleMenu::TitleMenu()
 {
@@ -27,10 +35,18 @@ TitleMenu::TitleMenu()
     currentFps = 30;
 
     bool fromCache;
+    #ifdef _MEOW
+    bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_320_240.png",fromCache),1,1,0,0);
+    #else
     bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_800_480.png",fromCache),1,1,0,0);
+    #endif
     bg.disableTransparentColour();
     bg.setPosition(0,0);
+    #ifdef _MEOW
+    marker.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_marker_320_240.png",fromCache),1,1,0,0);
+    #else
     marker.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_marker_800_480.png",fromCache),1,1,0,0);
+    #endif
     marker.setX(0);
     setSelection(true);
 

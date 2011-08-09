@@ -33,13 +33,8 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
 
     if (parent->getWidth() > GFX::getXResolution())
         result.x = pos.x - (GFX::getXResolution() / 2.0f);
-    #ifdef _DEBUG_COL
-    if (parent->getHeight() > GFX::getYResolution() / 2.0f)
-        result.y = pos.y - (GFX::getYResolution() / 4.0f);
-    #else
     if (parent->getHeight() > GFX::getYResolution())
         result.y = pos.y - (GFX::getYResolution() / 2.0f);
-    #endif
 
     if (not disregardBoundaries)
     {
@@ -49,15 +44,9 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
             result.x += max(-result.x,0.0f); // left
             result.x += min(parent->getWidth() - (result.x + GFX::getXResolution()),0.0f); // right
         }
-        #ifdef _DEBUG_COL
-        if (parent->getHeight() >= GFX::getYResolution() / 2.0f)
-        {
-            result.y += min(parent->getHeight() - (result.y + GFX::getYResolution() / 2.0f),0.0f);
-        #else
         if ((parent->getHeight() >= GFX::getYResolution()))
         {
             result.y += min(parent->getHeight() - (result.y + GFX::getYResolution()),0.0f); // bottom
-        #endif
             result.y += max(-result.y,0.0f); // top
         }
     }

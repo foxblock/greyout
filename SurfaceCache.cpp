@@ -6,7 +6,7 @@ SurfaceCache* SurfaceCache::self = NULL;
 
 SurfaceCache::SurfaceCache()
 {
-    //
+    errorSurface = createErrorSurface(64,64);
 }
 
 SurfaceCache::~SurfaceCache()
@@ -41,7 +41,7 @@ SDL_Surface* SurfaceCache::getSurface(CRstring filename, bool &fromCache, CRbool
                 std::cout << "Error loading \"" << filename << "\"" << std::endl;
                 std::cout << "The error was: " << IMG_GetError() << std::endl;
             }
-            return NULL;
+            return errorSurface;
         }
         if (optimize)
         {
@@ -71,7 +71,7 @@ SDL_Surface* SurfaceCache::getSurface(CRstring filename, CRstring pathOverwrite,
 
     SDL_Surface* surface = getSurface(pathOverwrite + filename, fromCache, optimize,true);
 
-    if (not surface)
+    if (surface == errorSurface)
     {
         std::cout << "Custom image not found, loading default!" << std::endl;
         surface = getSurface(filename,fromCache,optimize);
@@ -116,4 +116,37 @@ bool SurfaceCache::isCached(CRstring filename) const
     if (iter == cachedSurfaces.end())
         return false;
     return true;
+}
+
+#define XOR(a,b) ((a) && !(b)) || (!(a) && (b))
+#define CHECKER_SIZE 4
+
+SDL_Surface* SurfaceCache::createErrorSurface(const Uint32 width, const Uint32 height) const
+{
+    SDL_Surface* dummy = SDL_CreateRGBSurface(SDL_SWSURFACE,width,height,32,
+                        0xff000000, 0x00ff0000, 0x0000ff00,  0x000000ff);
+    SDL_LockSurface(dummy);
+    Uint8* pixel = (Uint8*)(dummy->pixels);
+    for (int x=0;x<width;x++)
+        for (int y=0;y<height;y++)
+        {
+            if (XOR(x % (CHECKER_SIZE*2) < CHECKER_SIZE,y % (CHECKER_SIZE*2) < CHECKER_SIZE))
+            {
+                pixel[(x+y*width)*4+0]=255; //A
+                pixel[(x+y*width)*4+1]=0; //B
+                pixel[(x+y*width)*4+2]=0; //G
+                pixel[(x+y*width)*4+3]=0; //R
+            }
+            else
+            {
+                pixel[(x+y*width)*4+0]=255; //A
+                pixel[(x+y*width)*4+1]=255; //B
+                pixel[(x+y*width)*4+2]=0; //G
+                pixel[(x+y*width)*4+3]=255; //R
+            }
+        }
+    SDL_UnlockSurface(dummy);
+    SDL_Surface* result = SDL_DisplayFormatAlpha(dummy);
+    SDL_FreeSurface(dummy);
+    return result;
 }

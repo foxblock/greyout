@@ -58,12 +58,20 @@ bool BasePlayer::load(const PARAMETER_TYPE& params)
     temp->setFrameRate(FIFTEEN_FRAMES);
 
     if (takesControl)
-        setSpriteState("wave",true);
+        startingState = "wave";
     else
-        setSpriteState("stand");
-    startingState = "stand";
+        startingState = "stand";
 
     return result;
+}
+
+void BasePlayer::reset()
+{
+    if (takesControl)
+        startingState = "wave";
+    else
+        startingState = "stand";
+    BaseUnit::reset();
 }
 
 void BasePlayer::resetTemporary()
@@ -98,18 +106,18 @@ void BasePlayer::update()
                 {
                     if (velocity.y > 3)
                     {
-                        if (direction > 0)
-                            setSpriteState("fallRight");
-                        else
+                        if (direction < 0)
                             setSpriteState("fallLeft");
+                        else
+                            setSpriteState("fallRight");
                     }
                 }
                 else if (not canJump)
                 {
-                    if (direction > 0)
-                        setSpriteState("flyRight");
-                    else
+                    if (direction < 0)
                         setSpriteState("flyLeft");
+                    else
+                        setSpriteState("flyRight");
                 }
             }
         }
@@ -188,10 +196,10 @@ void BasePlayer::control(SimpleJoy* input)
     {
         velocity.y = -14;
         canJump = false;
-        if (direction > 0)
-            setSpriteState("jumpRight",true);
-        else
+        if (direction < 0)
             setSpriteState("jumpLeft",true);
+        else
+            setSpriteState("jumpRight",true);
         fallCounter.start();
     }
 }
