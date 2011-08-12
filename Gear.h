@@ -9,7 +9,7 @@ public:
     Gear(Level* newParent);
     virtual ~Gear();
 
-    virtual bool load(const PARAMETER_TYPE& params);
+    virtual bool load(const list<PARAMETER_TYPE >& params);
 
     virtual inline int getHeight() const;
     virtual inline int getWidth() const;
@@ -18,7 +18,7 @@ public:
     virtual void updateScreenPosition(const Vector2di& offset);
     virtual void render(SDL_Surface* surf);
 protected:
-    virtual bool processParameter(const pair<string,string>& value);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     enum BoxProp
     {

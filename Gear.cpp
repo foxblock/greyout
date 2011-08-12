@@ -20,7 +20,7 @@ Gear::~Gear()
 
 ///---public---
 
-bool Gear::load(const PARAMETER_TYPE& params)
+bool Gear::load(const list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -70,7 +70,7 @@ void Gear::render(SDL_Surface* surf)
 
 ///---protected---
 
-bool Gear::processParameter(const pair<string,string>& value)
+bool Gear::processParameter(const PARAMETER_TYPE& value)
 {
     if (BaseUnit::processParameter(value))
         return true;

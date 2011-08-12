@@ -26,6 +26,7 @@
 #include "DialogueTrigger.h"
 #include "Gear.h"
 #include "Switch.h"
+#include "Key.h"
 
 using namespace std;
 
@@ -61,7 +62,8 @@ enum UnitIdent
     ucExit,
     ucDialogueTrigger,
     ucGear,
-    ucSwitch
+    ucSwitch,
+    ucKey
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -91,6 +93,7 @@ void createIdentMaps()
     unitClasses["dialoguetrigger"] = ucDialogueTrigger;
     unitClasses["gear"] = ucGear;
     unitClasses["switch"] = ucSwitch;
+    unitClasses["key"] = ucKey;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -132,7 +135,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
     ErrorCode error = ecNone;
 
     string field = ""; // the current field
-    PARAMETER_TYPE params; // list of field parameters (key=value)
+    list<PARAMETER_TYPE > params; // list of field parameters (key=value)
     Level* level = NULL;
 
     // parse file line by line
@@ -300,7 +303,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
     return level;
 }
 
-Level* LevelLoader::createLevel(PARAMETER_TYPE& params, CRstring chapterPath, CRint lineNumber)
+Level* LevelLoader::createLevel(list<PARAMETER_TYPE >& params, CRstring chapterPath, CRint lineNumber)
 {
     Level* result = NULL;
 
@@ -346,7 +349,7 @@ Level* LevelLoader::createLevel(PARAMETER_TYPE& params, CRstring chapterPath, CR
     return result;
 }
 
-ControlUnit* LevelLoader::createPlayer(PARAMETER_TYPE& params, Level* const parent, CRint lineNumber)
+ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* const parent, CRint lineNumber)
 {
     ControlUnit* result = NULL;
 
@@ -397,7 +400,7 @@ ControlUnit* LevelLoader::createPlayer(PARAMETER_TYPE& params, Level* const pare
 }
 
 
-BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, CRint lineNumber)
+BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const parent, CRint lineNumber)
 {
     BaseUnit* result = NULL;
 
@@ -437,6 +440,11 @@ BaseUnit* LevelLoader::createUnit(PARAMETER_TYPE& params, Level* const parent, C
     case ucSwitch:
     {
         result = new Switch(parent);
+        break;
+    }
+    case ucKey:
+    {
+        result = new Key(parent);
         break;
     }
     default:

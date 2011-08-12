@@ -21,7 +21,7 @@ BasePlayer::~BasePlayer()
 ///---public---
 
 // Custom load implementation to ensure the unit is initialized properly after loading
-bool BasePlayer::load(const PARAMETER_TYPE& params)
+bool BasePlayer::load(const list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 

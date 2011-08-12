@@ -9,7 +9,7 @@ public:
     Exit(Level* newParent);
     virtual ~Exit();
 
-    virtual bool load(const PARAMETER_TYPE& params);
+    virtual bool load(const list<PARAMETER_TYPE >& params);
 
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;
     virtual void hitUnit(const UnitCollisionEntry& entry);

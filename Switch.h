@@ -6,7 +6,7 @@ public:
     Switch(Level* newParent);
     virtual ~Switch();
 
-    virtual bool load(const PARAMETER_TYPE& params);
+    virtual bool load(const list<PARAMETER_TYPE >& params);
     virtual void reset();
 
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;
@@ -14,7 +14,7 @@ public:
 
     virtual void update();
 protected:
-    virtual bool processParameter(const pair<string,string>& value);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     typedef void (Switch::*FuncPtr)();
     FuncPtr switchOn;
@@ -23,7 +23,7 @@ protected:
     void movementOff();
 
     int switchTimer;
-    BaseUnit* target;
+    vector<BaseUnit*> targets;
 
     enum SwitchProp
     {

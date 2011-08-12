@@ -34,7 +34,7 @@ public:
     // loads the unit's parameters from a map<key,value> passed from the level loading
     // passes the individual key=value pairs to processParameter
     // returns true on success and false on fail
-    virtual bool load(const PARAMETER_TYPE& params);
+    virtual bool load(const list<PARAMETER_TYPE >& params);
 
     // resets the unit to its initial state (right after loading)
     virtual void reset();
@@ -114,13 +114,13 @@ public:
     };
     // converts a string from a level file to a usable flag
     // you can simply add unit-specific flags in child classes
-    map<string,UnitFlag> stringToFlag;
+    static map<string,int> stringToFlag;
 
 protected:
     // processes a single key=value pair for loading
     // this function can be overwritten in child classes to allow for custom data fiels
     // return true if the data has been successfully processed, false otherwise
-    virtual bool processParameter(const pair<string,string>& value);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     // basically just a lazy way of writing position += velocity
     virtual void move();
@@ -143,7 +143,7 @@ protected:
     };
     // converts a string from a level file to a propIdent usable in a switch statement
     // simply add unit-specific props in child classes' constructors
-    map<string,int> stringToProp;
+    static map<string,int> stringToProp;
 
     // Store all the sprites in here along with an unique string for identifing
     // These sprites WILL get deleted on destruction of the unit
@@ -168,7 +168,7 @@ protected:
     virtual bool processOrder(Order& next);
     // periodically updates orders
     virtual bool updateOrder(const Order& curr);
-    map<string,OrderKey> stringToOrder;
+    static map<string,int> stringToOrder;
     vector<Order> orderList;
     int currentOrder;
     int orderTimer;

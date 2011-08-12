@@ -7,7 +7,7 @@
 #define DELIMIT_STRING ((string)",")
 #define CLASS_STRING ((string)"class")
 
-#define PARAMETER_TYPE list<pair<string,string> >
+#define PARAMETER_TYPE pair<string,string>
 
 #endif // FILETYPEDEFINES_H
 

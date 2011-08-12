@@ -33,7 +33,7 @@ public:
     // Loads the classes parameters from the passed map of key=value pairs
     // passes each pair to processParameter
     // returns true on success and false otherwise
-    virtual bool load(const PARAMETER_TYPE& params);
+    virtual bool load(const list<PARAMETER_TYPE >& params);
 
     // reset level to initial state
     virtual void reset();
@@ -107,7 +107,7 @@ public:
         lfDrawPattern = 1024,
         lfEOL = 2048
     };
-    map<string,int> stringToFlag;
+    static map<string,int> stringToFlag;
 
     Vector2df drawOffset;
     Vector2df startingOffset;
@@ -138,9 +138,9 @@ protected:
     // processes a single key=value pair for loading
     // this function can be overwritten in child classes to allow for custom data fiels
     // return true if the data has been successfully processed, false otherwise
-    virtual bool processParameter(const pair<string,string>& value);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
-    string ticksToTimeString(CRint ticks) const;
+    static string ticksToTimeString(CRint ticks);
 
     static void loseCallback(void* data); // fades out
     static void lose2Callback(void* data); // fades in and resets the level
@@ -162,7 +162,7 @@ protected:
         lpDialogue,
         lpEOL
     };
-    map<string,int> stringToProp;
+    static map<string,int> stringToProp;
 
     vector<ControlUnit*> removedPlayers;
     vector<BaseUnit*> removedUnits;

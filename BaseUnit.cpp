@@ -7,8 +7,45 @@
 #include "SurfaceCache.h"
 #include "MusicCache.h"
 
+map<string,int> BaseUnit::stringToFlag;
+map<string,int> BaseUnit::stringToProp;
+map<string,int> BaseUnit::stringToOrder;
+
 BaseUnit::BaseUnit(Level* newParent)
 {
+    // set-up conversion maps
+    if (stringToFlag.empty())
+    {
+        stringToFlag["nomapcollision"] = ufNoMapCollision;
+        stringToFlag["nounitcollision"] = ufNoUnitCollision;
+        stringToFlag["nogravity"] = ufNoGravity;
+        stringToFlag["invincible"] = ufInvincible;
+        stringToFlag["missionobjective"] = ufMissionObjective;
+        stringToFlag["noupdate"] = ufNoUpdate;
+    }
+
+    if (stringToProp.empty())
+    {
+        stringToProp["class"] = upClass;
+        stringToProp["state"] = upState;
+        stringToProp["position"] = upPosition;
+        stringToProp["velocity"] = upVelocity;
+        stringToProp["flags"] = upFlags;
+        stringToProp["collision"] = upCollision;
+        stringToProp["imageoverwrite"] = upImageOverwrite;
+        stringToProp["colour"] = upColour;
+        stringToProp["health"] = upHealth;
+        stringToProp["id"] = upID;
+        stringToProp["order"] = upOrder;
+    }
+
+    if (stringToOrder.empty())
+    {
+        stringToOrder["idle"] = okIdle;
+        stringToOrder["position"] = okPosition;
+        stringToOrder["repeat"] = okRepeat;
+    }
+
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
     startingPosition = Vector2df(0.0f,0.0f);
@@ -28,30 +65,6 @@ BaseUnit::BaseUnit(Level* newParent)
     direction = 0;
     isPlayer = false;
     orderRunning = false;
-
-    // set-up conversion maps
-    stringToFlag["nomapcollision"] = ufNoMapCollision;
-    stringToFlag["nounitcollision"] = ufNoUnitCollision;
-    stringToFlag["nogravity"] = ufNoGravity;
-    stringToFlag["invincible"] = ufInvincible;
-    stringToFlag["missionobjective"] = ufMissionObjective;
-    stringToFlag["noupdate"] = ufNoUpdate;
-
-    stringToProp["class"] = upClass;
-    stringToProp["state"] = upState;
-    stringToProp["position"] = upPosition;
-    stringToProp["velocity"] = upVelocity;
-    stringToProp["flags"] = upFlags;
-    stringToProp["collision"] = upCollision;
-    stringToProp["imageoverwrite"] = upImageOverwrite;
-    stringToProp["colour"] = upColour;
-    stringToProp["health"] = upHealth;
-    stringToProp["id"] = upID;
-    stringToProp["order"] = upOrder;
-
-    stringToOrder["idle"] = okIdle;
-    stringToOrder["position"] = okPosition;
-    stringToOrder["repeat"] = okRepeat;
 
     currentOrder = 0;
 }
@@ -77,15 +90,15 @@ BaseUnit::~BaseUnit()
 
 /// ---public---
 
-bool BaseUnit::load(const PARAMETER_TYPE& params)
+bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
 {
-    for (PARAMETER_TYPE::const_iterator value = params.begin(); value != params.end(); ++value)
+    for (list<PARAMETER_TYPE >::const_iterator value = params.begin(); value != params.end(); ++value)
     {
         if (not processParameter(make_pair(value->first,value->second)))
         {
             string className = params.front().second;
             cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit with id \""
-                << id << "\" (" << className << "\")" << endl;
+                 << id << "\" (" << className << "\")" << endl;
         }
     }
 
@@ -268,7 +281,7 @@ AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRbool reset, CRstri
         else
         {
             cout << "Unrecognized sprite state \"" << newState << "\" and fallback \"" <<
-            fallbackState << "\" on unit with id \"" << id << "\"" << endl;
+                 fallbackState << "\" on unit with id \"" << id << "\"" << endl;
         }
     }
     else
@@ -343,7 +356,7 @@ void BaseUnit::explode()
 
 /// ---protected---
 
-bool BaseUnit::processParameter(const pair<string,string>& value)
+bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 {
     bool parsed = true;
 

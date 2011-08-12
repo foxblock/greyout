@@ -117,7 +117,7 @@ void PushableBox::explode()
 
 /// ---protected---
 
-bool PushableBox::processParameter(const pair<string,string>& value)
+bool PushableBox::processParameter(const PARAMETER_TYPE& value)
 {
     // first ensure backwards compatibility by passing the value to BaseUnit
     // (also avoids having to copy that code)
