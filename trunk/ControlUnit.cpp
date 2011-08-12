@@ -53,7 +53,7 @@ void ControlUnit::control(SimpleJoy* input)
 
 /// ---protected---
 
-bool ControlUnit::processParameter(const pair<string,string>& value)
+bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
 {
     if (BaseUnit::processParameter(value))
         return true;

@@ -47,7 +47,7 @@ void DialogueTrigger::hitUnit(const UnitCollisionEntry& entry)
 
 ///---protected---
 
-bool DialogueTrigger::processParameter(const pair<string,string>& value)
+bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 {
     bool parsed = true;
 

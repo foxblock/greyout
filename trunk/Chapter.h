@@ -7,6 +7,8 @@
 
 #include "PenjinTypes.h"
 
+#include "fileTypeDefines.h"
+
 /**
 Organizing and ordering levels loaded from a chapter information file
 Also displaying a name and image if needed
@@ -66,7 +68,7 @@ public:
     };
     map<string,int> stringToProp;
 protected:
-    bool processParameter(const pair<string,string>& value);
+    bool processParameter(const PARAMETER_TYPE& value);
 
 private:
 

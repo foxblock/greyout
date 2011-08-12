@@ -14,7 +14,6 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
     switchTimer = 0;
-    target = NULL;
 
     stringToProp["function"] = spFunction;
     stringToProp["target"] = spTarget;
@@ -23,12 +22,12 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
 
 Switch::~Switch()
 {
-    //
+    targets.clear();
 }
 
 ///---public---
 
-bool Switch::load(const PARAMETER_TYPE& params)
+bool Switch::load(const list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -48,7 +47,7 @@ bool Switch::load(const PARAMETER_TYPE& params)
     if (startingState[0] == 0)
         startingState = "off";
 
-    if (!switchOn || !target)
+    if (!switchOn || targets.empty())
         result = false;
 
     return result;
@@ -98,7 +97,7 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
 
 ///---protected---
 
-bool Switch::processParameter(const pair<string,string>& value)
+bool Switch::processParameter(const PARAMETER_TYPE& value)
 {
     if (BaseUnit::processParameter(value))
         return true;
@@ -122,10 +121,15 @@ bool Switch::processParameter(const pair<string,string>& value)
     }
     case spTarget:
     {
+        vector<string> tokens;
+        StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
         for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
         {
-            if ((*I)->id == value.second)
-                target = *I;
+            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    targets.push_back(*I);
+            }
         }
         break;
     }
@@ -138,12 +142,14 @@ bool Switch::processParameter(const pair<string,string>& value)
 
 void Switch::movementOn()
 {
-    target->flags.removeFlag(BaseUnit::ufNoUpdate);
+    for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+        (*I)->flags.removeFlag(BaseUnit::ufNoUpdate);
 }
 
 void Switch::movementOff()
 {
-    target->flags.addFlag(BaseUnit::ufNoUpdate);
+    for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+        (*I)->flags.addFlag(BaseUnit::ufNoUpdate);
 }
 
 ///---private---

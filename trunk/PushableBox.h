@@ -32,7 +32,7 @@ class PushableBox : public BaseUnit
 
         SDL_Rect rect;
     protected:
-        virtual bool processParameter(const pair<string,string>& value);
+        virtual bool processParameter(const PARAMETER_TYPE& value);
 
         virtual void move();
 

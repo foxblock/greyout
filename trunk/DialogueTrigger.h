@@ -18,7 +18,7 @@ public:
     int getHeight() const {return height;}
 
 protected:
-    virtual bool processParameter(const pair<string,string>& value);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     int width;
     int height;

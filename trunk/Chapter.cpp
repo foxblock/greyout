@@ -177,7 +177,7 @@ string Chapter::getNextLevelAndSave(CRstring current)
 
 /// ---protected---
 
-bool Chapter::processParameter(const pair<string,string>& value)
+bool Chapter::processParameter(const PARAMETER_TYPE& value)
 {
     bool parsed = true;
 

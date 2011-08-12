@@ -20,7 +20,7 @@ Exit::~Exit()
 
 ///---public---
 
-bool Exit::load(const PARAMETER_TYPE& params)
+bool Exit::load(const list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -48,13 +48,16 @@ bool Exit::hitUnitCheck(const BaseUnit* const caller) const
 
 void Exit::hitUnit(const UnitCollisionEntry& entry)
 {
-    // standing still on the ground
-    if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 && entry.overlap.x > 10)
+    if (currentState == "open")
     {
-        entry.unit->toBeRemoved = true;
-        parent->swapControl();
-        if (entry.unit->flags.hasFlag(ufMissionObjective))
-            parent->winCounter--;
+        // standing still on the ground
+        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 && entry.overlap.x > 10)
+        {
+            entry.unit->toBeRemoved = true;
+            parent->swapControl();
+            if (entry.unit->flags.hasFlag(ufMissionObjective))
+                parent->winCounter--;
+        }
     }
 }
 

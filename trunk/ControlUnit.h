@@ -21,7 +21,7 @@ public:
     bool takesControl; // if true control will be called by level
 
 protected:
-    virtual bool processParameter(const pair<string,string>& value);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     enum ControlProps
     {

@@ -48,8 +48,40 @@
 #define TIME_TRIAL_MENU_OFFSET_Y 80
 #endif
 
+map<string,int> Level::stringToFlag;
+map<string,int> Level::stringToProp;
+
 Level::Level()
 {
+    // set-up static string to int conversion maps
+    if (stringToFlag.empty())
+    {
+        stringToFlag["repeatx"] = lfRepeatX;
+        stringToFlag["repeaty"] = lfRepeatY;
+        stringToFlag["scrollx"] = lfScrollX;
+        stringToFlag["scrolly"] = lfScrollY;
+        stringToFlag["disableswap"] = lfDisableSwap;
+        stringToFlag["keepcentred"] = lfKeepCentred;
+        stringToFlag["scalex"] = lfScaleX;
+        stringToFlag["scaley"] = lfScaleY;
+        stringToFlag["splitx"] = lfSplitX;
+        stringToFlag["splity"] = lfSplitY;
+        stringToFlag["drawpattern"] = lfDrawPattern;
+    }
+
+    if (stringToProp.empty())
+    {
+        stringToProp["image"] = lpImage;
+        stringToProp["flags"] = lpFlags;
+        stringToProp["filename"] = lpFilename;
+        stringToProp["offset"] = lpOffset;
+        stringToProp["background"] = lpBackground;
+        stringToProp["boundaries"] = lpBoundaries;
+        stringToProp["name"] = lpName;
+        stringToProp["music"] = lpMusic;
+        stringToProp["dialogue"] = lpDialogue;
+    }
+
     levelImage = NULL;
     collisionLayer = NULL;
     levelFileName = "";
@@ -64,28 +96,6 @@ Level::Level()
     winCounter = 0;
     firstLoad = true;
     trialEnd = false;
-
-    stringToFlag["repeatx"] = lfRepeatX;
-    stringToFlag["repeaty"] = lfRepeatY;
-    stringToFlag["scrollx"] = lfScrollX;
-    stringToFlag["scrolly"] = lfScrollY;
-    stringToFlag["disableswap"] = lfDisableSwap;
-    stringToFlag["keepcentred"] = lfKeepCentred;
-    stringToFlag["scalex"] = lfScaleX;
-    stringToFlag["scaley"] = lfScaleY;
-    stringToFlag["splitx"] = lfSplitX;
-    stringToFlag["splity"] = lfSplitY;
-    stringToFlag["drawpattern"] = lfDrawPattern;
-
-    stringToProp["image"] = lpImage;
-    stringToProp["flags"] = lpFlags;
-    stringToProp["filename"] = lpFilename;
-    stringToProp["offset"] = lpOffset;
-    stringToProp["background"] = lpBackground;
-    stringToProp["boundaries"] = lpBoundaries;
-    stringToProp["name"] = lpName;
-    stringToProp["music"] = lpMusic;
-    stringToProp["dialogue"] = lpDialogue;
 
 #ifdef _DEBUG
     debugText.loadFont("fonts/unispace.ttf",12);
@@ -165,9 +175,9 @@ Level::~Level()
 
 /// ---public---
 
-bool Level::load(const PARAMETER_TYPE& params)
+bool Level::load(const list<PARAMETER_TYPE >& params)
 {
-    for (PARAMETER_TYPE::const_iterator value = params.begin(); value != params.end(); ++value)
+    for (list<PARAMETER_TYPE >::const_iterator value = params.begin(); value != params.end(); ++value)
     {
         if (not processParameter(make_pair(value->first,value->second)) && value->first != "class")
         {
@@ -1168,7 +1178,7 @@ void Level::adjustPosition(BaseUnit* const unit)
     }
 }
 
-bool Level::processParameter(const pair<string,string>& value)
+bool Level::processParameter(const PARAMETER_TYPE& value)
 {
     bool parsed = true;
 
@@ -1254,7 +1264,7 @@ bool Level::processParameter(const pair<string,string>& value)
     return parsed;
 }
 
-string Level::ticksToTimeString(CRint ticks) const
+string Level::ticksToTimeString(CRint ticks)
 {
     if (ticks < 0)
         return "NONE";
