@@ -36,12 +36,14 @@ TitleMenu::TitleMenu()
 
     bool fromCache;
     #ifdef _MEOW
-    bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_320_240.png",fromCache),1,1,0,0);
+    SDL_Surface* temp = SURFACE_CACHE->getSurface("images/menu/title_320_240.png",fromCache);
     #else
-    bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_800_480.png",fromCache),1,1,0,0);
+    SDL_Surface* temp = SURFACE_CACHE->getSurface("images/menu/title_800_480.png",fromCache);
     #endif
+    bg.loadFrames(temp,temp->w / GFX::getXResolution(),temp->h / GFX::getYResolution(),0,0);
     bg.disableTransparentColour();
     bg.setPosition(0,0);
+    bg.setFrameRate(THIRTY_FRAMES);
     #ifdef _MEOW
     marker.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_marker_320_240.png",fromCache),1,1,0,0);
     #else
@@ -51,7 +53,7 @@ TitleMenu::TitleMenu()
     setSelection(true);
 
     // cache the inverted surfaces for faster drawing
-    for (int I = bg.frameCount()-1; I >= 0; --I)
+    for (int I = 0; I < bg.frameCount(); ++I)
     {
         SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,bg.getWidth(),bg.getHeight(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
         bg.setCurrentFrame(I);
@@ -110,6 +112,7 @@ void TitleMenu::userInput()
 void TitleMenu::update()
 {
     setSelection(false);
+    bg.update();
     EFFECTS->update();
 }
 

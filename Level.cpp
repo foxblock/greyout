@@ -54,33 +54,27 @@ map<string,int> Level::stringToProp;
 Level::Level()
 {
     // set-up static string to int conversion maps
-    if (stringToFlag.empty())
-    {
-        stringToFlag["repeatx"] = lfRepeatX;
-        stringToFlag["repeaty"] = lfRepeatY;
-        stringToFlag["scrollx"] = lfScrollX;
-        stringToFlag["scrolly"] = lfScrollY;
-        stringToFlag["disableswap"] = lfDisableSwap;
-        stringToFlag["keepcentred"] = lfKeepCentred;
-        stringToFlag["scalex"] = lfScaleX;
-        stringToFlag["scaley"] = lfScaleY;
-        stringToFlag["splitx"] = lfSplitX;
-        stringToFlag["splity"] = lfSplitY;
-        stringToFlag["drawpattern"] = lfDrawPattern;
-    }
+    stringToFlag["repeatx"] = lfRepeatX;
+    stringToFlag["repeaty"] = lfRepeatY;
+    stringToFlag["scrollx"] = lfScrollX;
+    stringToFlag["scrolly"] = lfScrollY;
+    stringToFlag["disableswap"] = lfDisableSwap;
+    stringToFlag["keepcentred"] = lfKeepCentred;
+    stringToFlag["scalex"] = lfScaleX;
+    stringToFlag["scaley"] = lfScaleY;
+    stringToFlag["splitx"] = lfSplitX;
+    stringToFlag["splity"] = lfSplitY;
+    stringToFlag["drawpattern"] = lfDrawPattern;
 
-    if (stringToProp.empty())
-    {
-        stringToProp["image"] = lpImage;
-        stringToProp["flags"] = lpFlags;
-        stringToProp["filename"] = lpFilename;
-        stringToProp["offset"] = lpOffset;
-        stringToProp["background"] = lpBackground;
-        stringToProp["boundaries"] = lpBoundaries;
-        stringToProp["name"] = lpName;
-        stringToProp["music"] = lpMusic;
-        stringToProp["dialogue"] = lpDialogue;
-    }
+    stringToProp["image"] = lpImage;
+    stringToProp["flags"] = lpFlags;
+    stringToProp["filename"] = lpFilename;
+    stringToProp["offset"] = lpOffset;
+    stringToProp["background"] = lpBackground;
+    stringToProp["boundaries"] = lpBoundaries;
+    stringToProp["name"] = lpName;
+    stringToProp["music"] = lpMusic;
+    stringToProp["dialogue"] = lpDialogue;
 
     levelImage = NULL;
     collisionLayer = NULL;
@@ -179,7 +173,7 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
 {
     for (list<PARAMETER_TYPE >::const_iterator value = params.begin(); value != params.end(); ++value)
     {
-        if (not processParameter(make_pair(value->first,value->second)) && value->first != "class")
+        if (not processParameter(make_pair(value->first,value->second)) && value->first != CLASS_STRING)
         {
             string className = params.front().second;
             cout << "Warning: Unprocessed parameter \"" << value->first << "\" on level \"" << className << "\"" << endl;

@@ -1,3 +1,6 @@
+#ifndef SWITCH_H
+#define SWITCH_H
+
 #include "BaseUnit.h"
 
 class Switch : public BaseUnit
@@ -39,4 +42,7 @@ protected:
     map<string,int> stringToFunc;
 private:
 };
+
+#endif // SWITCH_H
+
 

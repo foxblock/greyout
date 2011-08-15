@@ -139,8 +139,9 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
     Level* level = NULL;
 
     // parse file line by line
-    while (getline(file,line))
+    while (file.good())
     {
+        getline(file,line);
         ++lineNumber;
 
         if (line.substr(0,COMMENT_STRING.length()) == COMMENT_STRING) // comment line - disregard
@@ -190,7 +191,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         }
 
         // add current field with parameters to the level when reaching a new field or the end of the file
-        if (((nextField[0] != 0) && (field[0] != 0)) || not file.good())
+        if ((nextField[0] != 0) && (field[0] != 0) || not (file.good()))
         {
             switch (dataIdents[field])
             {
