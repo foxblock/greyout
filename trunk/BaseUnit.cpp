@@ -14,37 +14,28 @@ map<string,int> BaseUnit::stringToOrder;
 BaseUnit::BaseUnit(Level* newParent)
 {
     // set-up conversion maps
-    if (stringToFlag.empty())
-    {
-        stringToFlag["nomapcollision"] = ufNoMapCollision;
-        stringToFlag["nounitcollision"] = ufNoUnitCollision;
-        stringToFlag["nogravity"] = ufNoGravity;
-        stringToFlag["invincible"] = ufInvincible;
-        stringToFlag["missionobjective"] = ufMissionObjective;
-        stringToFlag["noupdate"] = ufNoUpdate;
-    }
+    stringToFlag["nomapcollision"] = ufNoMapCollision;
+    stringToFlag["nounitcollision"] = ufNoUnitCollision;
+    stringToFlag["nogravity"] = ufNoGravity;
+    stringToFlag["invincible"] = ufInvincible;
+    stringToFlag["missionobjective"] = ufMissionObjective;
+    stringToFlag["noupdate"] = ufNoUpdate;
 
-    if (stringToProp.empty())
-    {
-        stringToProp["class"] = upClass;
-        stringToProp["state"] = upState;
-        stringToProp["position"] = upPosition;
-        stringToProp["velocity"] = upVelocity;
-        stringToProp["flags"] = upFlags;
-        stringToProp["collision"] = upCollision;
-        stringToProp["imageoverwrite"] = upImageOverwrite;
-        stringToProp["colour"] = upColour;
-        stringToProp["health"] = upHealth;
-        stringToProp["id"] = upID;
-        stringToProp["order"] = upOrder;
-    }
+    stringToProp["class"] = upClass;
+    stringToProp["state"] = upState;
+    stringToProp["position"] = upPosition;
+    stringToProp["velocity"] = upVelocity;
+    stringToProp["flags"] = upFlags;
+    stringToProp["collision"] = upCollision;
+    stringToProp["imageoverwrite"] = upImageOverwrite;
+    stringToProp["colour"] = upColour;
+    stringToProp["health"] = upHealth;
+    stringToProp["id"] = upID;
+    stringToProp["order"] = upOrder;
 
-    if (stringToOrder.empty())
-    {
-        stringToOrder["idle"] = okIdle;
-        stringToOrder["position"] = okPosition;
-        stringToOrder["repeat"] = okRepeat;
-    }
+    stringToOrder["idle"] = okIdle;
+    stringToOrder["position"] = okPosition;
+    stringToOrder["repeat"] = okRepeat;
 
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
