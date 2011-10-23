@@ -5,7 +5,7 @@
 #include "MyGame.h"
 #include "Level.h"
 #include "userStates.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 #include "LevelLoader.h"
 #include "MusicCache.h"
 
@@ -59,22 +59,22 @@ StateLevelSelect::StateLevelSelect()
     // graphic stuff
     // TODO: Use 320x240 bg here (and make that)
     bool fromCache;
-    bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/error_bg_800_480.png",fromCache),1,1,0,0);
+    bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
     bg.disableTransparentColour();
     bg.setPosition(0,0);
-    loading.loadFrames(SURFACE_CACHE->getSurface("images/general/loading.png",fromCache,true),1,1,0,0);
+    loading.loadFrames(SURFACE_CACHE->loadSurface("images/general/loading.png",true),1,1,0,0);
     loading.disableTransparentColour();
     loading.setScaleX((float)size.x / loading.getWidth());
     loading.setScaleY((float)size.y / loading.getHeight());
-    error.loadFrames(SURFACE_CACHE->getSurface("images/general/error.png",fromCache,true),1,1,0,0);
+    error.loadFrames(SURFACE_CACHE->loadSurface("images/general/error.png",true),1,1,0,0);
     error.disableTransparentColour();
     error.setScaleX((float)size.x / error.getWidth());
     error.setScaleY((float)size.y / error.getHeight());
-    locked.loadFrames(SURFACE_CACHE->getSurface("images/general/locked.png",fromCache,true),1,1,0,0);
+    locked.loadFrames(SURFACE_CACHE->loadSurface("images/general/locked.png",true),1,1,0,0);
     locked.disableTransparentColour();
     locked.setScaleX((float)size.x / locked.getWidth());
     locked.setScaleY((float)size.y / locked.getHeight());
-    arrows.loadFrames(SURFACE_CACHE->getSurface("images/general/arrows.png",fromCache),2,1,0,0);
+    arrows.loadFrames(SURFACE_CACHE->loadSurface("images/general/arrows.png"),2,1,0,0);
     arrows.setTransparentColour(MAGENTA);
     cursor.setDimensions(size.x + 2*CURSOR_BORDER,size.y + 2*CURSOR_BORDER);
     cursor.setColour(ORANGE);
@@ -235,7 +235,7 @@ void StateLevelSelect::userInput()
             }
         }
 
-        if (input->isA())
+        if (ACCEPT_KEY)
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             switch (intermediateSelection)
@@ -252,7 +252,7 @@ void StateLevelSelect::userInput()
                 break;
             }
         }
-        else if (input->isB())
+        else if (CANCEL_KEY)
         {
             switchState(lsChapter);
         }
@@ -261,14 +261,14 @@ void StateLevelSelect::userInput()
 
     if (state == lsLevel)
     {
-        if (input->isB()) // return to chapter selection
+        if (CANCEL_KEY) // return to chapter selection
         {
             abortLevelLoading = true;
             switchState(lsChapter);
             input->resetKeys();
             return;
         }
-        if (input->isA())
+        if (ACCEPT_KEY)
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             // make sure the map has not returned an error on load already
@@ -286,7 +286,7 @@ void StateLevelSelect::userInput()
     }
     else if (state == lsChapter)
     {
-        if (input->isB()) // return to menu
+        if (CANCEL_KEY) // return to menu
         {
             abortLevelLoading = true;
             setNextState(STATE_MAIN);
@@ -294,7 +294,7 @@ void StateLevelSelect::userInput()
             MUSIC_CACHE->playSound("sounds/menu_back.wav");
             return;
         }
-        if (input->isA())
+        if (ACCEPT_KEY)
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             if (value == 0) // level folder
@@ -504,10 +504,10 @@ void StateLevelSelect::setLevelDirectory(CRstring dir)
     files = levelLister.getListing();
     files.erase(files.begin()); // delete first element which is the current folder
 
-    #ifdef _DEBUG
+    //#ifdef _DEBUG
     PreviewData bench = {BENCHMARK_LEVEL,NULL,false};
     levelPreviews.push_back(bench);
-    #endif
+    //#endif
 
     // initialize map
     for (vector<string>::const_iterator file = files.begin(); file < files.end(); ++file)
@@ -541,7 +541,7 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
 
     // add single level folder
     bool fromCache;
-    SDL_Surface* img = SURFACE_CACHE->getSurface("images/general/levelfolder.png",fromCache,true);
+    SDL_Surface* img = SURFACE_CACHE->loadSurface("images/general/levelfolder.png");
     if (img->w != size.x || img->h != size.y)
     {
         img = zoomSurface(img,(float)size.x / (float)img->w , (float)size.y / (float)img->h, SMOOTHING_OFF);
@@ -751,8 +751,7 @@ int StateLevelSelect::loadChapterPreviews(void* data)
         // loaded chapter fine
         if (chapter.imageFile[0] != 0) // we have an image file
         {
-            bool fromCache;
-            SDL_Surface* img = SURFACE_CACHE->getSurface(chapter.imageFile,chapter.path,fromCache,true);
+            SDL_Surface* img = SURFACE_CACHE->loadSurface(chapter.imageFile,chapter.path,true);
             if (img) // load successful
             {
                 if (img->w != self->size.x || img->h != self->size.y) // scale if needed

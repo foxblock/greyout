@@ -8,7 +8,7 @@
 #include "Image.h"
 
 #include "userStates.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 #include "SimpleFlags.h"
 
 // Level classes
@@ -144,9 +144,6 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         getline(file,line);
         ++lineNumber;
 
-        if (line.substr(0,COMMENT_STRING.length()) == COMMENT_STRING) // comment line - disregard
-            continue;
-
         // solve win-lin compatibility issues
         line = StringUtility::stripLineEndings(line);
         // make case in-sensitive
@@ -155,10 +152,18 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         // A value in [] brackets indicates a new field
         // all key=value pairs following will be loaded in a map as parameters
         string nextField = "";
+        if (line.substr(0,COMMENT_STRING.length()) == COMMENT_STRING)
+        {
+            // comment line - disregard
+        }
         if (line.substr(0,FIELD_STRING.length()) == FIELD_STRING) // new field
         {
             // strip brackets
             nextField = line.substr(1,line.length()-2);
+        }
+        else if (line[0] == 0) // empty line
+        {
+            // disregard
         }
         else // key=value pair
         {

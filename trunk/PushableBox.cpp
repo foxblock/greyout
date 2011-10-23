@@ -4,7 +4,7 @@
 #include "Level.h"
 #include "MusicCache.h"
 
-#define PUSHING_SPEED 3.0f
+#define PUSHING_SPEED 1.0f
 
 PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 {
@@ -36,6 +36,10 @@ Vector2df PushableBox::getPixel(const SimpleDirection& dir) const
 {
     switch (dir.value)
     {
+    case diTOPLEFT:
+        return position + Vector2df(1,0);
+    case diTOPRIGHT:
+        return Vector2df(position.x + getWidth() - 2, position.y);
     case diBOTTOMLEFT:
         return Vector2df(position.x+1, position.y + getHeight() - 1);
     case diBOTTOMRIGHT:
@@ -101,13 +105,15 @@ void PushableBox::explode()
     if (parent)
     {
         Vector2df vel(0,0);
+        int time = 0;
         for (int X = 0; X < getWidth(); X+=2)
         {
             for (int Y = 0; Y < getHeight(); Y+=2)
             {
-                vel.x = Random::nextFloat(-10,10);
-                vel.y = Random::nextFloat(-15,-5);
-                parent->addParticle(this,col,position + Vector2df(X,Y),vel,750);
+                vel.x = Random::nextFloat(-5,5);
+                vel.y = Random::nextFloat(-8,-3);
+                time = Random::nextInt(750,1250);
+                parent->addParticle(this,col,position + Vector2df(X,Y),vel,time);
             }
         }
         MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);

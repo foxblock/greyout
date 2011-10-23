@@ -1,7 +1,7 @@
 #include "StateError.h"
 
 #include "Vector2di.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 
 StateError::StateError()
 {
@@ -16,7 +16,7 @@ StateError::StateError()
                     At lest the game did not crash...";
 
     bool fromCache;
-    bg.loadFrames(SURFACE_CACHE->getSurface("images/menu/error_bg_800_480.png",fromCache),1,1,0,0);
+    bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
     bg.disableTransparentColour();
     bg.setPosition(0,0);
 }

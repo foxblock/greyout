@@ -3,8 +3,18 @@
 // TODO: Story
 // TODO: "Connected" level type
 // TODO: More levels, organic levels, more assets (trees, gears)
-// TODO: Unit types (temporary platforms, timed platforms, keys, lasers)
-// TODO: Time-trial mode
+// TODO: Unit types (temporary platforms, (DONE)timed platforms, (DONE)keys, lasers)
+// DONE: Time-trial mode
+// DONE: Change buttons for menu
+// TODO: Show chapter/level names in selection
+// DONE: Set last chapter as active chapter for "Start game"
+// DONE: Randomize particle decay
+// DONE: Switch to 60fps
+// DONE: Fix boxes not falling through gaps (slower push speed)
+// DONE: Fix animations when pushing
+// DONE: Fix not being able to push boxes from the other side of the screen
+// DONE: Fix menu selector speed
+// TODO: Test with notaz' improved SDL
 
 int main(int argc, char** argv)
 {

@@ -11,8 +11,8 @@
 
 // you can do funky x-gravity, but the collision checking would need some tinkering to make it work
 // it currently checks the y-directions last for a reason...
-#define DEFAULT_GRAVITY Vector2df(0,2)
-#define DEFAULT_MAXIMUM Vector2df(16,16) // this should be the size of a tile if that's applicable
+#define DEFAULT_GRAVITY Vector2df(0,1)
+#define DEFAULT_MAXIMUM Vector2df(10,10) // this should be the size of a tile if that's applicable
 
 Physics* Physics::self = 0;
 
@@ -49,19 +49,19 @@ Physics* Physics::GetSingleton()
 void Physics::applyPhysics(BaseUnit* const unit) const
 {
     // Acceleration
-    if (unit->acceleration[0].x > 0)
+    if (unit->acceleration[0].x > 0.0f)
     {
         unit->velocity.x += min(max(unit->acceleration[1].x - unit->velocity.x,0.0f),unit->acceleration[0].x);
     }
-    else if (unit->acceleration[0].x < 0)
+    else if (unit->acceleration[0].x < 0.0f)
     {
         unit->velocity.x += max(min(unit->acceleration[1].x - unit->velocity.x,0.0f),unit->acceleration[0].x);
     }
-    if (unit->acceleration[0].y > 0)
+    if (unit->acceleration[0].y > 0.0f)
     {
         unit->velocity.y += min(max(unit->acceleration[1].y - unit->velocity.y,0.0f),unit->acceleration[0].y);
     }
-    else if (unit->acceleration[0].y < 0)
+    else if (unit->acceleration[0].y < 0.0f)
     {
         unit->velocity.y += max(min(unit->acceleration[1].y - unit->velocity.y,0.0f),unit->acceleration[0].y);
     }

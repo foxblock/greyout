@@ -3,25 +3,26 @@
 #include "userStates.h"
 #include "Colour.h"
 #include "Vector2di.h"
+#include "SurfaceCache.h"
 
 StateTitle::StateTitle()
 {
     nullify = false;
 
     #ifdef _MEOW
-    pandora.loadSprite("images/general/gp2x_logo.png");
+    pandora.loadSprite(SURFACE_CACHE->loadSurface("images/general/gp2x_logo.png"));
     pandora.setPosition(30,70);
     #elif defined(PLATFORM_PANDORA)
-    pandora.loadSprite("images/general/Pandora_logo-unofficial.png");
+    pandora.loadSprite(SURFACE_CACHE->loadSurface("images/general/Pandora_logo-unofficial.png"));
     pandora.setPosition(100,115);
     #else
-    pandora.loadSprite("images/general/Pandora_logo-unofficial.png");
+    pandora.loadSprite(SURFACE_CACHE->loadSurface("images/general/Pandora_logo-unofficial.png"));
     pandora.setPosition(100,115);
     #endif
     pandora.setTransparentColour(MAGENTA);
     pandora.setAlpha(0);
 
-    penjin.loadSprite("images/general/penjinsigok5.png");
+    penjin.loadSprite(SURFACE_CACHE->loadSurface("images/general/penjinsigok5.png"));
     #ifdef _MEOW
     penjin.setPosition(54,80);
     #else

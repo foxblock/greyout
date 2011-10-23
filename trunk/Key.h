@@ -1,5 +1,5 @@
-#ifndef KEY_H
-#define KEY_H
+#ifndef _KEY_H
+#define _KEY_H
 
 #include "BaseUnit.h"
 
@@ -29,5 +29,4 @@ private:
 };
 
 
-#endif // KEY_H
-
+#endif // _KEY_H

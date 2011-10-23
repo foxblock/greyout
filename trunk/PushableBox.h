@@ -19,8 +19,8 @@ class PushableBox : public BaseUnit
         PushableBox(Level* newParent);
         virtual ~PushableBox();
 
-        virtual inline int getHeight() const;
-        virtual inline int getWidth() const;
+        virtual int getHeight() const;
+        virtual int getWidth() const;
         virtual Vector2df getPixel(const SimpleDirection& dir) const;
 
         virtual void updateScreenPosition(const Vector2di& offset);

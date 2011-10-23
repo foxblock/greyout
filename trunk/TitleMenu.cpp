@@ -5,7 +5,7 @@
 #include "NumberUtility.h"
 
 #include "MyGame.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 #include "effects/Hollywood.h"
 #include "MusicCache.h"
 #include "Music.h"
@@ -17,12 +17,12 @@
 #define MENU_OFFSET_X 101
 #define MENU_ITEM_HEIGHT 27
 #define MENU_ITEM_SPACING 0
-#define MARKER_SPEED 5
+#define MARKER_SPEED 3
 #else
 #define MENU_OFFSET_X 173
 #define MENU_ITEM_HEIGHT 61
 #define MENU_ITEM_SPACING 0
-#define MARKER_SPEED 10
+#define MARKER_SPEED 5
 #endif
 
 
@@ -36,18 +36,18 @@ TitleMenu::TitleMenu()
 
     bool fromCache;
     #ifdef _MEOW
-    SDL_Surface* temp = SURFACE_CACHE->getSurface("images/menu/title_320_240.png",fromCache);
+    SDL_Surface* temp = SURFACE_CACHE->loadSurface("images/menu/title_320_240.png");
     #else
-    SDL_Surface* temp = SURFACE_CACHE->getSurface("images/menu/title_800_480.png",fromCache);
+    SDL_Surface* temp = SURFACE_CACHE->loadSurface("images/menu/title_800_480.png");
     #endif
     bg.loadFrames(temp,temp->w / GFX::getXResolution(),temp->h / GFX::getYResolution(),0,0);
     bg.disableTransparentColour();
     bg.setPosition(0,0);
     bg.setFrameRate(THIRTY_FRAMES);
     #ifdef _MEOW
-    marker.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_marker_320_240.png",fromCache),1,1,0,0);
+    marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_marker_320_240.png"),1,1,0,0);
     #else
-    marker.loadFrames(SURFACE_CACHE->getSurface("images/menu/title_marker_800_480.png",fromCache),1,1,0,0);
+    marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_marker_800_480.png"),1,1,0,0);
     #endif
     marker.setX(0);
     setSelection(true);
@@ -103,7 +103,7 @@ void TitleMenu::userInput()
     else if (input->isDown())
         incSelection();
 
-    if (input->isA())
+    if (ACCEPT_KEY)
         doSelection();
 
     input->resetKeys();
@@ -172,7 +172,10 @@ void TitleMenu::doSelection()
     switch (selection)
     {
     case 0:
-        ENGINE->playChapter(DEFAULT_CHAPTER);
+        if (ENGINE->activeChapter[0] != 0)
+            ENGINE->playChapter(ENGINE->activeChapter);
+        else
+            ENGINE->playChapter(DEFAULT_CHAPTER);
         break;
     case 1:
         ENGINE->timeTrial = true;

@@ -8,9 +8,14 @@
 
 #define ENGINE MyGame::getMyGame()
 
-#define DEFAULT_CHAPTER "chapters/default/info.txt"
+#define DEFAULT_CHAPTER "chapters/newDefault/info.txt"
 #define BENCHMARK_LEVEL "data/benchmark.txt"
 #define PLAYGROUND_LEVEL "levels/playground.txt"
+
+#define FRAME_RATE 60
+
+#define ACCEPT_KEY input->isB()
+#define CANCEL_KEY input->isX()
 
 class Level;
 
@@ -42,6 +47,7 @@ class MyGame : public Engine
         uint returnState;
         bool timeTrial; // whether to start a level in time trial mode or normal mode
         uint restartCounter;
+        string activeChapter; // the chapter started when selecting "Start Game" in the main menu
     private:
         // creates a state from a defined set, gets called by MyGame::stateManangement()
         BaseState* createState(CRuint stateID, CRstring parameter="");
