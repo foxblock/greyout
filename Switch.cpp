@@ -1,6 +1,7 @@
 #include "Switch.h"
 
 #include "Level.h"
+#include "ControlUnit.h"
 
 #define SWITCH_TIMEOUT 15
 
@@ -78,7 +79,7 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
     // standing still on the ground
     if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 && entry.overlap.x > 10)
     {
-        if (parent->getInput()->isUp() && switchTimer == 0)
+        if (((ControlUnit*)entry.unit)->takesControl && parent->getInput()->isUp() && switchTimer == 0)
         {
             if (currentState == "off")
             {

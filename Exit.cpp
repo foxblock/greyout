@@ -51,7 +51,9 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
     if (currentState == "open")
     {
         // standing still on the ground
-        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 && entry.overlap.x > 10)
+        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
+            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
+            entry.overlap.x > 10 && entry.overlap.y > 20)
         {
             entry.unit->toBeRemoved = true;
             parent->swapControl();

@@ -44,9 +44,9 @@ public:
     // loads an image file through the surface cache and returns the result
     SDL_Surface* getSurface(CRstring filename, CRbool optimize=false) const;
 
-    virtual inline int getHeight() const;
-    virtual inline int getWidth() const;
-    virtual inline Vector2di getSize() const;
+    virtual int getHeight() const;
+    virtual int getWidth() const;
+    virtual Vector2di getSize() const;
     // returns the coordinate of an edge pixel (edge indicated by passed direction)
     virtual Vector2df getPixel(const SimpleDirection& dir) const;
     void setStartingPosition(const Vector2df& pos);

@@ -90,9 +90,9 @@ void BasePlayer::update()
     {
         if (currentState == "stand")
         {
-            if (velocity.x < 0)
+            if (velocity.x < 0.0f)
                 setSpriteState("runLeft");
-            else if (velocity.x > 0)
+            else if (velocity.x > 0.0f)
                 setSpriteState("runRight");
         }
     }
@@ -104,7 +104,7 @@ void BasePlayer::update()
             {
                 if (fallCounter.hasFinished() || not fallCounter.isStarted())
                 {
-                    if (velocity.y > 3)
+                    if (velocity.y > 3.0f)
                     {
                         if (direction < 0)
                             setSpriteState("fallLeft");
@@ -141,8 +141,13 @@ void BasePlayer::hitMap(const Vector2df& correctionOverride)
 {
     BaseUnit::hitMap(correctionOverride);
 
-    if (correctionOverride.y < 0)
+    if (correctionOverride.y < 0.0f)
         canJump = true;
+    else if (correctionOverride.y > 0.0f)
+    {
+        acceleration[0].y = 0;
+        acceleration[1].y = 0;
+    }
 }
 
 
@@ -154,8 +159,8 @@ void BasePlayer::control(SimpleJoy* input)
         {
             setSpriteState("turnLeft",true);
         }
-        acceleration[0].x = -2;
-        acceleration[1].x = -8;
+        acceleration[0].x = -1;
+        acceleration[1].x = -4;
     }
     else if (input->isRight())
     {
@@ -163,8 +168,8 @@ void BasePlayer::control(SimpleJoy* input)
         {
             setSpriteState("turnRight",true);
         }
-        acceleration[0].x = 2;
-        acceleration[1].x = 8;
+        acceleration[0].x = 1;
+        acceleration[1].x = 4;
     }
     else
     {
@@ -192,9 +197,11 @@ void BasePlayer::control(SimpleJoy* input)
         acceleration[1].y = 0;
         velocity.y = 0;
     }*/
-    if ((input->isA() || input->isX()) && canJump)
+    if ((input->isB() || input->isY()) && canJump)
     {
-        velocity.y = -14;
+        acceleration[0].y = -4;
+        acceleration[1].y = -9;
+        //velocity.y = -10;
         canJump = false;
         if (direction < 0)
             setSpriteState("jumpLeft",true);
@@ -202,6 +209,10 @@ void BasePlayer::control(SimpleJoy* input)
             setSpriteState("jumpRight",true);
         fallCounter.start();
     }
+    if (input->isB())
+        input->resetB();
+    if (input->isY())
+        input->resetY();
 }
 
 ///---private---

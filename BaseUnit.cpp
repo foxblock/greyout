@@ -4,8 +4,9 @@
 #include "Random.h"
 
 #include "Level.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 #include "MusicCache.h"
+#include "MyGame.h"
 
 map<string,int> BaseUnit::stringToFlag;
 map<string,int> BaseUnit::stringToProp;
@@ -134,8 +135,7 @@ void BaseUnit::resetTemporary()
 
 SDL_Surface* BaseUnit::getSurface(CRstring filename, CRbool optimize) const
 {
-    bool fromCache;
-    return SURFACE_CACHE->getSurface(filename,parent->chapterPath,fromCache,optimize);
+    return SURFACE_CACHE->loadSurface(filename,parent->chapterPath,optimize);
 }
 
 int BaseUnit::getHeight() const
@@ -170,17 +170,17 @@ Vector2df BaseUnit::getPixel(const SimpleDirection& dir) const
     case diTOP:
         return Vector2df(position.x + getWidth() / 2.0f, position.y);
     case diBOTTOM:
-        return Vector2df(position.x + getWidth() / 2.0f, position.y + getHeight() - 1);
+        return Vector2df(position.x + getWidth() / 2.0f, position.y + getHeight() - 1.0f);
     case diTOPLEFT:
         return position;
     case diTOPRIGHT:
-        return Vector2df(position.x + getWidth() - 1, position.y);
+        return Vector2df(position.x + getWidth() - 1.0f, position.y);
     case diBOTTOMLEFT:
-        return Vector2df(position.x, position.y + getHeight() - 1);
+        return Vector2df(position.x, position.y + getHeight() - 1.0f);
     case diBOTTOMRIGHT:
         return position + getSize() - Vector2df(1,1);
     default:
-        return position + Vector2df(getWidth() / 2,getHeight() / 2);
+        return position + Vector2df(getWidth() / 2.0f,getHeight() / 2.0f);
     }
 }
 
@@ -209,9 +209,9 @@ void BaseUnit::update()
     else
     {
         move();
-        if (velocity.x > 0)
+        if (velocity.x > 0.0f)
             direction = 1;
-        else if (velocity.x < 0)
+        else if (velocity.x < 0.0f)
             direction = -1;
 
         if (currentSprite)
@@ -284,7 +284,7 @@ AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRbool reset, CRstri
 
 void BaseUnit::hitMap(const Vector2df& correctionOverride)
 {
-    if (correctionOverride.y < 0) // hitting the ground
+    if (correctionOverride.y < 0.0f) // hitting the ground
     {
         position.y += velocity.y + correctionOverride.y;
         velocity.y = 0;
@@ -299,6 +299,9 @@ void BaseUnit::hitMap(const Vector2df& correctionOverride)
 
 bool BaseUnit::checkCollisionColour(const Colour& col) const
 {
+    // NOTE: This effectively always adds the unit's colour to the collision list (done to speed check up)
+    if (col == this->col)
+        return true;
     set<int>::const_iterator iter = collisionColours.find(col.getIntColour());
     if (iter != collisionColours.end())
         return true;
@@ -327,6 +330,7 @@ void BaseUnit::explode()
         Colour none = currentSprite->getTransparentColour();
         Colour pix = MAGENTA;
         Vector2df vel(0,0);
+        int time = 0;
         for (int X = 0; X < currentSprite->getWidth(); X+=2)
         {
             for (int Y = 0; Y < currentSprite->getHeight(); Y+=2)
@@ -334,9 +338,10 @@ void BaseUnit::explode()
                 pix = currentSprite->getPixel(X,Y);
                 if (pix != none)
                 {
-                    vel.x = Random::nextFloat(-10,10);
-                    vel.y = Random::nextFloat(-15,-5);
-                    parent->addParticle(this,pix,position + Vector2df(X,Y),vel,1000);
+                    vel.x = Random::nextFloat(-5,5);
+                    vel.y = Random::nextFloat(-8,-3);
+                    time = Random::nextInt(750,1250);
+                    parent->addParticle(this,pix,position + Vector2df(X,Y),vel,time);
                 }
             }
         }
@@ -482,9 +487,10 @@ bool BaseUnit::processOrder(Order& next)
     vector<string> tokens;
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
     int ticks = 1;
+    // This is kinda fucked up, because of the frame based movement
     if (tokens.size() > 0)
     {
-        ticks = float(StringUtility::stringToInt(tokens.front())) / 30.0f;
+        ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
     }
 
     switch (next.key)

@@ -20,7 +20,6 @@ CollisionObject::~CollisionObject()
 void CollisionObject::clear()
 {
     pixels.clear();
-    correction = Vector2df(0.0f,0.0f);
     positionCorrection = Vector2df(0.0f,0.0f);
     units.clear();
 }

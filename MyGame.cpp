@@ -1,7 +1,7 @@
 #include "MyGame.h"
 
 #include "userStateList.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 #include "MusicCache.h"
 #include "LevelLoader.h"
 #include "Savegame.h"
@@ -30,6 +30,7 @@ MyGame::~MyGame()
     SAVEGAME->writeData("restarts",StringUtility::intToString(restartCounter));
     SAVEGAME->writeData("musicvolume",StringUtility::intToString(MUSIC_CACHE->getMusicVolume()),true);
     SAVEGAME->writeData("soundvolume",StringUtility::intToString(MUSIC_CACHE->getSoundVolume()),true);
+    SAVEGAME->writeData("activechapter",activeChapter,true);
     SAVEGAME->save();
     SURFACE_CACHE->clear();
     MUSIC_CACHE->clear();
@@ -54,13 +55,14 @@ PENJIN_ERRORS MyGame::init()
     GFX::setResolution(800,480);
     #endif
     GFX::resetScreen();
-    setFrameRate(30);
+    setFrameRate(FRAME_RATE);
     SAVEGAME->setFile(SAVE_FILE);
     if (SAVEGAME->hasData("musicvolume"))
         MUSIC_CACHE->setMusicVolume(StringUtility::stringToInt(SAVEGAME->getData("musicvolume")));
     if (SAVEGAME->hasData("soundvolume"))
         MUSIC_CACHE->setSoundVolume(StringUtility::stringToInt(SAVEGAME->getData("soundvolume")));
     restartCounter = StringUtility::stringToInt(SAVEGAME->getData("restarts"));
+    activeChapter = SAVEGAME->getData("activechapter");
     return PENJIN_OK;
 }
 
@@ -206,6 +208,8 @@ void MyGame::playChapter(CRstring filename, CRint startLevel)
             stateParameter = currentChapter->getLevelFilename(startLevel-1);
         if (currentChapter->dialogueFile[0] != 0)
             DIALOGUE->loadFromFile(currentChapter->path + currentChapter->dialogueFile);
+
+        activeChapter = filename;
 
         state->setNextState(STATE_NEXT);
     }

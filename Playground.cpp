@@ -41,7 +41,7 @@ void Playground::userInput()
     if (input->isY())
     {
         // spwan a black box
-        list<pair<string,string> > params;
+        list<PARAMETER_TYPE > params;
         Vector2df pos = drawOffset + input->getMouse() - Vector2df(16,16);
         params.push_back(make_pair("class","pushablebox"));
         params.push_back(make_pair("collision","0,255"));
@@ -55,7 +55,7 @@ void Playground::userInput()
     if (input->isX())
     {
         // spwan a white box
-        list<pair<string,string> > params;
+        list<PARAMETER_TYPE > params;
         Vector2df pos = drawOffset + input->getMouse() - Vector2df(16,16);
         params.push_back(make_pair("class","pushablebox"));
         params.push_back(make_pair("collision","white,255"));

@@ -1,44 +1,51 @@
 #include "Benchmark.h"
 
-#define BECHMARK_DURATION 10000
 #define GRAPH_UPDATE 1000
 
 #define LEFT_REGION SDL_Rect left = {50,50,250,200}
 #define RIGHT_REGION SDL_Rect right = {500,50,250,200}
+
+#include <limits.h>
 
 #include "BaseUnit.h"
 #include "ControlUnit.h"
 #include "LevelLoader.h"
 #include "MyGame.h"
 
-#include "StringUtility.h"
-
-using namespace StringUtility;
 
 Benchmark::Benchmark() : Level()
 {
-    ENGINE->setFrameRate(1000);
+    phases[0] = 0;
+    phases[1] = 10000;
+    phases[2] = 20000;
+    currentPhase = 0;
+    secondIndex.push_back(0);
+    #ifndef _DEBUG
+    fpsCount = 0;
+    #endif
 }
 
 Benchmark::~Benchmark()
 {
     fpsData.clear();
-    secondData.clear();
-    secondAverage.clear();
-    ENGINE->setFrameRate(30);
+    secondIndex.clear();
+    ENGINE->setFrameRate(FRAME_RATE);
 }
 
 void Benchmark::init()
 {
+    ENGINE->setFrameRate(1000);
     second.init(GRAPH_UPDATE,MILLI_SECONDS,this,Benchmark::secondCallback);
     second.setRewind(REWIND);
     second.start();
-    counter.init(BECHMARK_DURATION,MILLI_SECONDS,this,Benchmark::timerCallback);
-    counter.setRewind(REWIND);
+    counter.init(phases[currentPhase+1]-phases[currentPhase],MILLI_SECONDS,this,Benchmark::timerCallback);
+    counter.setRewind(STOP);
     counter.start();
 
     winCounter = 1;
     SDL_BlitSurface(levelImage,NULL,collisionLayer,NULL);
+    boxCount = 0;
+    particleCount = 0;
 }
 
 void Benchmark::userInput()
@@ -52,7 +59,7 @@ void Benchmark::userInput()
 #endif
     if (input->isStart())
     {
-        nullifyState();
+        setNextState(STATE_MAIN);
         return;
     }
 }
@@ -61,12 +68,11 @@ void Benchmark::update()
 {
     Level::update();
     #ifdef _DEBUG
-    int value = MyGame::getMyGame()->getFPS();
-    #else
-    int value = 0;
-    #endif
+    float value = MyGame::getMyGame()->getFPS();
     fpsData.push_back(value);
-    secondData.push_back(value);
+    #else
+    ++fpsCount;
+    #endif
     second.update();
     counter.update();
 }
@@ -78,11 +84,11 @@ void Benchmark::pauseUpdate()
 
 void Benchmark::generateFPSData()
 {
-    int minFPS = 2147483647;
-    int maxFPS = 0;
+    float minFPS = INT_MAX;
+    float maxFPS = 0;
     double averageFPS = 0;
 
-    for (vector<int>::iterator I = fpsData.begin(); I < fpsData.end(); ++I)
+    for (vector<float>::iterator I = fpsData.begin(); I < fpsData.end(); ++I)
     {
         minFPS = min((*I),minFPS);
         maxFPS = max((*I),maxFPS);
@@ -92,37 +98,67 @@ void Benchmark::generateFPSData()
 
     cout << "----------" << endl;
     cout << "Benchmark results:" << endl;
+    #ifdef _DEBUG
+    cout << "Using interpolated fps data in DEBUG mode." << endl;
+    #else
+    cout << "Using frame count data in RELEASE mode." << endl;
+    #endif
     cout << "----------" << endl;
-    cout << "Duration (ms): " << intToString(counter.getLimit()) << endl;
-    cout << "Graph update (ms): " << intToString(second.getLimit()) << endl;
-    cout << "FPS (min): " << intToString(minFPS) << endl;
-    cout << "FPS (max): " << intToString(maxFPS) << endl;
-    cout << "FPS (avg): " << doubleToString(averageFPS) << endl;
+    cout << "Duration (ms): " << phases[sizeof(phases)/sizeof(phases[0])-1] << endl;
+    cout << "Graph update (ms): " << second.getLimit() << endl;
+    cout << "FPS (min): " << minFPS << endl;
+    cout << "FPS (max): " << maxFPS << endl;
+    cout << "FPS (avg): " << averageFPS << endl;
     cout << "FPS Graph:";
-    for (vector<float>::iterator I = secondAverage.begin(); I < secondAverage.end(); ++I)
-        cout << " " << floatToString(*I);
+    for (int I = 0; I < secondIndex.size()-1; ++I)
+    {
+        averageFPS = 0;
+        for (int K = secondIndex.at(I); K < secondIndex.at(I+1); ++K)
+            averageFPS += fpsData.at(K);
+        averageFPS /= secondIndex.at(I+1) - secondIndex.at(I);
+        cout << " " << averageFPS;
+    }
     cout << endl;
-    cout << "Update cycles (#): " << intToString(fpsData.size()) << endl;
-    cout << "Boxes created (#): " << intToString(units.size()) << endl;
+    #ifdef _DEBUG
+    cout << "Update cycles (#): " << fpsData.size() << endl;
+    #else
+    fpsCount = 0;
+    for (int I = 0; I < fpsData.size(); ++I)
+        fpsCount += fpsData.at(I);
+    cout << "Update cycles (#): " << fpsCount << endl;
+    #endif
+    cout << "Boxes total (#): " << boxCount << endl;
+    cout << "Particles total (#): " << particleCount << endl;
     cout << "----------" << endl;
     cout << "Benchmark finished successfully!" << endl;
 }
 
 void Benchmark::secondUpdate()
 {
-    // calculate the average fps for this second
-    float average = 0;
-    for (vector<int>::iterator I = secondData.begin(); I < secondData.end(); ++I)
-    {
-        average += (*I);
-    }
-    average /= secondData.size();
-    secondAverage.push_back(average);
-    secondData.clear();
+    #ifndef _DEBUG
+    fpsData.push_back(fpsCount);
+    fpsCount = 0;
+    #endif
+    secondIndex.push_back(fpsData.size());
 
+    switch (currentPhase)
+    {
+    case 0:
+        spawnBox();
+        break;
+    case 1:
+        explodeBox();
+        break;
+    default:
+        break;
+    }
+}
+
+void Benchmark::spawnBox()
+{
     // spawn some boxes
     LEFT_REGION;
-    list<pair<string,string> > params;
+    list<PARAMETER_TYPE > params;
     params.push_back(make_pair("class","pushablebox"));
     params.push_back(make_pair("collision","0"));
     params.push_back(make_pair("size","24,24"));
@@ -132,26 +168,60 @@ void Benchmark::secondUpdate()
     box->position.x = rand() % (left.w) + left.x;
     box->position.y = rand() % (left.h / 2) + left.y;
     units.push_back(box);
+    boxCount++;
     box = LEVEL_LOADER->createUnit(params,this);
     box->position.x = rand() % (left.w) + left.x;
     box->position.y = rand() % (left.h / 2) + left.y + (left.h / 2);
     units.push_back(box);
+    boxCount++;
+
     RIGHT_REGION;
     box = LEVEL_LOADER->createUnit(params,this);
     box->position.x = rand() % (right.w) + right.x;
     box->position.y = rand() % (right.h / 2) + right.y;
     units.push_back(box);
+    boxCount++;
     box = LEVEL_LOADER->createUnit(params,this);
     box->position.x = rand() % (right.w) + right.x;
     box->position.y = rand() % (right.h / 2) + right.y + (right.h / 2);
     units.push_back(box);
+    boxCount++;
+}
+
+void Benchmark::explodeBox()
+{
+    int I = 0;
+    for (int K = 0; K < min((int)units.size(),4); ++K)
+    {
+        int temp = effects.size();
+        do
+        {
+            I = rand() % units.size();
+        }
+        while (units[I]->toBeRemoved);
+        units[I]->explode();
+        particleCount += effects.size() - temp;
+    }
 }
 
 void Benchmark::timerCallback(void* object)
 {
     Benchmark* self = (Benchmark*) object;
-    self->generateFPSData();
-    self->setNextState(STATE_MAIN);
+    if (self->secondIndex.size() <= self->phases[self->currentPhase] / GRAPH_UPDATE)
+    {
+        self->secondUpdate();
+        self->second.start(GRAPH_UPDATE);
+    }
+    self->currentPhase++;
+    if (self->currentPhase >= sizeof(self->phases) / sizeof(self->phases[0]))
+    {
+        self->generateFPSData();
+        self->setNextState(STATE_MAIN);
+    }
+    else
+    {
+        self->counter.start(self->phases[self->currentPhase+1] - self->phases[self->currentPhase]);
+    }
 }
 
 void Benchmark::secondCallback(void* object)

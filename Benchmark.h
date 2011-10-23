@@ -19,12 +19,20 @@ class Benchmark : public Level
     protected:
         virtual void generateFPSData();
         virtual void secondUpdate();
+        virtual void spawnBox();
+        virtual void explodeBox();
 
-        vector<int> fpsData;
-        vector<int> secondData;
-        vector<float> secondAverage;
+        vector<float> fpsData;
+        vector<int> secondIndex;
         CountDown counter;
         CountDown second;
+        int phases[3];
+        int currentPhase;
+        int boxCount;
+        int particleCount;
+        #ifndef _DEBUG
+        int fpsCount;
+        #endif
     private:
         static void timerCallback(void* object);
         static void secondCallback(void* object);

@@ -8,7 +8,7 @@
 #include "Physics.h"
 #include "MyGame.h"
 #include "userStates.h"
-#include "SurfaceCache.h"
+#include "GreySurfaceCache.h"
 #include "effects/Hollywood.h"
 #include "MusicCache.h"
 #include "Dialogue.h"
@@ -112,7 +112,7 @@ Level::Level()
 
     if (ENGINE->timeTrial)
     {
-        timeTrialText.loadFont("fonts/Lato-Bold.ttf",NAME_TEXT_SIZE * 1.5);
+        timeTrialText.loadFont("fonts/Lato-Bold.ttf",int(NAME_TEXT_SIZE * 1.5));
         timeTrialText.setColour(WHITE);
         timeTrialText.setAlignment(RIGHT_JUSTIFIED);
         timeTrialText.setUpBoundary(Vector2di(GFX::getXResolution()-PAUSE_MENU_OFFSET_X,GFX::getYResolution()-10));
@@ -279,7 +279,7 @@ void Level::userInput()
         pauseToggle();
         return;
     }
-    if (input->isB() && input->isY())
+    if (input->isA() && input->isX())
     {
         for (vector<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
         {
@@ -290,7 +290,8 @@ void Level::userInput()
     }
 
 
-    if ((input->isL() || input->isR()) && not flags.hasFlag(lfDisableSwap))
+    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick())
+        && not flags.hasFlag(lfDisableSwap))
     {
         if (players.size() > 1)
         {
@@ -298,6 +299,7 @@ void Level::userInput()
         }
         input->resetL();
         input->resetR();
+        input->resetMouseButtons();
     }
 
     for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -305,8 +307,6 @@ void Level::userInput()
         if ((*curr)->takesControl)
             (*curr)->control(input);
     }
-    input->resetA();
-    input->resetX();
 }
 
 void Level::update()
@@ -761,7 +761,7 @@ void Level::pauseInput()
             ++pauseSelection;
             input->resetDown();
         }
-        if (input->isA() || input->isX())
+        if (ACCEPT_KEY)
         {
             switch (pauseSelection)
             {
@@ -829,7 +829,7 @@ void Level::pauseInput()
             }
         }
 
-        if (input->isA() || input->isX())
+        if (ACCEPT_KEY)
         {
             switch (pauseSelection)
             {
@@ -1180,8 +1180,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
     {
     case lpImage:
     {
-        bool fromCache;
-        levelImage = SURFACE_CACHE->getSurface(value.second,chapterPath,fromCache);
+        levelImage = SURFACE_CACHE->loadSurface(value.second,chapterPath);
         if (levelImage)
         {
             if (levelImage->w < GFX::getXResolution())
@@ -1243,7 +1242,12 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
     case lpMusic:
     {
         if (ENGINE->currentState != STATE_LEVELSELECT)
-            MUSIC_CACHE->playMusic(value.second,chapterPath);
+        {
+            if (value.second == "none")
+                MUSIC_CACHE->stopMusic();
+            else
+                MUSIC_CACHE->playMusic(value.second,chapterPath);
+        }
         break;
     }
     case lpDialogue:
