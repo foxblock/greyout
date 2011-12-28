@@ -18,6 +18,8 @@ class Camera
         Camera();
         virtual ~Camera();
 
+        virtual void update();
+
         // If time is set to 0 the move will be instant
         virtual void centerOnUnit(const BaseUnit* const unit, CRint time=0);
         virtual void centerOnPos(const Vector2df& pos, CRint time=0);
@@ -27,7 +29,7 @@ class Camera
         // the "camera" so space outside the level is never shown
         bool disregardBoundaries;
     protected:
-
+        Vector2df speed;
     private:
 
 };

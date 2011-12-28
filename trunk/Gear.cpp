@@ -5,6 +5,8 @@ Gear::Gear(Level* newParent) : BaseUnit(newParent)
     stringToProp["speed"] = gpSpeed;
     stringToProp["rotation"] = gpRotation;
 
+    stringToOrder["rotation"] = goRotation;
+
     speed = 1;
     angle = 0;
     screenPosition = Vector2df(0,0);
@@ -53,7 +55,8 @@ int Gear::getWidth() const
 void Gear::update()
 {
     angle += speed;
-    angle = (int)angle % 360 + angle - (int)angle;
+    if (abs(angle) > 360)
+        angle = (int)angle % 360 + angle - (int)angle;
     img.setRotation(angle);
     BaseUnit::update();
 }
@@ -93,6 +96,55 @@ bool Gear::processParameter(const PARAMETER_TYPE& value)
         parsed = false;
     }
 
+    return parsed;
+}
+
+bool Gear::processOrder(Order& next)
+{
+    bool parsed = true;
+
+    vector<string> tokens;
+    StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
+    int ticks = 1;
+    // This is kinda fucked up, because of the frame based movement
+    if (tokens.size() > 0)
+    {
+        ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
+    }
+
+    switch (next.key)
+    {
+    case okIdle:
+    {
+        velocity = Vector2df(0,0);
+        acceleration[0] = Vector2df(0,0);
+        acceleration[1] = Vector2df(0,0);
+        speed = 0;
+        break;
+    }
+    case goRotation:
+    {
+        if (tokens.size() < 2)
+        {
+            cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
+            orderList.erase(orderList.begin() + currentOrder);
+            orderTimer = 1; // process next order in next cycle
+            return false;
+        }
+        speed = (StringUtility::stringToFloat(tokens[1]) - angle) / ticks;
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    if (parsed == false)
+        return BaseUnit::processOrder(next);
+    else
+    {
+        orderTimer = ticks;
+        orderRunning = true;
+    }
     return parsed;
 }
 

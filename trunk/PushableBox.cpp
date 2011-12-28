@@ -11,8 +11,13 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
     rect.w = 32;
     rect.h = 32;
     col = BLACK;
+    sizeTimer.x = 0;
+    sizeTimer.y = 0;
+    startingSize.x = rect.w;
+    startingSize.y = rect.h;
 
     stringToProp["size"] = bpSize;
+    stringToOrder["size"] = boSize;
 }
 
 PushableBox::~PushableBox()
@@ -21,6 +26,13 @@ PushableBox::~PushableBox()
 }
 
 /// ---public---
+
+void PushableBox::reset()
+{
+    rect.w = startingSize.x;
+    rect.h = startingSize.y;
+    BaseUnit::reset();
+}
 
 int PushableBox::getHeight() const
 {
@@ -148,6 +160,81 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
         }
         rect.w = StringUtility::stringToInt(token.at(0));
         rect.h = StringUtility::stringToInt(token.at(1));
+        startingSize.x = rect.w;
+        startingSize.y = rect.h;
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
+}
+
+bool PushableBox::processOrder(Order& next)
+{
+    bool parsed = true;
+
+    vector<string> tokens;
+    StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
+    int ticks = 1;
+    // This is kinda fucked up, because of the frame based movement
+    if (tokens.size() > 0)
+    {
+        ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
+    }
+
+    switch (next.key)
+    {
+    case boSize:
+    {
+        if (tokens.size() < 3)
+        {
+            cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
+            orderList.erase(orderList.begin() + currentOrder);
+            orderTimer = 1; // process next order in next cycle
+            return false;
+        }
+        Vector2di destSize;
+        destSize.x = StringUtility::stringToInt(tokens[1]);
+        destSize.y = StringUtility::stringToInt(tokens[2]);
+        if (destSize.x != rect.w)
+            sizeTimer.x = ticks / (destSize.x - rect.w);
+        if (destSize.y != rect.h)
+            sizeTimer.y = ticks / (destSize.y - rect.h);
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    if (parsed == false)
+        return BaseUnit::processOrder(next);
+    else
+    {
+        orderTimer = ticks;
+        orderRunning = true;
+    }
+    return parsed;
+}
+
+bool PushableBox::updateOrder(const Order& curr)
+{
+    if (BaseUnit::updateOrder(curr))
+        return true;
+
+    bool parsed = true;
+
+    switch (curr.key)
+    {
+    case boSize:
+    {
+        if (sizeTimer.x != 0 && orderTimer % abs(sizeTimer.x) == 0)
+        {
+            rect.w += NumberUtility::sign(sizeTimer.x);
+        }
+        if (sizeTimer.y != 0 && orderTimer % abs(sizeTimer.y) == 0)
+            rect.h += NumberUtility::sign(sizeTimer.y);
         break;
     }
     default:

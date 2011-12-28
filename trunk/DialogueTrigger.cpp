@@ -1,22 +1,15 @@
 #include "DialogueTrigger.h"
 
 #include "Dialogue.h"
-#include "StringUtility.h"
 
-DialogueTrigger::DialogueTrigger(Level* newParent) : BaseUnit(newParent)
+DialogueTrigger::DialogueTrigger(Level* newParent) : BaseTrigger(newParent)
 {
     stringToProp["textkey"] = tpTextKey;
-    stringToProp["size"] = tpSize;
     stringToProp["time"] = tpTime;
-    width = 32;
-    height = 32;
     textKey = "";
     time = 1000;
     triggered = false;
-    collisionColours.insert(Colour(BLACK).getIntColour());
-    collisionColours.insert(Colour(WHITE).getIntColour());
-    flags.addFlag(ufNoMapCollision);
-    flags.addFlag(ufNoGravity);
+    triggerCol = LIGHT_GREEN;
 }
 
 DialogueTrigger::~DialogueTrigger()
@@ -26,25 +19,6 @@ DialogueTrigger::~DialogueTrigger()
 
 ///---public---
 
-void DialogueTrigger::render(SDL_Surface* surf)
-{
-    // don't render anything
-}
-
-bool DialogueTrigger::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
-}
-
-void DialogueTrigger::hitUnit(const UnitCollisionEntry& entry)
-{
-    if (entry.unit->isPlayer && not triggered)
-    {
-        DIALOGUE->queueLine(textKey,this,time);
-        triggered = true;
-    }
-}
-
 ///---protected---
 
 bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
@@ -53,19 +27,6 @@ bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 
     switch (stringToProp[value.first])
     {
-    case tpSize:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        width = StringUtility::stringToInt(token.at(0));
-        height = StringUtility::stringToInt(token.at(1));
-        break;
-    }
     case tpTextKey:
     {
         textKey = value.second;
@@ -81,9 +42,18 @@ bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
     }
 
     if (not parsed)
-        return BaseUnit::processParameter(value);
+        return BaseTrigger::processParameter(value);
 
     return parsed;
+}
+
+void DialogueTrigger::doTrigger(const UnitCollisionEntry& entry)
+{
+    if (not triggered)
+    {
+        DIALOGUE->queueLine(textKey,this,time);
+        triggered = true;
+    }
 }
 
 ///---private---

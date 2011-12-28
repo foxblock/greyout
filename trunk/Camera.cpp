@@ -5,10 +5,13 @@
 #include "BaseUnit.h"
 #include "Level.h"
 
+#define MOVEMENT_VIEW_FACTOR 10.0f
+
 Camera::Camera()
 {
     parent = NULL;
     disregardBoundaries = false;
+    speed = Vector2df(0,0);
 }
 
 Camera::~Camera()
@@ -16,15 +19,19 @@ Camera::~Camera()
     //
 }
 
-// TODO: Implement time
 // TODO: Maybe implement non-moving area in which the player can move without the camera moving
+
+void Camera::update()
+{
+    parent->drawOffset += speed;
+}
 
 void Camera::centerOnUnit(const BaseUnit* const unit, CRint time)
 {
     if (not parent || not unit)
         return;
 
-    centerOnPos(unit->getPixel(diMIDDLE),time);
+    centerOnPos(unit->getPixel(diMIDDLE) + unit->velocity * MOVEMENT_VIEW_FACTOR,time);
 }
 
 void Camera::centerOnPos(const Vector2df& pos, CRint time)
@@ -50,6 +57,8 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
             result.y += max(-result.y,0.0f); // top
         }
     }
-
-    parent->drawOffset = result;
+    if (time == 0)
+        parent->drawOffset = result;
+    else
+        speed = (result - parent->drawOffset) / (float)time / (float)FRAME_RATE * 1000.0f;
 }

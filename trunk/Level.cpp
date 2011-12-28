@@ -75,6 +75,7 @@ Level::Level()
     stringToProp["name"] = lpName;
     stringToProp["music"] = lpMusic;
     stringToProp["dialogue"] = lpDialogue;
+    stringToProp["gravity"] = lpGravity;
 
     levelImage = NULL;
     collisionLayer = NULL;
@@ -84,6 +85,7 @@ Level::Level()
     drawOffset = Vector2df(0,0);
     startingOffset = drawOffset;
     idCounter = 0;
+    PHYSICS->gravity = DEFAULT_GRAVITY;
 
     eventTimer.init(1000,MILLI_SECONDS);
     eventTimer.setRewind(STOP_AND_REWIND);
@@ -307,6 +309,8 @@ void Level::userInput()
         if ((*curr)->takesControl)
             (*curr)->control(input);
     }
+    input->resetB();
+    input->resetY();
 }
 
 void Level::update()
@@ -438,7 +442,7 @@ void Level::update()
 
     // other update stuff
     if (flags.hasFlag(lfKeepCentred))
-        cam.centerOnUnit(getFirstActivePlayer());
+        cam.centerOnUnit(getFirstActivePlayer(),500);
     eventTimer.update();
     DIALOGUE->update();
 
@@ -448,6 +452,8 @@ void Level::update()
     }
 
     EFFECTS->update();
+
+    cam.update();
 }
 
 void Level::render()
@@ -1254,6 +1260,26 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
     {
         if (ENGINE->currentState != STATE_LEVELSELECT)
             DIALOGUE->loadFromFile(chapterPath + value.second);
+        break;
+    }
+    case lpGravity:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        PHYSICS->gravity = Vector2df(0,0);
+        switch (token.size())
+        {
+        case 1:
+            PHYSICS->gravity.x = StringUtility::stringToFloat(token[0]);
+            break;
+        case 2:
+            PHYSICS->gravity.x = StringUtility::stringToFloat(token[0]);
+            PHYSICS->gravity.y = StringUtility::stringToFloat(token[1]);
+            break;
+        default:
+            parsed = false;
+            break;
+        }
         break;
     }
     default:

@@ -6,16 +6,13 @@
 #include "Text.h"
 #include "Chapter.h"
 
+#include "gameDefines.h"
+
 #define ENGINE MyGame::getMyGame()
 
 #define DEFAULT_CHAPTER "chapters/newDefault/info.txt"
 #define BENCHMARK_LEVEL "data/benchmark.txt"
 #define PLAYGROUND_LEVEL "levels/playground.txt"
-
-#define FRAME_RATE 60
-
-#define ACCEPT_KEY input->isB()
-#define CANCEL_KEY input->isX()
 
 class Level;
 

@@ -19,12 +19,18 @@ public:
     virtual void render(SDL_Surface* surf);
 protected:
     virtual bool processParameter(const PARAMETER_TYPE& value);
+    virtual bool processOrder(Order& next);
 
-    enum BoxProp
+    enum GearProp
     {
         gpSpeed=BaseUnit::upEOL,
         gpRotation,
         gpEOL
+    };
+    enum GearOder
+    {
+        goRotation=BaseUnit::okEOL,
+        goEOL
     };
 
     float speed;

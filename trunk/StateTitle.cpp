@@ -128,9 +128,9 @@ void StateTitle::render()
     else if (state == 3)
     {
         #ifdef _MEOW
-        text.setPosition(0,40);
+        text.setPosition(0,30);
         #else
-        text.setPosition(0,150);
+        text.setPosition(0,130);
         #endif
         text.print("A game by");
         text.print("\n\n");
@@ -139,6 +139,19 @@ void StateTitle::render()
         text.print("foxblock@gmail.com");
     }
     else if (state == 4)
+    {
+        #ifdef _MEOW
+        text.setPosition(0,30);
+        #else
+        text.setPosition(0,130);
+        #endif
+        text.print("Music by");
+        text.print("\n\n");
+        text.print("Nick May");
+        text.print("\n");
+        text.print("www.nickmaymusic.co.uk");
+    }
+    else if (state == 5)
     {
         if (once)
         {
@@ -171,34 +184,6 @@ void StateTitle::render()
         text.print("\n\n");
         text.print("Super Mario, Braid, VVVVVV, Portal, NIDHOGG");
     }
-
-    else if (state == 5)
-    {
-        #ifdef _MEOW
-        text.setPosition(0,10);
-        #else
-        text.setPosition(0,20);
-        #endif
-        text.print("Music:");
-        text.print("\n\n");
-        text.print("Return to Lavender Town [Menu]");
-        text.print("\n");
-        text.print("by Alex Baker (picklesandwichh)");
-        text.print("\n\n");
-        text.print("Quietly [Alone]");
-        text.print("\n");
-        text.print("by Thomas L (Computer112)");
-        text.print("\n\n");
-        text.print("Amber Waves of Grain [Separate]");
-        text.print("\n");
-        text.print("by Lenard Kritzer (Pocketpod)");
-        text.print("\n\n");
-        text.print("The Color's Gray [Together]");
-        text.print("\n");
-        text.print("by Ailad");
-        text.print("\n\n");
-        text.print("All from the Newgrounds.com Audio portal");
-    }
     else if (state == 6)
     {
         #ifdef _MEOW
@@ -214,7 +199,9 @@ void StateTitle::render()
         text.print("\n\n\n");
         text.print("Thanks:");
         text.print("\n\n");
-        text.print("CME, EvilDragon, Ivanovic, milkshake, Ziz");
+        text.print("B-Zar, CME, cosurgi, EvilDragon");
+        text.print("\n");
+        text.print("Esn, Ivanovic, milkshake, Ziz");
     }
 }
 
@@ -224,7 +211,7 @@ void StateTitle::update()
 
     if (ticks > 100)
     {
-        if (ticks <= (100 + 255)) // fade in (pandora)
+        if (ticks <= (100 + 255)) // Pandora logo
         {
             int value = ticks - 100;
             pandora.setAlpha(value);
@@ -237,7 +224,7 @@ void StateTitle::update()
             pandora.setAlpha(value);
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 1000 && ticks < (1000 + 255)) // fade in (penjin)
+        else if (ticks > 1000 && ticks < (1000 + 255)) // Penjin logo
         {
             int value = ticks - 1000;
             penjin.setAlpha(value);
@@ -250,7 +237,7 @@ void StateTitle::update()
             penjin.setAlpha(value);
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 1900 && ticks <= (1900 + 255))
+        else if (ticks > 1900 && ticks <= (1900 + 255)) // A game by
         {
             int value = ticks - 1900;
             text.setColour(Colour(value,value,value));
@@ -261,40 +248,40 @@ void StateTitle::update()
             int value = 2400 + 255 - ticks;
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 2800 && ticks <= (2800 + 255))
+        else if (ticks > 2800 && ticks <= (2800 + 255)) // Music
         {
             int value = ticks - 2800;
             text.setColour(Colour(value,value,value));
             state = 4;
         }
-        else if (ticks > 3800 && ticks <= (3800 + 255))
+        else if (ticks > 3300 && ticks <= (3300 + 255))
         {
-            int value = 3800 + 255 - ticks;
+            int value = 3300 + 255 - ticks;
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 4100 && ticks <= (4100 + 255))
+        else if (ticks > 3600 && ticks <= (3600 + 255)) // Inspiration
         {
-            int value = ticks - 4100;
+            int value = ticks - 3600;
             text.setColour(Colour(value,value,value));
             state = 5;
         }
-        else if (ticks > 5500 && ticks <= (5500 + 255))
+        else if (ticks > 5000 && ticks <= (5000 + 255))
         {
-            int value = 5500 + 255 - ticks;
+            int value = 5000 + 255 - ticks;
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 5800 && ticks <= (5800 + 255))
+        else if (ticks > 5300 && ticks <= (5300 + 255)) // Sounds
         {
-            int value = ticks - 5800;
+            int value = ticks - 5300;
             text.setColour(Colour(value,value,value));
             state = 6;
         }
-        else if (ticks > 6800 && ticks <= (6800 + 255))
+        else if (ticks > 6300 && ticks <= (6300 + 255))
         {
-            int value = 6800 + 255 - ticks;
+            int value = 6300 + 255 - ticks;
             text.setColour(Colour(value,value,value));
         }
-        else if (ticks > 7100)
+        else if (ticks > 6500)
             setNextState(STATE_MAIN);
     }
 }

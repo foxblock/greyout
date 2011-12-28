@@ -67,7 +67,7 @@ void Playground::userInput()
 
         input->resetX();
     }
-    if (input->isB())
+    if (input->isA())
     {
         for (vector<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
         {
