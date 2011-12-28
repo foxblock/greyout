@@ -9,11 +9,6 @@
 #include "BaseUnit.h"
 #include "Level.h"
 
-// you can do funky x-gravity, but the collision checking would need some tinkering to make it work
-// it currently checks the y-directions last for a reason...
-#define DEFAULT_GRAVITY Vector2df(0,1)
-#define DEFAULT_MAXIMUM Vector2df(10,10) // this should be the size of a tile if that's applicable
-
 Physics* Physics::self = 0;
 
 Physics::Physics()
@@ -102,6 +97,7 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
 {
     /// TODO: Implement step-size and check diBOTTOMLEFT and -RIGHT in x-direction, too
     /// compare to y-correction values and step-size
+    /// TODO: Take the unit's velocity into account when returning correction value, so sub-pixel movements get corrected properly
 
     vector<MapCollisionEntry> collisionDir;
     Vector2df correction(0,0);

@@ -209,10 +209,6 @@ void BasePlayer::control(SimpleJoy* input)
             setSpriteState("jumpRight",true);
         fallCounter.start();
     }
-    if (input->isB())
-        input->resetB();
-    if (input->isY())
-        input->resetY();
 }
 
 ///---private---

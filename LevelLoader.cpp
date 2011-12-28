@@ -27,6 +27,8 @@
 #include "Gear.h"
 #include "Switch.h"
 #include "Key.h"
+#include "ExitTrigger.h"
+#include "SoundTrigger.h"
 
 using namespace std;
 
@@ -63,7 +65,9 @@ enum UnitIdent
     ucDialogueTrigger,
     ucGear,
     ucSwitch,
-    ucKey
+    ucKey,
+    ucExitTrigger,
+    ucSoundTrigger
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -94,6 +98,8 @@ void createIdentMaps()
     unitClasses["gear"] = ucGear;
     unitClasses["switch"] = ucSwitch;
     unitClasses["key"] = ucKey;
+    unitClasses["exittrigger"] = ucExitTrigger;
+    unitClasses["soundtrigger"] = ucSoundTrigger;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -156,7 +162,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         {
             // comment line - disregard
         }
-        if (line.substr(0,FIELD_STRING.length()) == FIELD_STRING) // new field
+        else if (line.substr(0,FIELD_STRING.length()) == FIELD_STRING) // new field
         {
             // strip brackets
             nextField = line.substr(1,line.length()-2);
@@ -451,6 +457,16 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
     case ucKey:
     {
         result = new Key(parent);
+        break;
+    }
+    case ucExitTrigger:
+    {
+        result = new ExitTrigger(parent);
+        break;
+    }
+    case ucSoundTrigger:
+    {
+        result = new SoundTrigger(parent);
         break;
     }
     default:

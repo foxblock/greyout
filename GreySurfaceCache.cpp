@@ -19,7 +19,9 @@ SDL_Surface* GreySurfaceCache::loadSurface(CRstring filename, CRstring pathOverw
 
     std::cout << "Trying to load custom image \"" << pathOverwrite + filename << "\"" << std::endl;
 
+    verbose = false;
     SDL_Surface* surface = loadSurface(pathOverwrite + filename, optimize);
+    verbose = true;
 
     if (surface == errorSurface || surface == NULL)
     {

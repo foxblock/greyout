@@ -160,6 +160,7 @@ protected:
         lpName,
         lpMusic,
         lpDialogue,
+        lpGravity,
         lpEOL
     };
     static map<string,int> stringToProp;

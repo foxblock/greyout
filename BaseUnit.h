@@ -15,6 +15,7 @@
 #include "AnimatedSprite.h"
 
 #include "fileTypeDefines.h"
+#include "gameDefines.h"
 
 /**
 This is the base class for all units in the game
@@ -110,7 +111,8 @@ public:
         ufInvincible=8, // will not explode by environmental hazards
         ufMissionObjective=16, // level will restart when this unit is killed (also winCounter increases for ControlUnits)
         ufNoUpdate=32, // update won't be called for this unit (effectively freezing it in place)
-        ufEOL=64
+        ufNoRender=66, // do not render this unit (includes NoUnitCollision)
+        ufEOL=128
     };
     // converts a string from a level file to a usable flag
     // you can simply add unit-specific flags in child classes
@@ -154,7 +156,6 @@ protected:
     {
         int key;
         string value; // consists of several items, mostly time and something like position, speed, etc.
-        void* data; // a data pointer which you can write something to for fast access in updateOrder without the need of re-parsing
     };
     enum OrderKey
     {

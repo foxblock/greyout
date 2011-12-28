@@ -19,6 +19,8 @@ class PushableBox : public BaseUnit
         PushableBox(Level* newParent);
         virtual ~PushableBox();
 
+        virtual void reset();
+
         virtual int getHeight() const;
         virtual int getWidth() const;
         virtual Vector2df getPixel(const SimpleDirection& dir) const;
@@ -30,16 +32,27 @@ class PushableBox : public BaseUnit
 
         virtual void explode();
 
+        Vector2di startingSize;
+
         SDL_Rect rect;
     protected:
         virtual bool processParameter(const PARAMETER_TYPE& value);
+        virtual bool processOrder(Order& next);
+        virtual bool updateOrder(const Order& curr);
 
         virtual void move();
+
+        Vector2di sizeTimer;
 
         enum BoxProp
         {
             bpSize=BaseUnit::upEOL,
             bpEOL
+        };
+        enum BoxOrder
+        {
+            boSize=BaseUnit::okEOL,
+            boEOL
         };
     private:
 };

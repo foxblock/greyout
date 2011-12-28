@@ -6,7 +6,6 @@
 #include "Level.h"
 #include "GreySurfaceCache.h"
 #include "MusicCache.h"
-#include "MyGame.h"
 
 map<string,int> BaseUnit::stringToFlag;
 map<string,int> BaseUnit::stringToProp;
@@ -90,7 +89,7 @@ bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
         {
             string className = params.front().second;
             cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit with id \""
-                 << id << "\" (" << className << "\")" << endl;
+                 << id << "\" (" << className << ")" << endl;
         }
     }
 
@@ -99,7 +98,7 @@ bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
 
     if (orderList.size() > 0)
     {
-        Order temp = {okIdle,"-1",NULL};
+        Order temp = {okIdle,"-1"};
         orderList.push_back(temp); // make unit stop after last order (unless a repeat order is specified)
     }
 
@@ -459,12 +458,12 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             }
             else
             {
-                Order temp = {okRepeat,"",NULL};
+                Order temp = {okRepeat,""};
                 orderList.push_back(temp);
             }
             break;
         }
-        Order temp = {stringToOrder[token.front()],token.back(),NULL};
+        Order temp = {stringToOrder[token.front()],token.back()};
         orderList.push_back(temp);
         break;
     }
@@ -513,9 +512,6 @@ bool BaseUnit::processOrder(Order& next)
         }
         Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens.at(1)),StringUtility::stringToFloat(tokens.at(2)));
         velocity = (dest - position) / (float)ticks; // set speed to pixels per framerate
-        next.data = new Vector2df;
-        ((Vector2df*)(next.data))->x = dest.x;
-        ((Vector2df*)(next.data))->y = dest.y;
         break;
     }
     case okRepeat:
@@ -542,10 +538,6 @@ bool BaseUnit::updateOrder(const Order& curr)
 
     switch (curr.key)
     {
-    case okPosition:
-    {
-        Vector2df diff = *((Vector2df*)(curr.data)) - position;
-    }
     default:
         parsed = false;
     }

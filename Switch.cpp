@@ -37,11 +37,11 @@ bool Switch::load(const list<PARAMETER_TYPE >& params)
         imageOverwrite = "images/units/switch.png";
     }
     AnimatedSprite* temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),2,1,1,1);
+    temp->loadFrames(getSurface(imageOverwrite),2,1,0,1);
     temp->setTransparentColour(MAGENTA);
     states["off"] = temp;
     temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),2,1,0,1);
+    temp->loadFrames(getSurface(imageOverwrite),2,1,1,1);
     temp->setTransparentColour(MAGENTA);
     states["on"] = temp;
 
