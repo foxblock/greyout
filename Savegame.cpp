@@ -65,7 +65,7 @@ bool Savegame::setFile(CRstring filename)
         StringUtility::tokenize(line,tokens,VALUE_STRING);
         if (tokens.size() == 2)
         {
-            data[tokens.at(0)] = tokens.at(1);
+            data[tokens[0]] = tokens[1];
         }
     }
 

@@ -441,8 +441,8 @@ void Physics::playerUnitCollision(const Level* const level, BaseUnit* const play
 
 bool Physics::checkUnitCollision(const Level* const level, const BaseUnit* const unitA, const BaseUnit* const unitB) const
 {
-    SDL_Rect rectA = {unitA->position.x, unitA->position.y, unitA->getWidth(), unitA->getHeight()};
-    SDL_Rect rectB = {unitB->position.x, unitB->position.y, unitB->getWidth(), unitB->getHeight()};
+    SDL_Rect rectA = unitA->getRect();
+    SDL_Rect rectB = unitB->getRect();
     if (rectCheck(rectA,rectB))
         return true;
 

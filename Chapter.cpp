@@ -74,8 +74,8 @@ bool Chapter::loadFromFile(CRstring filename)
         }
         else
         {
-            tokens.at(0) = StringUtility::lower(tokens.at(0));
-            processParameter(make_pair(tokens.at(0),tokens.at(1)));
+            tokens[0] = StringUtility::lower(tokens[0]);
+            processParameter(make_pair(tokens[0],tokens[1]));
         }
     }
 
@@ -106,7 +106,7 @@ string Chapter::getLevelFilename(CRint pos)
         errorString = "Level number out of range " + StringUtility::intToString(pos);
         return "";
     }
-    return path + levels.at(pos);
+    return path + levels[pos];
 }
 
 int Chapter::getLevelIndex(CRstring filename)
@@ -118,7 +118,7 @@ int Chapter::getLevelIndex(CRstring filename)
 
     for (int I = levels.size()-1; I >= 0; --I)
     {
-        if (path + levels.at(I) == filename)
+        if (path + levels[I] == filename)
             return I;
     }
     errorString = "Level not found in chapter!";
@@ -146,10 +146,10 @@ string Chapter::getNextLevel(CRstring current)
 
     for (int I = levels.size()-1; I >= 0; --I)
     {
-        if (path + levels.at(I) == current)
+        if (path + levels[I] == current)
         {
             if ((I+1) < levels.size())
-                return path + levels.at(I+1);
+                return path + levels[I+1];
             else // end of the chapter
                 return "";
         }
@@ -169,7 +169,7 @@ string Chapter::getNextLevelAndSave(CRstring current)
     if (index < (int)levels.size()-1) // there is a next level
     {
         SAVEGAME->setChapterProgress(filename,++index);
-        return path + levels.at(index);
+        return path + levels[index];
     }
 
     return "";

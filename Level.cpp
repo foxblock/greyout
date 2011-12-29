@@ -162,6 +162,9 @@ Level::~Level()
         delete (*curr);
     }
     effects.clear();
+    #ifdef _DEBUG
+    debugUnits.clear();
+    #endif
     delete hidex;
     delete hidey;
 
@@ -291,9 +294,30 @@ void Level::userInput()
         input->resetKeys();
     }
 
+#ifdef _DEBUG
+    if (input->isLeftClick())
+    {
+        Vector2df pos = input->getMouse() + drawOffset;
+        for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+        {
+            if (pos.inRect((*I)->getRect()))
+                debugUnits.push_back(*I);
+        }
+        for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+        {
+            if (pos.inRect((*I)->getRect()))
+                debugUnits.push_back(*I);
+        }
+    }
+    if (input->isRightClick())
+        debugUnits.clear();
+    input->resetMouseButtons();
 
+    if ((input->isL() || input->isR()) && not flags.hasFlag(lfDisableSwap))
+#else
     if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick())
         && not flags.hasFlag(lfDisableSwap))
+#endif
     {
         if (players.size() > 1)
         {
@@ -596,6 +620,20 @@ void Level::render()
     debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
     debugString += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
     debugString += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
+    debugString += "---\n";
+    for (vector<BaseUnit*>::const_iterator I = debugUnits.begin(); I != debugUnits.end(); ++I)
+    {
+        debugString += (*I)->tag + ";" + (*I)->id + "\n";
+        debugString += "P: " + StringUtility::vecToString((*I)->position) + "\n" +
+                        "V: " + StringUtility::vecToString((*I)->velocity) + "\n" +
+                        "A: " + StringUtility::vecToString((*I)->acceleration[0]) + " to " + StringUtility::vecToString((*I)->acceleration[1]) + "\n" +
+                        "C: " + StringUtility::vecToString((*I)->collisionInfo.correction) + " " + StringUtility::vecToString((*I)->collisionInfo.positionCorrection) + "\n" +
+                        "S: " + (*I)->currentState;
+        if ((*I)->currentSprite)
+            debugString += " (" + StringUtility::intToString((*I)->currentSprite->getCurrentFrame()) + ")\n";
+        else
+            debugString += "\n";
+    }
     debugText.setPosition(10,10);
     debugText.print(debugString);
     fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
@@ -915,7 +953,7 @@ void Level::pauseScreen()
             nameText.setColour(WHITE);
         }
         nameRect.render();
-        nameText.print(pauseItems.at(I));
+        nameText.print(pauseItems[I]);
 
         if (not trialEnd)
         {
@@ -1221,8 +1259,8 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
             break;
         }
-        drawOffset.x = StringUtility::stringToFloat(token.at(0));
-        drawOffset.y = StringUtility::stringToFloat(token.at(1));
+        drawOffset.x = StringUtility::stringToFloat(token[0]);
+        drawOffset.y = StringUtility::stringToFloat(token[1]);
         startingOffset = drawOffset;
         break;
     }

@@ -241,11 +241,11 @@ void StateLevelSelect::userInput()
             switch (intermediateSelection)
             {
             case 0: // play
-                ENGINE->playChapter(chapterPreviews.at(value).filename);
+                ENGINE->playChapter(chapterPreviews[value].filename);
                 MUSIC_CACHE->playSound("sounds/drip.wav");
                 break;
             case 1: // explore
-                exploreChapter(chapterPreviews.at(value).filename);
+                exploreChapter(chapterPreviews[value].filename);
                 switchState(lsLevel);
                 break;
             default: // nothing
@@ -272,11 +272,11 @@ void StateLevelSelect::userInput()
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             // make sure the map has not returned an error on load already
-            if (levelPreviews.at(value).surface && levelPreviews.at(value).hasBeenLoaded)
+            if (levelPreviews[value].surface && levelPreviews[value].hasBeenLoaded)
             {
                 abortLevelLoading = true;
                 if (not exChapter) // level from level folder
-                    ENGINE->playSingleLevel(levelPreviews.at(value).filename,STATE_LEVELSELECT);
+                    ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
                 else // exploring chapter -> start chapter at selected level
                     ENGINE->playChapter(exChapter->filename,value);
                 MUSIC_CACHE->playSound("sounds/drip.wav");
@@ -304,7 +304,7 @@ void StateLevelSelect::userInput()
             }
             else // show play/explore menu
             {
-                if (chapterPreviews.at(value).surface && chapterPreviews.at(value).hasBeenLoaded)
+                if (chapterPreviews[value].surface && chapterPreviews[value].hasBeenLoaded)
                 {
                     switchState(lsIntermediate);
                     input->resetKeys();
@@ -449,12 +449,12 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
         pos.y = OFFSET_Y + ((I - numOffset) / PREVIEW_COUNT_X) * size.y + ((I - numOffset) / PREVIEW_COUNT_X + 1) * spacing.y;
 
         SDL_mutexP(levelLock);
-        if (data.at(I).hasBeenLoaded)
+        if (data[I].hasBeenLoaded)
         {
-            if (data.at(I).surface) // render preview
+            if (data[I].surface) // render preview
             {
                 SDL_Rect rect = {pos.x,pos.y,0,0};
-                SDL_BlitSurface(data.at(I).surface,NULL,target,&rect);
+                SDL_BlitSurface(data[I].surface,NULL,target,&rect);
                 SDL_mutexV(levelLock);
             }
             else // render error or locked image

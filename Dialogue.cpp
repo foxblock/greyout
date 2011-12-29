@@ -80,9 +80,9 @@ bool Dialogue::loadFromFile(CRstring filename)
         else
         {
             // add to list
-            if (lines.find(tokens.at(0)) != lines.end())
-                cout << "Warning: key \"" << tokens.at(0) << "\" redefined on line " << lineNumber << "!" << endl;
-            lines[tokens.at(0)] = tokens.at(1);
+            if (lines.find(tokens[0]) != lines.end())
+                cout << "Warning: key \"" << tokens[0] << "\" redefined on line " << lineNumber << "!" << endl;
+            lines[tokens[0]] = tokens[1];
         }
     }
 

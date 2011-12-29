@@ -39,7 +39,7 @@ protected:
     {
         sfMovement
     };
-    map<string,int> stringToFunc;
+    static map<string,int> stringToFunc;
 private:
 };
 

@@ -125,14 +125,6 @@ void BasePlayer::update()
 
     BaseUnit::update();
 
-#ifdef _DEBUG
-    parent->debugString += "P: " + StringUtility::vecToString(position) + "\n" +
-                           "V: " + StringUtility::vecToString(velocity) + "\n" +
-                           "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
-                           "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + "\n" +
-                           "S: " + currentState + " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
-#endif
-
     if ((int)velocity.y != 0)
         canJump = false;
 }

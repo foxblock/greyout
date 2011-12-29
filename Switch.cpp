@@ -5,6 +5,8 @@
 
 #define SWITCH_TIMEOUT 15
 
+map<string,int> Switch::stringToFunc;
+
 Switch::Switch(Level* newParent) : BaseUnit(newParent)
 {
     flags.addFlag(ufNoMapCollision);
@@ -12,6 +14,7 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoUnitCollision);
 
     col = Colour(50,217,54);
+    startingColour = col;
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
     switchTimer = 0;

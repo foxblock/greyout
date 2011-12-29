@@ -158,8 +158,8 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
             break;
         }
-        rect.w = StringUtility::stringToInt(token.at(0));
-        rect.h = StringUtility::stringToInt(token.at(1));
+        rect.w = StringUtility::stringToInt(token[0]);
+        rect.h = StringUtility::stringToInt(token[1]);
         startingSize.x = rect.w;
         startingSize.y = rect.h;
         break;

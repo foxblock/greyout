@@ -16,7 +16,6 @@ protected:
 
     string textKey;
     int time;
-    bool triggered;
 
     enum DialogueTriggerProps
     {

@@ -12,6 +12,7 @@ Camera::Camera()
     parent = NULL;
     disregardBoundaries = false;
     speed = Vector2df(0,0);
+    dest = Vector2df(0,0);
 }
 
 Camera::~Camera()
@@ -24,6 +25,9 @@ Camera::~Camera()
 void Camera::update()
 {
     parent->drawOffset += speed;
+    if ((speed.x != 0 || speed.y != 0) &&
+        (int)parent->drawOffset.x == (int)dest.x && (int)parent->drawOffset.y == (int)dest.y)
+        speed = Vector2df(0,0);
 }
 
 void Camera::centerOnUnit(const BaseUnit* const unit, CRint time)
@@ -58,7 +62,13 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
         }
     }
     if (time == 0)
+    {
         parent->drawOffset = result;
+        speed = Vector2df(0,0);
+    }
     else
+    {
         speed = (result - parent->drawOffset) / (float)time / (float)FRAME_RATE * 1000.0f;
+        dest = result;
+    }
 }
