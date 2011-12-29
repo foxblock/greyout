@@ -8,7 +8,6 @@ DialogueTrigger::DialogueTrigger(Level* newParent) : BaseTrigger(newParent)
     stringToProp["time"] = tpTime;
     textKey = "";
     time = 1000;
-    triggered = false;
     triggerCol = LIGHT_GREEN;
 }
 
@@ -49,11 +48,8 @@ bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 
 void DialogueTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
-    if (not triggered)
-    {
-        DIALOGUE->queueLine(textKey,this,time);
-        triggered = true;
-    }
+    DIALOGUE->queueLine(textKey,this,time);
+    enabled = false;
 }
 
 ///---private---

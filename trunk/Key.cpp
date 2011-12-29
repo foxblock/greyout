@@ -9,6 +9,7 @@ Key::Key(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoUnitCollision);
 
     col = Colour(50,217,54);
+    startingColour = col;
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
 

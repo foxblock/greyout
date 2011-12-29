@@ -9,6 +9,8 @@ public:
     SoundTrigger(Level* newParent);
     virtual ~SoundTrigger();
 
+    virtual void reset();
+
 protected:
     virtual void doTrigger(const UnitCollisionEntry& entry);
 
@@ -24,6 +26,7 @@ protected:
 
     string filename;
     int playcount;
+    int count;
     int loops;
 private:
 

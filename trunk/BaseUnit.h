@@ -13,6 +13,7 @@
 #include "SimpleFlags.h"
 #include "GFX.h"
 #include "AnimatedSprite.h"
+#include "Vector3df.h"
 
 #include "fileTypeDefines.h"
 #include "gameDefines.h"
@@ -50,6 +51,7 @@ public:
     virtual Vector2di getSize() const;
     // returns the coordinate of an edge pixel (edge indicated by passed direction)
     virtual Vector2df getPixel(const SimpleDirection& dir) const;
+    virtual SDL_Rect getRect() const;
     void setStartingPosition(const Vector2df& pos);
     void setStartingVelocity(const Vector2df& vel);
 
@@ -89,6 +91,7 @@ public:
     SimpleFlags flags;
     string imageOverwrite; // used for level-specific customisation
     Colour col; // the colour of this unit
+    Colour startingColour;
 
     // this is only a "working" pointer, it will not get deleted
     AnimatedSprite* currentSprite;
@@ -163,6 +166,7 @@ protected:
         okIdle,
         okPosition,
         okRepeat,
+        okColour,
         okEOL
     };
     // processes the next order to start
@@ -174,6 +178,9 @@ protected:
     int currentOrder;
     int orderTimer;
     bool orderRunning; // is this unit currently executing orders?
+
+    Vector3df tempColour;
+    Vector3df tempColourChange;
 
 private:
 };

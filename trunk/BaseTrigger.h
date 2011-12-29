@@ -9,6 +9,8 @@ public:
     BaseTrigger(Level* newParent);
     virtual ~BaseTrigger();
 
+    virtual void reset();
+
     virtual void render(SDL_Surface* surf);
 
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;
@@ -17,18 +19,24 @@ public:
     int getWidth() const {return width;}
     int getHeight() const {return height;}
 
+    bool enabled;
+    bool startingEnabled;
+
 protected:
-    virtual void doTrigger(const UnitCollisionEntry& entry)=0;
+    virtual void doTrigger(const UnitCollisionEntry& entry);
 
     virtual bool processParameter(const PARAMETER_TYPE& value);
 
     int width;
     int height;
     Colour triggerCol;
+    vector<BaseTrigger*> targets;
 
     enum BaseTriggerProps
     {
         bpSize=BaseUnit::upEOL,
+        bpEnabled,
+        bpTarget,
         bpEOL
     };
 private:

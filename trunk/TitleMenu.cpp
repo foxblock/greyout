@@ -122,7 +122,7 @@ void TitleMenu::render()
 
     bg.render();
 
-    SDL_BlitSurface(inverseBG.at(bg.getCurrentFrame()),&invertRegion,GFX::getVideoSurface(),&invertRegion);
+    SDL_BlitSurface(inverseBG[bg.getCurrentFrame()],&invertRegion,GFX::getVideoSurface(),&invertRegion);
 
     marker.render();
 

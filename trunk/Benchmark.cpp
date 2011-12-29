@@ -113,9 +113,9 @@ void Benchmark::generateFPSData()
     for (int I = 0; I < secondIndex.size()-1; ++I)
     {
         averageFPS = 0;
-        for (int K = secondIndex.at(I); K < secondIndex.at(I+1); ++K)
-            averageFPS += fpsData.at(K);
-        averageFPS /= secondIndex.at(I+1) - secondIndex.at(I);
+        for (int K = secondIndex[I]; K < secondIndex[I+1]; ++K)
+            averageFPS += fpsData[K];
+        averageFPS /= secondIndex[I+1] - secondIndex[I];
         cout << " " << averageFPS;
     }
     cout << endl;
@@ -124,7 +124,7 @@ void Benchmark::generateFPSData()
     #else
     fpsCount = 0;
     for (int I = 0; I < fpsData.size(); ++I)
-        fpsCount += fpsData.at(I);
+        fpsCount += fpsData[I];
     cout << "Update cycles (#): " << fpsCount << endl;
     #endif
     cout << "Boxes total (#): " << boxCount << endl;

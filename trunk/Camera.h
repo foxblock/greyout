@@ -30,6 +30,7 @@ class Camera
         bool disregardBoundaries;
     protected:
         Vector2df speed;
+        Vector2df dest;
     private:
 
 };

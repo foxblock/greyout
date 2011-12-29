@@ -36,6 +36,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToOrder["idle"] = okIdle;
     stringToOrder["position"] = okPosition;
     stringToOrder["repeat"] = okRepeat;
+    stringToOrder["colour"] = okColour;
 
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
@@ -51,6 +52,7 @@ BaseUnit::BaseUnit(Level* newParent)
     id = "";
     imageOverwrite = "";
     col = WHITE;
+    startingColour = WHITE;
     currentState = "";
     startingState = "";
     direction = 0;
@@ -125,6 +127,7 @@ void BaseUnit::reset()
         currentOrder = 0;
         processOrder(orderList.front());
     }
+    col = startingColour;
 }
 
 void BaseUnit::resetTemporary()
@@ -183,6 +186,12 @@ Vector2df BaseUnit::getPixel(const SimpleDirection& dir) const
     }
 }
 
+SDL_Rect BaseUnit::getRect() const
+{
+    SDL_Rect result = {position.x,position.y,getWidth(),getHeight()};
+    return result;
+}
+
 void BaseUnit::setStartingPosition(const Vector2df& pos)
 {
     position = pos;
@@ -217,12 +226,12 @@ void BaseUnit::update()
             currentSprite->update();
         if (orderRunning && orderTimer > 0 && orderList.size() > 0)
         {
-            updateOrder(orderList.at(currentOrder));
+            updateOrder(orderList[currentOrder]);
             if (--orderTimer <= 0)
             {
                 ++currentOrder;
                 if (currentOrder < orderList.size())
-                    processOrder(orderList.at(currentOrder));
+                    processOrder(orderList[currentOrder]);
                 else
                 {
                     orderRunning = false;
@@ -376,8 +385,8 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
             break;
         }
-        position.x = StringUtility::stringToFloat(token.at(0));
-        position.y = StringUtility::stringToFloat(token.at(1));
+        position.x = StringUtility::stringToFloat(token[0]);
+        position.y = StringUtility::stringToFloat(token[1]);
         startingPosition = position;
         break;
     }
@@ -390,8 +399,8 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
             break;
         }
-        velocity.x = StringUtility::stringToFloat(token.at(0));
-        velocity.y = StringUtility::stringToFloat(token.at(1));
+        velocity.x = StringUtility::stringToFloat(token[0]);
+        velocity.y = StringUtility::stringToFloat(token[1]);
         startingVelocity = velocity;
         break;
     }
@@ -434,6 +443,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         else // string colour code
             col = Colour(value.second);
         collisionColours.insert(col.getIntColour());
+        startingColour = col;
         break;
     }
     case upHealth:
@@ -482,6 +492,7 @@ void BaseUnit::move()
 bool BaseUnit::processOrder(Order& next)
 {
     bool parsed = true;
+    bool badOrder = false;
 
     vector<string> tokens;
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
@@ -505,12 +516,10 @@ bool BaseUnit::processOrder(Order& next)
     {
         if (tokens.size() < 3)
         {
-            cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
-            orderList.erase(orderList.begin() + currentOrder);
-            orderTimer = 1; // process next order in next cycle
-            return false;
+            badOrder = true;
+            break;
         }
-        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens.at(1)),StringUtility::stringToFloat(tokens.at(2)));
+        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
         velocity = (dest - position) / (float)ticks; // set speed to pixels per framerate
         break;
     }
@@ -523,7 +532,38 @@ bool BaseUnit::processOrder(Order& next)
         }
         return true;
     }
+    case okColour:
+    {
+        if (tokens.size() < 2)
+        {
+            badOrder = true;
+            break;
+        }
+        tempColour.x = col.red;
+        tempColour.y = col.green;
+        tempColour.z = col.blue;
+
+        int val = StringUtility::stringToInt(tokens[1]);
+        Colour temp;
+        if (val > 0 || tokens[1] == "0") // passed parameter is a numeric colour code
+            temp = Colour(val);
+        else // string colour code
+            temp = Colour(tokens[1]);
+
+        tempColourChange.x = (float)(temp.red - col.red) / (float)ticks;
+        tempColourChange.y = (float)(temp.green - col.green) / (float)ticks;
+        tempColourChange.z = (float)(temp.blue - col.blue) / (float)ticks;
+        break;
+    }
     default:
+        return false;
+    }
+
+    if (badOrder)
+    {
+        cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
+        orderList.erase(orderList.begin() + currentOrder);
+        orderTimer = 1; // process next order in next cycle
         return false;
     }
 
@@ -538,6 +578,12 @@ bool BaseUnit::updateOrder(const Order& curr)
 
     switch (curr.key)
     {
+    case okColour:
+        tempColour += tempColourChange;
+        col.red = tempColour.x;
+        col.green = tempColour.y;
+        col.blue = tempColour.z;
+        break;
     default:
         parsed = false;
     }

@@ -27,8 +27,11 @@
 #include "Gear.h"
 #include "Switch.h"
 #include "Key.h"
+#include "BaseTrigger.h"
 #include "ExitTrigger.h"
 #include "SoundTrigger.h"
+#include "CameraTrigger.h"
+#include "TextObject.h"
 
 using namespace std;
 
@@ -66,8 +69,11 @@ enum UnitIdent
     ucGear,
     ucSwitch,
     ucKey,
+    ucBaseTrigger,
     ucExitTrigger,
-    ucSoundTrigger
+    ucSoundTrigger,
+    ucCameraTrigger,
+    ucTextObject
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -98,8 +104,11 @@ void createIdentMaps()
     unitClasses["gear"] = ucGear;
     unitClasses["switch"] = ucSwitch;
     unitClasses["key"] = ucKey;
+    unitClasses["basetrigger"] = ucBaseTrigger;
     unitClasses["exittrigger"] = ucExitTrigger;
     unitClasses["soundtrigger"] = ucSoundTrigger;
+    unitClasses["cameratrigger"] = ucCameraTrigger;
+    unitClasses["text"] = ucTextObject;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -192,10 +201,10 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
                 else
                 {
                     // make sure class parameter is always the first element
-                    if (tokens.at(0) == CLASS_STRING)
-                        params.push_front(make_pair(tokens.at(0),tokens.at(1)));
+                    if (tokens[0] == CLASS_STRING)
+                        params.push_front(make_pair(tokens[0],tokens[1]));
                     else
-                        params.push_back(make_pair(tokens.at(0),tokens.at(1)));
+                        params.push_back(make_pair(tokens[0],tokens[1]));
                 }
 
             }
@@ -459,6 +468,11 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
         result = new Key(parent);
         break;
     }
+    case ucBaseTrigger:
+    {
+        result = new BaseTrigger(parent);
+        break;
+    }
     case ucExitTrigger:
     {
         result = new ExitTrigger(parent);
@@ -467,6 +481,16 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
     case ucSoundTrigger:
     {
         result = new SoundTrigger(parent);
+        break;
+    }
+    case ucCameraTrigger:
+    {
+        result = new CameraTrigger(parent);
+        break;
+    }
+    case ucTextObject:
+    {
+        result = new TextObject(parent);
         break;
     }
     default:

@@ -88,6 +88,7 @@ public:
 
     #ifdef _DEBUG
     string debugString;
+    vector<BaseUnit*> debugUnits;
     #endif
     // errors (on loading) will be placed here
     string errorString;
