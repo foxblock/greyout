@@ -44,6 +44,7 @@ void TextObject::updateScreenPosition(const Vector2di& offset)
 
 void TextObject::render(SDL_Surface* screen)
 {
+    currentText.setColour(col);
     currentText.print(screen,line);
 }
 
