@@ -79,6 +79,10 @@ public:
     // kills the unit
     virtual void explode();
 
+    #ifdef _DEBUG
+    virtual string debugInfo();
+    #endif
+
     Vector2df position;
     Vector2df startingPosition;
     Vector2df velocity; // velocity caused by the unit's movement
@@ -167,6 +171,8 @@ protected:
         okPosition,
         okRepeat,
         okColour,
+        okExplode,
+        okRemove,
         okEOL
     };
     // processes the next order to start

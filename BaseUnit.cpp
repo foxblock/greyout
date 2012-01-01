@@ -37,6 +37,8 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToOrder["position"] = okPosition;
     stringToOrder["repeat"] = okRepeat;
     stringToOrder["colour"] = okColour;
+    stringToOrder["explode"] = okExplode;
+    stringToOrder["remove"] = okRemove;
 
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
@@ -358,6 +360,24 @@ void BaseUnit::explode()
     toBeRemoved = true;
 }
 
+#ifdef _DEBUG
+string BaseUnit::debugInfo()
+{
+    string result = "";
+    result += tag + ";" + id + "\n";
+    result += "P: " + StringUtility::vecToString(position) + " | " + StringUtility::intToString(getWidth()) + "," + StringUtility::intToString(getHeight()) + "\n" +
+              "V: " + StringUtility::vecToString(velocity) + "\n" +
+              "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
+              "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + "\n" +
+              "S: " + currentState;
+    if (currentSprite)
+        result += " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
+    else
+        result += "\n";
+    return result;
+}
+#endif
+
 /// ---protected---
 
 bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
@@ -462,19 +482,14 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         StringUtility::tokenize(value.second,token,DELIMIT_STRING,2);
         if (token.size() != 2)
         {
-            if (stringToOrder[token.front()] != okRepeat)
-            {
-                cout << "Error: Bad order parameter \"" << value.second << "\" on unit id \"" << id << "\"" << endl;
-            }
-            else
-            {
-                Order temp = {okRepeat,""};
-                orderList.push_back(temp);
-            }
-            break;
+            Order temp = {stringToOrder[token.front()],""};
+            orderList.push_back(temp);
         }
-        Order temp = {stringToOrder[token.front()],token.back()};
-        orderList.push_back(temp);
+        else
+        {
+            Order temp = {stringToOrder[token.front()],token.back()};
+            orderList.push_back(temp);
+        }
         break;
     }
     default:
@@ -553,6 +568,16 @@ bool BaseUnit::processOrder(Order& next)
         tempColourChange.x = (float)(temp.red - col.red) / (float)ticks;
         tempColourChange.y = (float)(temp.green - col.green) / (float)ticks;
         tempColourChange.z = (float)(temp.blue - col.blue) / (float)ticks;
+        break;
+    }
+    case okExplode:
+    {
+        explode();
+        break;
+    }
+    case okRemove:
+    {
+        toBeRemoved = true;
         break;
     }
     default:

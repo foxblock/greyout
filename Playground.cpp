@@ -88,6 +88,25 @@ void Playground::userInput()
         input->resetR();
     }
 
+#ifdef _DEBUG
+    if (input->isLeftClick())
+    {
+        Vector2df pos = input->getMouse() + drawOffset;
+        for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+        {
+            if (pos.inRect((*I)->getRect()))
+                debugUnits.push_back(*I);
+        }
+        for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+        {
+            if (pos.inRect((*I)->getRect()))
+                debugUnits.push_back(*I);
+        }
+    }
+    if (input->isRightClick())
+        debugUnits.clear();
+    //input->resetMouseButtons();
+#else
     if (input->isLeftClick())
     {
         Rectangle* temp = new Rectangle;
@@ -104,6 +123,7 @@ void Playground::userInput()
         temp->setPosition(input->getMouse() - Vector2df(12,12));
         mouseRects.push_back(temp);
     }
+#endif
 
     for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {

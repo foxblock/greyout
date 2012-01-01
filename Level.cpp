@@ -623,16 +623,7 @@ void Level::render()
     debugString += "---\n";
     for (vector<BaseUnit*>::const_iterator I = debugUnits.begin(); I != debugUnits.end(); ++I)
     {
-        debugString += (*I)->tag + ";" + (*I)->id + "\n";
-        debugString += "P: " + StringUtility::vecToString((*I)->position) + "\n" +
-                        "V: " + StringUtility::vecToString((*I)->velocity) + "\n" +
-                        "A: " + StringUtility::vecToString((*I)->acceleration[0]) + " to " + StringUtility::vecToString((*I)->acceleration[1]) + "\n" +
-                        "C: " + StringUtility::vecToString((*I)->collisionInfo.correction) + " " + StringUtility::vecToString((*I)->collisionInfo.positionCorrection) + "\n" +
-                        "S: " + (*I)->currentState;
-        if ((*I)->currentSprite)
-            debugString += " (" + StringUtility::intToString((*I)->currentSprite->getCurrentFrame()) + ")\n";
-        else
-            debugString += "\n";
+        debugString += (*I)->debugInfo();
     }
     debugText.setPosition(10,10);
     debugText.print(debugString);
