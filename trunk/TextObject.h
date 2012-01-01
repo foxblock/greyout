@@ -18,13 +18,16 @@ public:
 
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;
 
-    int getWidth() const {return currentText.getWidth();}
-    int getHeight() const {return currentText.getHeight();}
+    virtual int getWidth() const {return size.x;}
+    virtual int getHeight() const {return size.y;}
+
+    virtual void explode();
 protected:
     virtual bool processParameter(const PARAMETER_TYPE& value);
 
     Text currentText;
     string line;
+    Vector2di size;
 
     enum TextProps
     {

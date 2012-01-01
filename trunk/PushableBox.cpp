@@ -11,6 +11,7 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
     rect.w = 32;
     rect.h = 32;
     col = BLACK;
+    startingColour = BLACK;
     sizeTimer.x = 0;
     sizeTimer.y = 0;
     startingSize.x = rect.w;
