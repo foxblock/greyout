@@ -10,19 +10,19 @@ public:
     virtual ~Key();
 
     virtual bool load(const list<PARAMETER_TYPE >& params);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
     virtual void reset();
 
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;
     virtual void hitUnit(const UnitCollisionEntry& entry);
 protected:
-    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     enum KeyProp
     {
         kpTarget=BaseUnit::upEOL,
         kpEOL
     };
-    BaseUnit* target;
+    vector<BaseUnit*> targets;
 
 private:
 

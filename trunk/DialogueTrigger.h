@@ -9,10 +9,10 @@ public:
     DialogueTrigger(Level* newParent);
     virtual ~DialogueTrigger();
 
+    virtual bool processParameter(const PARAMETER_TYPE& value);
+
 protected:
     virtual void doTrigger(const UnitCollisionEntry& entry);
-
-    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     string textKey;
     int time;

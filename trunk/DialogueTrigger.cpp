@@ -18,8 +18,6 @@ DialogueTrigger::~DialogueTrigger()
 
 ///---public---
 
-///---protected---
-
 bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 {
     bool parsed = true;
@@ -45,6 +43,8 @@ bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 
     return parsed;
 }
+
+///---protected---
 
 void DialogueTrigger::doTrigger(const UnitCollisionEntry& entry)
 {

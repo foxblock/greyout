@@ -37,9 +37,15 @@ public:
     // passes the individual key=value pairs to processParameter
     // returns true on success and false on fail
     virtual bool load(const list<PARAMETER_TYPE >& params);
+    // processes a single key=value pair for loading
+    // this function can be overwritten in child classes to allow for custom data fiels
+    // return true if the data has been successfully processed, false otherwise
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     // resets the unit to its initial state (right after loading)
     virtual void reset();
+    // restarts the order system
+    void resetOrder();
     // resets the unit temporary values like collisionInfo
     virtual void resetTemporary();
 
@@ -110,6 +116,8 @@ public:
 
     string id;
 
+    bool orderRunning; // is this unit currently executing orders?
+
     enum UnitFlag
     {
         ufNoMapCollision=1, // no map collision check for this unit
@@ -126,11 +134,6 @@ public:
     static map<string,int> stringToFlag;
 
 protected:
-    // processes a single key=value pair for loading
-    // this function can be overwritten in child classes to allow for custom data fiels
-    // return true if the data has been successfully processed, false otherwise
-    virtual bool processParameter(const PARAMETER_TYPE& value);
-
     // basically just a lazy way of writing position += velocity
     virtual void move();
 
@@ -183,7 +186,6 @@ protected:
     vector<Order> orderList;
     int currentOrder;
     int orderTimer;
-    bool orderRunning; // is this unit currently executing orders?
 
     Vector3df tempColour;
     Vector3df tempColourChange;

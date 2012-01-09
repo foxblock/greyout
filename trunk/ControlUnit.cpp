@@ -15,6 +15,27 @@ ControlUnit::~ControlUnit()
 
 /// ---public---
 
+bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
+{
+    if (BaseUnit::processParameter(value))
+        return true;
+
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case cpControl:
+    {
+        takesControl = StringUtility::stringToBool(value.second);
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
+}
+
 void ControlUnit::control(SimpleJoy* input)
 {
     if (input->isLeft())
@@ -52,24 +73,3 @@ void ControlUnit::control(SimpleJoy* input)
 }
 
 /// ---protected---
-
-bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
-{
-    if (BaseUnit::processParameter(value))
-        return true;
-
-    bool parsed = true;
-
-    switch (stringToProp[value.first])
-    {
-    case cpControl:
-    {
-        takesControl = StringUtility::stringToBool(value.second);
-        break;
-    }
-    default:
-        parsed = false;
-    }
-
-    return parsed;
-}

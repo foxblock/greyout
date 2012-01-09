@@ -10,6 +10,7 @@ public:
     virtual ~Gear();
 
     virtual bool load(const list<PARAMETER_TYPE >& params);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     virtual inline int getHeight() const;
     virtual inline int getWidth() const;
@@ -18,7 +19,6 @@ public:
     virtual void updateScreenPosition(const Vector2di& offset);
     virtual void render(SDL_Surface* surf);
 protected:
-    virtual bool processParameter(const PARAMETER_TYPE& value);
     virtual bool processOrder(Order& next);
 
     enum GearProp

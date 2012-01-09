@@ -9,6 +9,7 @@ public:
     Switch(Level* newParent);
     virtual ~Switch();
 
+    virtual bool processParameter(const PARAMETER_TYPE& value);
     virtual bool load(const list<PARAMETER_TYPE >& params);
     virtual void reset();
 
@@ -17,13 +18,16 @@ public:
 
     virtual void update();
 protected:
-    virtual bool processParameter(const PARAMETER_TYPE& value);
 
-    typedef void (Switch::*FuncPtr)();
+    typedef void (Switch::*FuncPtr)(BaseUnit* unit);
     FuncPtr switchOn;
     FuncPtr switchOff;
-    void movementOn();
-    void movementOff();
+    PARAMETER_TYPE paramOn;
+    PARAMETER_TYPE paramOff;
+    void movementOn(BaseUnit* unit);
+    void movementOff(BaseUnit* unit);
+    void parameterOn(BaseUnit* unit);
+    void parameterOff(BaseUnit* unit);
 
     int switchTimer;
     vector<BaseUnit*> targets;
@@ -37,7 +41,10 @@ protected:
 
     enum SwitchFunction
     {
-        sfMovement
+        sfMovement,
+        sfParameter,
+        sfParameterOn,
+        sfParameterOff
     };
     static map<string,int> stringToFunc;
 private:

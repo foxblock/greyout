@@ -23,6 +23,8 @@ TextObject::~TextObject()
     //
 }
 
+// TODO: Crashes on the Pandora, find cause of that
+
 ///---public---
 
 bool TextObject::load(const list<PARAMETER_TYPE >& params)
@@ -38,6 +40,41 @@ bool TextObject::load(const list<PARAMETER_TYPE >& params)
     size = currentText.getDimensions(line);
 
     return result;
+}
+
+bool TextObject::processParameter(const PARAMETER_TYPE& value)
+{
+    if (BaseUnit::processParameter(value))
+        return true;
+
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case tpFont:
+    {
+        currentText.loadFont(value.second);
+        break;
+    }
+    case tpSize:
+    {
+        int val = StringUtility::stringToInt(value.second);
+        if (val > 0)
+            currentText.setFontSize(val);
+        else
+            parsed = false;
+        break;
+    }
+    case tpText:
+    {
+        line = StringUtility::upper(value.second);
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
 }
 
 void TextObject::updateScreenPosition(const Vector2di& offset)
@@ -118,40 +155,5 @@ void TextObject::explode()
 }
 
 ///---protected---
-
-bool TextObject::processParameter(const PARAMETER_TYPE& value)
-{
-    if (BaseUnit::processParameter(value))
-        return true;
-
-    bool parsed = true;
-
-    switch (stringToProp[value.first])
-    {
-    case tpFont:
-    {
-        currentText.loadFont(value.second);
-        break;
-    }
-    case tpSize:
-    {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0)
-            currentText.setFontSize(val);
-        else
-            parsed = false;
-        break;
-    }
-    case tpText:
-    {
-        line = StringUtility::upper(value.second);
-        break;
-    }
-    default:
-        parsed = false;
-    }
-
-    return parsed;
-}
 
 ///---private---

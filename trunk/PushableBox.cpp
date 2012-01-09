@@ -28,6 +28,42 @@ PushableBox::~PushableBox()
 
 /// ---public---
 
+bool PushableBox::processParameter(const PARAMETER_TYPE& value)
+{
+    // first ensure backwards compatibility by passing the value to BaseUnit
+    // (also avoids having to copy that code)
+    if (BaseUnit::processParameter(value))
+        return true;
+
+    // if the specific parameter is not caught by BaseUnit is has to be special
+    // to this unit (or erroneous), so custom implementation here, following the
+    // same structure as BaseUnit::processParameter
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case bpSize:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        rect.w = StringUtility::stringToInt(token[0]);
+        rect.h = StringUtility::stringToInt(token[1]);
+        startingSize.x = rect.w;
+        startingSize.y = rect.h;
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
+}
+
 void PushableBox::reset()
 {
     rect.w = startingSize.x;
@@ -135,42 +171,6 @@ void PushableBox::explode()
 }
 
 /// ---protected---
-
-bool PushableBox::processParameter(const PARAMETER_TYPE& value)
-{
-    // first ensure backwards compatibility by passing the value to BaseUnit
-    // (also avoids having to copy that code)
-    if (BaseUnit::processParameter(value))
-        return true;
-
-    // if the specific parameter is not caught by BaseUnit is has to be special
-    // to this unit (or erroneous), so custom implementation here, following the
-    // same structure as BaseUnit::processParameter
-    bool parsed = true;
-
-    switch (stringToProp[value.first])
-    {
-    case bpSize:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        rect.w = StringUtility::stringToInt(token[0]);
-        rect.h = StringUtility::stringToInt(token[1]);
-        startingSize.x = rect.w;
-        startingSize.y = rect.h;
-        break;
-    }
-    default:
-        parsed = false;
-    }
-
-    return parsed;
-}
 
 bool PushableBox::processOrder(Order& next)
 {

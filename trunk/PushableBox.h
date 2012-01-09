@@ -19,6 +19,7 @@ class PushableBox : public BaseUnit
         PushableBox(Level* newParent);
         virtual ~PushableBox();
 
+        virtual bool processParameter(const PARAMETER_TYPE& value);
         virtual void reset();
 
         virtual int getHeight() const;
@@ -36,7 +37,6 @@ class PushableBox : public BaseUnit
 
         SDL_Rect rect;
     protected:
-        virtual bool processParameter(const PARAMETER_TYPE& value);
         virtual bool processOrder(Order& next);
         virtual bool updateOrder(const Order& curr);
 

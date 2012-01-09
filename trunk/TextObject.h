@@ -11,7 +11,8 @@ public:
     TextObject(Level* newParent);
     virtual ~TextObject();
 
-    virtual bool TextObject::load(const list<PARAMETER_TYPE >& params);
+    virtual bool load(const list<PARAMETER_TYPE >& params);
+    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     virtual void updateScreenPosition(const Vector2di& offset);
     virtual void render(SDL_Surface* surf);
@@ -23,8 +24,6 @@ public:
 
     virtual void explode();
 protected:
-    virtual bool processParameter(const PARAMETER_TYPE& value);
-
     Text currentText;
     string line;
     Vector2di size;
