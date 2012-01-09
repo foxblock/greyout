@@ -62,6 +62,7 @@ enum PlayerIdent
 enum UnitIdent
 {
     ucUnknown,
+    ucGeneric,
     ucPushableBox,
     ucSolidBox,
     ucExit,
@@ -97,6 +98,7 @@ void createIdentMaps()
     playerClasses["black"] = pcBlack;
     playerClasses["white"] = pcWhite;
 
+    unitClasses["generic"] = ucGeneric;
     unitClasses["pushablebox"] = ucPushableBox;
     unitClasses["solidbox"] = ucSolidBox;
     unitClasses["exit"] = ucExit;
@@ -192,7 +194,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
             {
                 // add pair to the map
                 vector<string> tokens;
-                StringUtility::tokenize(line,tokens,VALUE_STRING);
+                StringUtility::tokenize(line,tokens,VALUE_STRING,2);
                 if (tokens.size() != 2)
                 {
                     cout << "Error: Incorrect key-value pair on line " << lineNumber << endl;
@@ -415,7 +417,8 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
         delete result;
         result = NULL;
     }
-    result->reset();
+    else
+        result->reset();
 
     return result;
 }
@@ -433,6 +436,11 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
 
     switch (unitClasses[params.front().second])
     {
+    case ucGeneric:
+    {
+        result = new BaseUnit(parent);
+        break;
+    }
     case ucPushableBox:
     {
         result = new PushableBox(parent);
@@ -504,7 +512,8 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
         delete result;
         result = NULL;
     }
-    result->reset();
+    else
+        result->reset();
 
     return result;
 }

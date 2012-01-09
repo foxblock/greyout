@@ -22,22 +22,6 @@ SoundTrigger::~SoundTrigger()
 
 ///---public---
 
-void SoundTrigger::reset()
-{
-    count = 0;
-    BaseTrigger::reset();
-}
-
-///---protected---
-
-void SoundTrigger::doTrigger(const UnitCollisionEntry& entry)
-{
-    if (playcount > 0 && ++count >= playcount)
-        enabled = false;
-
-    MUSIC_CACHE->playSound(filename,parent->chapterPath,loops);
-}
-
 bool SoundTrigger::processParameter(const PARAMETER_TYPE& value)
 {
     if (BaseTrigger::processParameter(value))
@@ -67,6 +51,22 @@ bool SoundTrigger::processParameter(const PARAMETER_TYPE& value)
     }
 
     return parsed;
+}
+
+void SoundTrigger::reset()
+{
+    count = 0;
+    BaseTrigger::reset();
+}
+
+///---protected---
+
+void SoundTrigger::doTrigger(const UnitCollisionEntry& entry)
+{
+    if (playcount > 0 && ++count >= playcount)
+        enabled = false;
+
+    MUSIC_CACHE->playSound(filename,parent->chapterPath,loops);
 }
 
 ///---private---

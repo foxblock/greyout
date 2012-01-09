@@ -16,13 +16,13 @@ public:
     ControlUnit(Level* newParent);
     ~ControlUnit();
 
+    virtual bool processParameter(const PARAMETER_TYPE& value);
+
     virtual void control(SimpleJoy* input);
 
     bool takesControl; // if true control will be called by level
 
 protected:
-    virtual bool processParameter(const PARAMETER_TYPE& value);
-
     enum ControlProps
     {
         cpControl=BaseUnit::upEOL,

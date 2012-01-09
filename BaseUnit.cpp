@@ -60,6 +60,7 @@ BaseUnit::BaseUnit(Level* newParent)
     direction = 0;
     isPlayer = false;
     orderRunning = false;
+    orderTimer = 0;
 
     currentOrder = 0;
 }
@@ -89,7 +90,7 @@ bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
 {
     for (list<PARAMETER_TYPE >::const_iterator value = params.begin(); value != params.end(); ++value)
     {
-        if (not processParameter(make_pair(value->first,value->second)))
+        if (not processParameter(*value))
         {
             string className = params.front().second;
             cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit with id \""
@@ -106,11 +107,140 @@ bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
         orderList.push_back(temp); // make unit stop after last order (unless a repeat order is specified)
     }
 
+    if (imageOverwrite[0] != 0)
+    {
+        SDL_Surface* surf = getSurface(imageOverwrite);
+        AnimatedSprite* temp = new AnimatedSprite;
+        temp->loadFrames(surf,1,1,0,1);
+        temp->setTransparentColour(MAGENTA);
+        states["default"] = temp;
+        startingState = "default";
+    }
+
 #ifdef _DEBUG
     collisionColours.insert(Colour(GREEN).getIntColour()); // collision indicator pixels else messing things up
 #endif
 
     return true; // Currently returns always true as no critical error checking is done here
+}
+
+bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
+{
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case upClass:
+    {
+        tag = value.second;
+        break;
+    }
+    case upState:
+    {
+        startingState = value.second;
+        break;
+    }
+    case upPosition:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        position.x = StringUtility::stringToFloat(token[0]);
+        position.y = StringUtility::stringToFloat(token[1]);
+        startingPosition = position;
+        break;
+    }
+    case upVelocity:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        velocity.x = StringUtility::stringToFloat(token[0]);
+        velocity.y = StringUtility::stringToFloat(token[1]);
+        startingVelocity = velocity;
+        break;
+    }
+    case upFlags:
+    {
+        flags.clear();
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        for (vector<string>::const_iterator flag = token.begin(); flag != token.end(); ++flag)
+        {
+            flags.addFlag(stringToFlag[*flag]);
+        }
+        break;
+    }
+    case upCollision:
+    {
+        collisionColours.clear();
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        for (vector<string>::const_iterator col = token.begin(); col != token.end(); ++col)
+        {
+            int val = StringUtility::stringToInt(*col);
+            if (val > 0 || (*col) == "0") // passed parameter is a numeric colour code
+                collisionColours.insert(Colour(val).getIntColour());
+            else // string colour code
+                collisionColours.insert(Colour(*col).getIntColour());
+        }
+        break;
+    }
+    case upImageOverwrite:
+    {
+        imageOverwrite = value.second;
+        break;
+    }
+    case upColour:
+    {
+        int val = StringUtility::stringToInt(value.second);
+        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
+            col = Colour(val);
+        else // string colour code
+            col = Colour(value.second);
+        collisionColours.insert(col.getIntColour());
+        startingColour = col;
+        break;
+    }
+    case upHealth:
+    {
+        collisionInfo.squashThreshold = StringUtility::stringToInt(value.second);
+        break;
+    }
+    case upID:
+    {
+        id = value.second;
+        break;
+    }
+    case upOrder:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING,2);
+        if (token.size() != 2)
+        {
+            Order temp = {stringToOrder[token.front()],""};
+            orderList.push_back(temp);
+        }
+        else
+        {
+            Order temp = {stringToOrder[token.front()],token.back()};
+            orderList.push_back(temp);
+        }
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
 }
 
 void BaseUnit::reset()
@@ -124,12 +254,17 @@ void BaseUnit::reset()
     toBeRemoved = false;
     if (startingState[0] != 0)
         setSpriteState(startingState,true);
+    resetOrder();
+    col = startingColour;
+}
+
+void BaseUnit::resetOrder()
+{
     if (orderList.size() > 0)
     {
         currentOrder = 0;
         processOrder(orderList.front());
     }
-    col = startingColour;
 }
 
 void BaseUnit::resetTemporary()
@@ -287,7 +422,7 @@ AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRbool reset, CRstri
     }
     else
         cout << "Unrecognized sprite state \"" << newState << "\" on unit with id \"" << id << "\"" << endl;
-    if (reset)
+    if (reset && currentSprite)
         currentSprite->rewind();
     return currentSprite;
 }
@@ -366,7 +501,7 @@ string BaseUnit::debugInfo()
     string result = "";
     result += tag + ";" + id + "\n";
     result += "P: " + StringUtility::vecToString(position) + " | " + StringUtility::intToString(getWidth()) + "," + StringUtility::intToString(getHeight()) + "\n" +
-              "V: " + StringUtility::vecToString(velocity) + "\n" +
+              "V: " + StringUtility::vecToString(velocity) + " | " +
               "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
               "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + "\n" +
               "S: " + currentState;
@@ -374,130 +509,13 @@ string BaseUnit::debugInfo()
         result += " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
     else
         result += "\n";
+    if (!orderList.empty())
+        result += "O: " + StringUtility::intToString(orderList[currentOrder].key) + "," + orderList[currentOrder].value + "(" + StringUtility::intToString(currentOrder) + ")\n";
     return result;
 }
 #endif
 
 /// ---protected---
-
-bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
-{
-    bool parsed = true;
-
-    switch (stringToProp[value.first])
-    {
-    case upClass:
-    {
-        tag = value.second;
-        break;
-    }
-    case upState:
-    {
-        startingState = value.second;
-        break;
-    }
-    case upPosition:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        position.x = StringUtility::stringToFloat(token[0]);
-        position.y = StringUtility::stringToFloat(token[1]);
-        startingPosition = position;
-        break;
-    }
-    case upVelocity:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        velocity.x = StringUtility::stringToFloat(token[0]);
-        velocity.y = StringUtility::stringToFloat(token[1]);
-        startingVelocity = velocity;
-        break;
-    }
-    case upFlags:
-    {
-        flags.clear();
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        for (vector<string>::const_iterator flag = token.begin(); flag != token.end(); ++flag)
-        {
-            flags.addFlag(stringToFlag[*flag]);
-        }
-        break;
-    }
-    case upCollision:
-    {
-        collisionColours.clear();
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        for (vector<string>::const_iterator col = token.begin(); col != token.end(); ++col)
-        {
-            int val = StringUtility::stringToInt(*col);
-            if (val > 0 || (*col) == "0") // passed parameter is a numeric colour code
-                collisionColours.insert(Colour(val).getIntColour());
-            else // string colour code
-                collisionColours.insert(Colour(*col).getIntColour());
-        }
-        break;
-    }
-    case upImageOverwrite:
-    {
-        imageOverwrite = value.second;
-        break;
-    }
-    case upColour:
-    {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
-            col = Colour(val);
-        else // string colour code
-            col = Colour(value.second);
-        collisionColours.insert(col.getIntColour());
-        startingColour = col;
-        break;
-    }
-    case upHealth:
-    {
-        collisionInfo.squashThreshold = StringUtility::stringToInt(value.second);
-        break;
-    }
-    case upID:
-    {
-        id = value.second;
-        break;
-    }
-    case upOrder:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING,2);
-        if (token.size() != 2)
-        {
-            Order temp = {stringToOrder[token.front()],""};
-            orderList.push_back(temp);
-        }
-        else
-        {
-            Order temp = {stringToOrder[token.front()],token.back()};
-            orderList.push_back(temp);
-        }
-        break;
-    }
-    default:
-        parsed = false;
-    }
-
-    return parsed;
-}
 
 void BaseUnit::move()
 {
@@ -587,7 +605,8 @@ bool BaseUnit::processOrder(Order& next)
     if (badOrder)
     {
         cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
-        orderList.erase(orderList.begin() + currentOrder);
+        if (currentOrder >= 0)
+            orderList.erase(orderList.begin() + currentOrder);
         orderTimer = 1; // process next order in next cycle
         return false;
     }

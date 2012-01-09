@@ -29,6 +29,14 @@ bool Exit::load(const list<PARAMETER_TYPE >& params)
     {
         imageOverwrite = "images/units/exit.png";
     }
+    else // clear sprites loaded by BaseUnit
+    {
+        for (map<string,AnimatedSprite*>::iterator I = states.begin(); I != states.end(); ++I)
+        {
+            delete I->second;
+        }
+        states.clear();
+    }
     AnimatedSprite* temp = new AnimatedSprite;
     temp->loadFrames(getSurface(imageOverwrite),2,1,0,1);
     temp->setTransparentColour(MAGENTA);
@@ -36,7 +44,7 @@ bool Exit::load(const list<PARAMETER_TYPE >& params)
     temp = new AnimatedSprite;
     temp->loadFrames(getSurface(imageOverwrite),2,1,1,1);
     temp->setTransparentColour(MAGENTA);
-    states["close"] = temp;
+    states["closed"] = temp;
     startingState = "open";
 
     return result;

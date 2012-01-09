@@ -29,6 +29,14 @@ bool BasePlayer::load(const list<PARAMETER_TYPE >& params)
     {
         imageOverwrite = "images/player/black_big.png";
     }
+    else // clear sprites loaded by BaseUnit
+    {
+        for (map<string,AnimatedSprite*>::iterator I = states.begin(); I != states.end(); ++I)
+        {
+            delete I->second;
+        }
+        states.clear();
+    }
     SDL_Surface* surf = getSurface(imageOverwrite);
     AnimatedSprite* temp;
     loadFrames(surf,0,1,false,"stand");

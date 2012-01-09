@@ -33,6 +33,14 @@ bool Gear::load(const list<PARAMETER_TYPE >& params)
         else
             imageOverwrite = "images/units/gear_white.png";
     }
+    else // clear sprites loaded by BaseUnit
+    {
+        for (map<string,AnimatedSprite*>::iterator I = states.begin(); I != states.end(); ++I)
+        {
+            delete I->second;
+        }
+        states.clear();
+    }
     img.loadImage(getSurface(imageOverwrite));
     img.setSurfaceSharing(true);
     img.setTransparentColour(Colour(MAGENTA));
@@ -40,6 +48,32 @@ bool Gear::load(const list<PARAMETER_TYPE >& params)
     img.precacheRotations();
 
     return result;
+}
+
+bool Gear::processParameter(const PARAMETER_TYPE& value)
+{
+    if (BaseUnit::processParameter(value))
+        return true;
+
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case gpSpeed:
+    {
+        speed = StringUtility::stringToFloat(value.second);
+        break;
+    }
+    case gpRotation:
+    {
+        angle = StringUtility::stringToFloat(value.second);
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
 }
 
 int Gear::getHeight() const
@@ -72,32 +106,6 @@ void Gear::render(SDL_Surface* surf)
 }
 
 ///---protected---
-
-bool Gear::processParameter(const PARAMETER_TYPE& value)
-{
-    if (BaseUnit::processParameter(value))
-        return true;
-
-    bool parsed = true;
-
-    switch (stringToProp[value.first])
-    {
-    case gpSpeed:
-    {
-        speed = StringUtility::stringToFloat(value.second);
-        break;
-    }
-    case gpRotation:
-    {
-        angle = StringUtility::stringToFloat(value.second);
-        break;
-    }
-    default:
-        parsed = false;
-    }
-
-    return parsed;
-}
 
 bool Gear::processOrder(Order& next)
 {

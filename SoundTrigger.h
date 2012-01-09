@@ -9,12 +9,11 @@ public:
     SoundTrigger(Level* newParent);
     virtual ~SoundTrigger();
 
+    virtual bool processParameter(const PARAMETER_TYPE& value);
     virtual void reset();
 
 protected:
     virtual void doTrigger(const UnitCollisionEntry& entry);
-
-    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     enum SoundProp
     {

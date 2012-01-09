@@ -18,8 +18,6 @@ CameraTrigger::~CameraTrigger()
 
 ///---public---
 
-///---protected---
-
 bool CameraTrigger::processParameter(const PARAMETER_TYPE& value)
 {
     bool parsed = true;
@@ -53,6 +51,17 @@ bool CameraTrigger::processParameter(const PARAMETER_TYPE& value)
 
     return parsed;
 }
+
+#ifdef _DEBUG
+string CameraTrigger::debugInfo()
+{
+    string result = BaseTrigger::debugInfo();
+    result += StringUtility::vecToString(dest) + "," + StringUtility::intToString(time);
+    return result;
+}
+#endif
+
+///---protected---
 
 void CameraTrigger::doTrigger(const UnitCollisionEntry& entry)
 {

@@ -5,6 +5,9 @@
 ExitTrigger::ExitTrigger(Level* newParent) : BaseTrigger(newParent)
 {
     triggerCol = LIGHT_RED;
+    startingState = "open";
+    states["open"] = NULL;
+    states["closed"] = NULL;
 }
 
 ExitTrigger::~ExitTrigger()
@@ -18,10 +21,13 @@ ExitTrigger::~ExitTrigger()
 
 void ExitTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
-    entry.unit->toBeRemoved = true;
-    parent->swapControl();
-    if (entry.unit->flags.hasFlag(ufMissionObjective))
-        parent->winCounter--;
+    if (currentState == "open")
+    {
+        entry.unit->toBeRemoved = true;
+        parent->swapControl();
+        if (entry.unit->flags.hasFlag(ufMissionObjective))
+            parent->winCounter--;
+    }
 }
 
 ///---private---
