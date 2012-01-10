@@ -9,6 +9,7 @@ public:
     ExitTrigger(Level* newParent);
     virtual ~ExitTrigger();
 
+    bool load(list<PARAMETER_TYPE >& params);
 protected:
     virtual void doTrigger(const UnitCollisionEntry& entry);
 private:

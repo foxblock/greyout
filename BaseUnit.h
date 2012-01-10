@@ -36,7 +36,7 @@ public:
     // loads the unit's parameters from a map<key,value> passed from the level loading
     // passes the individual key=value pairs to processParameter
     // returns true on success and false on fail
-    virtual bool load(const list<PARAMETER_TYPE >& params);
+    virtual bool load(list<PARAMETER_TYPE >& params);
     // processes a single key=value pair for loading
     // this function can be overwritten in child classes to allow for custom data fiels
     // return true if the data has been successfully processed, false otherwise
@@ -58,8 +58,6 @@ public:
     // returns the coordinate of an edge pixel (edge indicated by passed direction)
     virtual Vector2df getPixel(const SimpleDirection& dir) const;
     virtual SDL_Rect getRect() const;
-    void setStartingPosition(const Vector2df& pos);
-    void setStartingVelocity(const Vector2df& vel);
 
     virtual void update();
     virtual void updateScreenPosition(const Vector2di& offset);
@@ -92,8 +90,7 @@ public:
     Vector2df position;
     Vector2df startingPosition;
     Vector2df velocity; // velocity caused by the unit's movement
-    Vector2df startingVelocity;
-    Vector2df gravity;  // velocity caused by gravity
+    Vector2df gravity;  // velocity caused by gravity (NOT IMPLEMENTED)
     Vector2df acceleration[2]; // 0 - increment, 1 - maximum
     int direction; // the direction the unit is facing (use for sprite orientation)
     set<int> collisionColours;
@@ -101,7 +98,6 @@ public:
     SimpleFlags flags;
     string imageOverwrite; // used for level-specific customisation
     Colour col; // the colour of this unit
-    Colour startingColour;
 
     // this is only a "working" pointer, it will not get deleted
     AnimatedSprite* currentSprite;
@@ -133,6 +129,9 @@ public:
     // you can simply add unit-specific flags in child classes
     static map<string,int> stringToFlag;
 
+    // Copy of the parameters this unit was loaded with
+    list<PARAMETER_TYPE > parameters;
+
 protected:
     // basically just a lazy way of writing position += velocity
     virtual void move();
@@ -151,6 +150,8 @@ protected:
         upHealth,
         upID,
         upOrder,
+        upSize,
+        upTarget,
         upEOL // end of list value, starting point for child classes' lists
     };
     // converts a string from a level file to a propIdent usable in a switch statement

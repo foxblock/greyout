@@ -10,7 +10,6 @@ public:
     virtual ~BaseTrigger();
 
     virtual bool processParameter(const PARAMETER_TYPE& value);
-    virtual void reset();
 
     virtual void render(SDL_Surface* surf);
 
@@ -25,7 +24,6 @@ public:
     #endif
 
     bool enabled;
-    bool startingEnabled;
 
 protected:
     virtual void doTrigger(const UnitCollisionEntry& entry);
@@ -38,9 +36,7 @@ protected:
 
     enum BaseTriggerProps
     {
-        bpSize=BaseUnit::upEOL,
-        bpEnabled,
-        bpTarget,
+        bpEnabled=BaseUnit::upEOL,
         bpAction,
         bpEOL
     };

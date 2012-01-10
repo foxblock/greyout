@@ -9,7 +9,7 @@ public:
     Key(Level* newParent);
     virtual ~Key();
 
-    virtual bool load(const list<PARAMETER_TYPE >& params);
+    virtual bool load(list<PARAMETER_TYPE >& params);
     virtual bool processParameter(const PARAMETER_TYPE& value);
     virtual void reset();
 
@@ -17,11 +17,6 @@ public:
     virtual void hitUnit(const UnitCollisionEntry& entry);
 protected:
 
-    enum KeyProp
-    {
-        kpTarget=BaseUnit::upEOL,
-        kpEOL
-    };
     vector<BaseUnit*> targets;
 
 private:

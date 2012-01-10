@@ -9,8 +9,8 @@ public:
     Switch(Level* newParent);
     virtual ~Switch();
 
+    virtual bool load(list<PARAMETER_TYPE >& params);
     virtual bool processParameter(const PARAMETER_TYPE& value);
-    virtual bool load(const list<PARAMETER_TYPE >& params);
     virtual void reset();
 
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;
@@ -35,7 +35,6 @@ protected:
     enum SwitchProp
     {
         spFunction=BaseUnit::upEOL,
-        spTarget,
         bpEOL
     };
 

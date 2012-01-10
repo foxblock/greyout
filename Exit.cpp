@@ -9,7 +9,6 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoUnitCollision);
 
     col = Colour(50,217,54);
-    startingColour = col;
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
 }
@@ -21,7 +20,7 @@ Exit::~Exit()
 
 ///---public---
 
-bool Exit::load(const list<PARAMETER_TYPE >& params)
+bool Exit::load(list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -45,7 +44,10 @@ bool Exit::load(const list<PARAMETER_TYPE >& params)
     temp->loadFrames(getSurface(imageOverwrite),2,1,1,1);
     temp->setTransparentColour(MAGENTA);
     states["closed"] = temp;
-    startingState = "open";
+
+    if (startingState[0] == 0 || startingState == "default")
+        startingState = "open";
+    setSpriteState(startingState,true);
 
     return result;
 }

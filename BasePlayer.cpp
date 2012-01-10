@@ -21,7 +21,7 @@ BasePlayer::~BasePlayer()
 ///---public---
 
 // Custom load implementation to ensure the unit is initialized properly after loading
-bool BasePlayer::load(const list<PARAMETER_TYPE >& params)
+bool BasePlayer::load(list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -65,21 +65,18 @@ bool BasePlayer::load(const list<PARAMETER_TYPE >& params)
     temp->setPlayMode(pmPulse);
     temp->setFrameRate(FIFTEEN_FRAMES);
 
-    if (takesControl)
-        startingState = "wave";
-    else
-        startingState = "stand";
+
+    if (startingState[0] == 0 || startingState == "default")
+    {
+        if (takesControl)
+            startingState = "wave";
+        else
+            startingState = "stand";
+    }
+
+    setSpriteState(startingState,true);
 
     return result;
-}
-
-void BasePlayer::reset()
-{
-    if (takesControl)
-        startingState = "wave";
-    else
-        startingState = "stand";
-    BaseUnit::reset();
 }
 
 void BasePlayer::resetTemporary()
