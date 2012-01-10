@@ -9,11 +9,9 @@ Key::Key(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoUnitCollision);
 
     col = Colour(50,217,54);
-    startingColour = col;
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
 
-    stringToProp["target"] = kpTarget;
 }
 
 Key::~Key()
@@ -23,7 +21,7 @@ Key::~Key()
 
 ///---public---
 
-bool Key::load(const list<PARAMETER_TYPE >& params)
+bool Key::load(list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -43,7 +41,10 @@ bool Key::load(const list<PARAMETER_TYPE >& params)
     temp->loadFrames(getSurface(imageOverwrite),1,1,0,1);
     temp->setTransparentColour(MAGENTA);
     states["key"] = temp;
-    startingState = "key";
+
+    if (startingState[0] == 0 || startingState == "default")
+        startingState = "key";
+    setSpriteState(startingState,true);
 
     if (targets.empty())
         result = false;
@@ -60,8 +61,9 @@ bool Key::processParameter(const PARAMETER_TYPE& value)
 
     switch (stringToProp[value.first])
     {
-    case kpTarget:
+    case BaseUnit::upTarget:
     {
+        targets.clear();
         vector<string> tokens;
         StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
         for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)

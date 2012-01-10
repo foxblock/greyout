@@ -11,7 +11,7 @@ public:
     TextObject(Level* newParent);
     virtual ~TextObject();
 
-    virtual bool load(const list<PARAMETER_TYPE >& params);
+    virtual bool load(list<PARAMETER_TYPE >& params);
     virtual bool processParameter(const PARAMETER_TYPE& value);
 
     virtual void updateScreenPosition(const Vector2di& offset);
@@ -31,7 +31,6 @@ protected:
     enum TextProps
     {
         tpFont=BaseUnit::upEOL,
-        tpSize,
         tpText,
         bpEOL
     };

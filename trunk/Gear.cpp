@@ -22,7 +22,7 @@ Gear::~Gear()
 
 ///---public---
 
-bool Gear::load(const list<PARAMETER_TYPE >& params)
+bool Gear::load(list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 

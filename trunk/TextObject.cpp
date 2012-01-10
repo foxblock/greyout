@@ -7,7 +7,6 @@
 TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
 {
     stringToProp["font"] = tpFont;
-    stringToProp["size"] = tpSize;
     stringToProp["text"] = tpText;
 
     flags.addFlag(ufNoMapCollision);
@@ -27,7 +26,7 @@ TextObject::~TextObject()
 
 ///---public---
 
-bool TextObject::load(const list<PARAMETER_TYPE >& params)
+bool TextObject::load(list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -56,7 +55,7 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
         currentText.loadFont(value.second);
         break;
     }
-    case tpSize:
+    case BaseUnit::upSize:
     {
         int val = StringUtility::stringToInt(value.second);
         if (val > 0)

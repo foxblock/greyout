@@ -5,9 +5,8 @@
 
 BaseTrigger::BaseTrigger(Level* newParent) : BaseUnit(newParent)
 {
-    stringToProp["size"] = bpSize;
+    stringToProp["size"] = BaseUnit::upSize;
     stringToProp["enabled"] = bpEnabled;
-    stringToProp["target"] = bpTarget;
     stringToProp["action"] = bpAction;
     width = 32;
     height = 32;
@@ -18,7 +17,6 @@ BaseTrigger::BaseTrigger(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoUnitCollision);
     triggerCol = YELLOW;
     enabled = true;
-    startingEnabled = true;
     targetParam.first = "";
     targetParam.second = "";
 }
@@ -36,7 +34,7 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
 
     switch (stringToProp[value.first])
     {
-    case bpSize:
+    case BaseUnit::upSize:
     {
         vector<string> token;
         StringUtility::tokenize(value.second,token,DELIMIT_STRING);
@@ -52,11 +50,11 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
     case bpEnabled:
     {
         enabled = StringUtility::stringToBool(value.second);
-        startingEnabled = enabled;
         break;
     }
-    case bpTarget:
+    case BaseUnit::upTarget:
     {
+        targets.clear();
         vector<string> tokens;
         StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
         for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
@@ -80,6 +78,7 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
         }
         targetParam.first = tokens.front();
         targetParam.second = tokens.back();
+        break;
     }
     default:
         parsed = false;
@@ -89,12 +88,6 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
         return BaseUnit::processParameter(value);
 
     return parsed;
-}
-
-void BaseTrigger::reset()
-{
-    enabled = startingEnabled;
-    BaseUnit::reset();
 }
 
 void BaseTrigger::render(SDL_Surface* surf)

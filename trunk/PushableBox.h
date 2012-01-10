@@ -20,7 +20,6 @@ class PushableBox : public BaseUnit
         virtual ~PushableBox();
 
         virtual bool processParameter(const PARAMETER_TYPE& value);
-        virtual void reset();
 
         virtual int getHeight() const;
         virtual int getWidth() const;
@@ -33,8 +32,6 @@ class PushableBox : public BaseUnit
 
         virtual void explode();
 
-        Vector2di startingSize;
-
         SDL_Rect rect;
     protected:
         virtual bool processOrder(Order& next);
@@ -44,11 +41,6 @@ class PushableBox : public BaseUnit
 
         Vector2di sizeTimer;
 
-        enum BoxProp
-        {
-            bpSize=BaseUnit::upEOL,
-            bpEOL
-        };
         enum BoxOrder
         {
             boSize=BaseUnit::okEOL,

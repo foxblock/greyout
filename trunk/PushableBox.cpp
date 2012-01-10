@@ -11,13 +11,9 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
     rect.w = 32;
     rect.h = 32;
     col = BLACK;
-    startingColour = BLACK;
     sizeTimer.x = 0;
     sizeTimer.y = 0;
-    startingSize.x = rect.w;
-    startingSize.y = rect.h;
 
-    stringToProp["size"] = bpSize;
     stringToOrder["size"] = boSize;
 }
 
@@ -42,7 +38,7 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
 
     switch (stringToProp[value.first])
     {
-    case bpSize:
+    case BaseUnit::upSize:
     {
         vector<string> token;
         StringUtility::tokenize(value.second,token,DELIMIT_STRING);
@@ -53,8 +49,6 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
         }
         rect.w = StringUtility::stringToInt(token[0]);
         rect.h = StringUtility::stringToInt(token[1]);
-        startingSize.x = rect.w;
-        startingSize.y = rect.h;
         break;
     }
     default:
@@ -62,13 +56,6 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
     }
 
     return parsed;
-}
-
-void PushableBox::reset()
-{
-    rect.w = startingSize.x;
-    rect.h = startingSize.y;
-    BaseUnit::reset();
 }
 
 int PushableBox::getHeight() const

@@ -32,6 +32,8 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["health"] = upHealth;
     stringToProp["id"] = upID;
     stringToProp["order"] = upOrder;
+    stringToProp["size"] = upSize;
+    stringToProp["target"] = upTarget;
 
     stringToOrder["idle"] = okIdle;
     stringToOrder["position"] = okPosition;
@@ -44,7 +46,6 @@ BaseUnit::BaseUnit(Level* newParent)
     position = Vector2df(0.0f,0.0f);
     startingPosition = Vector2df(0.0f,0.0f);
     velocity = Vector2df(0.0f,0.0f);
-    startingVelocity = Vector2df(0.0f,0.0f);
     gravity = Vector2df(0.0f,0.0f);
     acceleration[0] = Vector2df(0.0f,0.0f);
     acceleration[1] = Vector2df(0.0f,0.0f);
@@ -54,14 +55,12 @@ BaseUnit::BaseUnit(Level* newParent)
     id = "";
     imageOverwrite = "";
     col = WHITE;
-    startingColour = WHITE;
     currentState = "";
     startingState = "";
     direction = 0;
     isPlayer = false;
     orderRunning = false;
     orderTimer = 0;
-
     currentOrder = 0;
 }
 
@@ -74,21 +73,20 @@ BaseUnit::~BaseUnit()
 {
     collisionInfo.clear();
     collisionColours.clear();
-    stringToFlag.clear();
-    stringToProp.clear();
     for (map<string,AnimatedSprite*>::iterator iter = states.begin(); iter != states.end(); ++iter)
     {
         delete iter->second;
     }
     states.clear();
     orderList.clear();
+    parameters.clear();
 }
 
 /// ---public---
 
-bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
+bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 {
-    for (list<PARAMETER_TYPE >::const_iterator value = params.begin(); value != params.end(); ++value)
+    for (list<PARAMETER_TYPE >::iterator value = params.begin(); value != params.end(); ++value)
     {
         if (not processParameter(*value))
         {
@@ -105,6 +103,8 @@ bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
     {
         Order temp = {okIdle,"-1"};
         orderList.push_back(temp); // make unit stop after last order (unless a repeat order is specified)
+        currentOrder = 0;
+        processOrder(orderList.front());
     }
 
     if (imageOverwrite[0] != 0)
@@ -115,6 +115,7 @@ bool BaseUnit::load(const list<PARAMETER_TYPE >& params)
         temp->setTransparentColour(MAGENTA);
         states["default"] = temp;
         startingState = "default";
+        setSpriteState(startingState,true);
     }
 
 #ifdef _DEBUG
@@ -165,7 +166,6 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         }
         velocity.x = StringUtility::stringToFloat(token[0]);
         velocity.y = StringUtility::stringToFloat(token[1]);
-        startingVelocity = velocity;
         break;
     }
     case upFlags:
@@ -207,7 +207,6 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         else // string colour code
             col = Colour(value.second);
         collisionColours.insert(col.getIntColour());
-        startingColour = col;
         break;
     }
     case upHealth:
@@ -245,17 +244,17 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 
 void BaseUnit::reset()
 {
-    position = startingPosition;
-    velocity = startingVelocity;
-    gravity = Vector2df(0,0);
     acceleration[0] = Vector2df(0,0);
     acceleration[1] = Vector2df(0,0);
     collisionInfo.clear();
+    for (map<string,AnimatedSprite*>::iterator iter = states.begin(); iter != states.end(); ++iter)
+    {
+        delete iter->second;
+    }
+    states.clear();
+    orderList.clear();
     toBeRemoved = false;
-    if (startingState[0] != 0)
-        setSpriteState(startingState,true);
-    resetOrder();
-    col = startingColour;
+    load(parameters);
 }
 
 void BaseUnit::resetOrder()
@@ -327,18 +326,6 @@ SDL_Rect BaseUnit::getRect() const
 {
     SDL_Rect result = {position.x,position.y,getWidth(),getHeight()};
     return result;
-}
-
-void BaseUnit::setStartingPosition(const Vector2df& pos)
-{
-    position = pos;
-    startingPosition = pos;
-}
-
-void BaseUnit::setStartingVelocity(const Vector2df& vel)
-{
-    velocity = vel;
-    startingVelocity = vel;
 }
 
 void BaseUnit::update()

@@ -135,6 +135,7 @@ LevelLoader* LevelLoader::getLevelLoader()
 
 Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
 {
+    cout << "---------------------------------------------------------" << endl;
     cout << "Trying to load level file \"" << filename << "\"" << endl;
 
     string line;
@@ -323,6 +324,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         break;
     }
 
+    cout << "---------------------------------------------------------" << endl;
     return level;
 }
 
@@ -411,14 +413,13 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
         return NULL;
     }
 
-    if (not result->load(params))
+    result->parameters.insert(result->parameters.begin(),params.begin(),params.end());
+    if (not result->load(result->parameters))
     {
         cout << "Error loading unit id \"" << result->id << "\"" << endl;
         delete result;
         result = NULL;
     }
-    else
-        result->reset();
 
     return result;
 }
@@ -506,14 +507,13 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
         return NULL;
     }
 
-    if (not result->load(params))
+    result->parameters.insert(result->parameters.begin(),params.begin(),params.end());
+    if (not result->load(result->parameters))
     {
         cout << "Error loading unit id \"" << result->id << "\"" << endl;
         delete result;
         result = NULL;
     }
-    else
-        result->reset();
 
     return result;
 }

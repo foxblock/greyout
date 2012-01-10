@@ -5,9 +5,6 @@
 ExitTrigger::ExitTrigger(Level* newParent) : BaseTrigger(newParent)
 {
     triggerCol = LIGHT_RED;
-    startingState = "open";
-    states["open"] = NULL;
-    states["closed"] = NULL;
 }
 
 ExitTrigger::~ExitTrigger()
@@ -16,6 +13,18 @@ ExitTrigger::~ExitTrigger()
 }
 
 ///---public---
+
+bool ExitTrigger::load(list<PARAMETER_TYPE >& params)
+{
+    bool result = BaseTrigger::load(params);
+
+    states["open"] = NULL;
+    states["closed"] = NULL;
+    startingState = "open";
+    setSpriteState(startingState);
+
+    return result;
+}
 
 ///---protected---
 

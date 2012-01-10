@@ -14,7 +14,6 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
     flags.addFlag(ufNoUnitCollision);
 
     col = Colour(50,217,54);
-    startingColour = col;
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
     switchTimer = 0;
@@ -22,7 +21,6 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
     switchOff = NULL;
 
     stringToProp["function"] = spFunction;
-    stringToProp["target"] = spTarget;
 
     stringToFunc["movement"] = sfMovement;
     stringToFunc["parameter"] = sfParameter;
@@ -37,7 +35,7 @@ Switch::~Switch()
 
 ///---public---
 
-bool Switch::load(const list<PARAMETER_TYPE >& params)
+bool Switch::load(list<PARAMETER_TYPE >& params)
 {
     bool result = BaseUnit::load(params);
 
@@ -62,8 +60,9 @@ bool Switch::load(const list<PARAMETER_TYPE >& params)
     temp->setTransparentColour(MAGENTA);
     states["on"] = temp;
 
-    if (startingState[0] == 0)
+    if (startingState[0] == 0 || startingState == "default")
         startingState = "off";
+    setSpriteState(startingState,true);
 
     if (!switchOn || targets.empty())
         result = false;
@@ -140,8 +139,9 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
         }
         break;
     }
-    case spTarget:
+    case BaseUnit::upTarget:
     {
+        targets.clear();
         vector<string> tokens;
         StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
         for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
