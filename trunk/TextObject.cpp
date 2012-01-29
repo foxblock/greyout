@@ -15,14 +15,14 @@ TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
 
     col = BLACK;
     line = "";
+    currentText = NULL;
+    fontSize = 24;
 }
 
 TextObject::~TextObject()
 {
-    //
+    delete currentText;
 }
-
-// TODO: Crashes on the Pandora, find cause of that
 
 ///---public---
 
@@ -35,8 +35,13 @@ bool TextObject::load(list<PARAMETER_TYPE >& params)
         cout << "ERROR: No text specified for TextObject: " << id << endl;
         return false;
     }
-    currentText.setColour(col);
-    size = currentText.getDimensions(line);
+    if (currentText == NULL)
+    {
+        cout << "ERROR: Failed to load or missing font on TextObject: " << id << endl;
+        return false;
+    }
+    currentText->setColour(col);
+    size = currentText->getDimensions(line);
 
     return result;
 }
@@ -52,14 +57,27 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
     {
     case tpFont:
     {
-        currentText.loadFont(value.second);
+        delete currentText;
+        currentText = new Text;
+        PENJIN_ERRORS err = currentText->loadFont(value.second,fontSize);
+        if (err != PENJIN_OK)
+        {
+            printf("ERROR: Loading font \"%s\" in size %i  failed: %s\n",value.second.c_str(),fontSize,TTF_GetError());
+            delete currentText;
+            currentText = NULL;
+            return false;
+        }
         break;
     }
     case BaseUnit::upSize:
     {
         int val = StringUtility::stringToInt(value.second);
         if (val > 0)
-            currentText.setFontSize(val);
+        {
+            fontSize = val;
+            if (currentText)
+                currentText->setFontSize(val);
+        }
         else
             parsed = false;
         break;
@@ -78,13 +96,13 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
 
 void TextObject::updateScreenPosition(const Vector2di& offset)
 {
-    currentText.setPosition(position - offset);
+    currentText->setPosition(position - offset);
 }
 
 void TextObject::render(SDL_Surface* screen)
 {
-    currentText.setColour(col);
-    currentText.print(screen,line);
+    currentText->setColour(col);
+    currentText->print(screen,line);
 }
 
 bool TextObject::hitUnitCheck(const BaseUnit* const caller) const
@@ -101,8 +119,8 @@ void TextObject::explode()
         SDL_FillRect(temp, NULL, SDL_MapRGB(temp->format,255,0,255));
         none = MAGENTA;
     }
-    currentText.setPosition(0,0);
-    currentText.print(temp,line);
+    currentText->setPosition(0,0);
+    currentText->print(temp,line);
 
     int bpp = temp->format->BytesPerPixel;
     Colour pix = MAGENTA;

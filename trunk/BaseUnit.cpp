@@ -86,6 +86,9 @@ BaseUnit::~BaseUnit()
 
 bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 {
+    if (id[0] == 0) // always set ID to increasing number (per level) - may be overriden in level file
+        id = StringUtility::intToString(++(parent->idCounter));
+
     for (list<PARAMETER_TYPE >::iterator value = params.begin(); value != params.end(); ++value)
     {
         if (not processParameter(*value))
@@ -95,9 +98,6 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
                  << id << "\" (" << className << ")" << endl;
         }
     }
-
-    if (id[0] == 0) // set id to increasing number if not set manually
-        id = StringUtility::intToString(++(parent->idCounter));
 
     if (orderList.size() > 0)
     {
@@ -257,9 +257,15 @@ void BaseUnit::reset()
     load(parameters);
 }
 
-void BaseUnit::resetOrder()
+void BaseUnit::resetOrder(const bool &clear)
 {
-    if (orderList.size() > 0)
+    if (clear)
+    {
+        orderList.clear();
+        orderRunning = false;
+        currentOrder = 0;
+    }
+    else if (orderList.size() > 0)
     {
         currentOrder = 0;
         processOrder(orderList.front());

@@ -48,6 +48,8 @@
 #define TIME_TRIAL_MENU_OFFSET_Y 80
 #endif
 
+#define XOR(a,b) ((a) && !(b)) || (!(a) && (b))
+
 map<string,int> Level::stringToFlag;
 map<string,int> Level::stringToProp;
 
@@ -94,15 +96,15 @@ Level::Level()
     trialEnd = false;
 
 #ifdef _DEBUG
-    debugText.loadFont("fonts/unispace.ttf",12);
+    debugText.loadFont(DEBUG_FONT,12);
     debugText.setColour(GREEN);
     debugString = "";
-    fpsDisplay.loadFont("fonts/unispace.ttf",24);
+    fpsDisplay.loadFont(DEBUG_FONT,24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
 #endif
-    nameText.loadFont("fonts/Lato-Bold.ttf",NAME_TEXT_SIZE);
+    nameText.loadFont(GAME_FONT,NAME_TEXT_SIZE);
     nameText.setColour(WHITE);
     nameText.setAlignment(CENTRED);
     nameText.setUpBoundary(Vector2di(GFX::getXResolution(),GFX::getYResolution()));
@@ -114,7 +116,7 @@ Level::Level()
 
     if (ENGINE->timeTrial)
     {
-        timeTrialText.loadFont("fonts/Lato-Bold.ttf",int(NAME_TEXT_SIZE * 1.5));
+        timeTrialText.loadFont(GAME_FONT,int(NAME_TEXT_SIZE * 1.5));
         timeTrialText.setColour(WHITE);
         timeTrialText.setAlignment(RIGHT_JUSTIFIED);
         timeTrialText.setUpBoundary(Vector2di(GFX::getXResolution()-PAUSE_MENU_OFFSET_X,GFX::getYResolution()-10));
@@ -130,8 +132,8 @@ Level::Level()
     overlay.setColour(BLACK);
     overlay.setAlpha(100);
 
-    hidex = NULL;
-    hidey = NULL;
+    hideHor = false;
+    hideVert = false;
 }
 
 Level::~Level()
@@ -165,8 +167,6 @@ Level::~Level()
     #ifdef _DEBUG
     debugUnits.clear();
     #endif
-    delete hidex;
-    delete hidey;
 
     // reset background colour
     GFX::setClearColour(BLACK);
@@ -195,17 +195,9 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
         collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->w,levelImage->h,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
     }
     if (getWidth() < GFX::getXResolution())
-    {
-        hidex = new Rectangle;
-        hidex->setDimensions((GFX::getXResolution() - getWidth()) / 2.0f,GFX::getYResolution());
-        hidex->setColour(GFX::getClearColour());
-    }
+        hideHor = true;
     if (getHeight() < GFX::getYResolution())
-    {
-        hidey = new Rectangle;
-        hidey->setDimensions(GFX::getXResolution() - max((int)GFX::getXResolution() - getWidth(),0),(GFX::getYResolution() - getHeight()) / 2.0f);
-        hidey->setColour(GFX::getClearColour());
-    }
+        hideVert = true;
 
     return true;
 }
@@ -487,7 +479,7 @@ void Level::render()
     render(GFX::getVideoSurface());
 
     // if level is smaller hide outside area
-    if (hidex) // left and right
+    if (hideHor) // left and right
     {
         if (flags.hasFlag(lfRepeatX) && flags.hasFlag(lfDrawPattern))
         {
@@ -506,13 +498,17 @@ void Level::render()
         }
         else
         {
-            hidex->setPosition(0,0);
-            hidex->render();
-            hidex->setPosition(getWidth() - drawOffset.x,0.0f);
-            hidex->render();
+            SDL_Rect rect;
+            rect.x = 0;
+            rect.y = 0;
+            rect.w = (GFX::getXResolution() - getWidth()) / 2.0f;
+            rect.h = GFX::getYResolution();
+            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
+            rect.x = getWidth() - drawOffset.x;
+            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
         }
     }
-    if (hidey) // top and bottom
+    if (hideVert) // top and bottom
     {
         if (flags.hasFlag(lfRepeatY) && flags.hasFlag(lfDrawPattern))
         {
@@ -531,13 +527,25 @@ void Level::render()
         }
         else
         {
-            hidey->setPosition(max(-drawOffset.x,0.0f),0.0f);
-            hidey->render();
-            hidey->setPosition(max(-drawOffset.x,0.0f),getHeight() - drawOffset.y);
-            hidey->render();
+            SDL_Rect rect;
+            rect.y = 0;
+            if (flags.hasFlag(lfRepeatX))
+            {
+                rect.x = 0;
+                rect.w = GFX::getXResolution();
+            }
+            else
+            {
+                rect.x = max(-drawOffset.x,0.0f);
+                rect.w = GFX::getXResolution() - max((int)GFX::getXResolution() - getWidth(),0);
+            }
+            rect.h = (GFX::getYResolution() - getHeight()) / 2.0f;
+            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
+            rect.y = getHeight() - drawOffset.y;
+            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
         }
     }
-    if (hidex && hidey && flags.hasFlag(lfRepeatX) && flags.hasFlag(lfRepeatY)
+    if (hideHor && hideVert && flags.hasFlag(lfRepeatX) && flags.hasFlag(lfRepeatY)
         && flags.hasFlag(lfDrawPattern)) // corners
     {
         SDL_Rect src;
@@ -634,7 +642,7 @@ void Level::render()
 void Level::render(SDL_Surface* screen)
 {
     // split screen on small screens and multiple players
-    if (not hidex && not hidey && (flags.hasFlag(lfSplitX) || flags.hasFlag(lfSplitY)) && players.size() > 1 && not playersVisible())
+    if (not hideHor && not hideVert && (flags.hasFlag(lfSplitX) || flags.hasFlag(lfSplitY)) && players.size() > 1 && not playersVisible())
     {
         // TODO: Proper algorithm here, not centring on one player, but "between" both and smooth
         // disconnection of screen parts (make X and Y split automatically maybe)

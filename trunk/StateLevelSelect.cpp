@@ -81,11 +81,11 @@ StateLevelSelect::StateLevelSelect()
     previewDraw = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
     SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
     SDL_SetColorKey(previewDraw, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(previewDraw->format,255,0,255));
-    imageText.loadFont("fonts/Lato-Bold.ttf",IMAGE_FONT_SIZE);
+    imageText.loadFont(GAME_FONT,IMAGE_FONT_SIZE);
     imageText.setUpBoundary(size);
     imageText.setWrapping(true);
     imageText.setColour(WHITE);
-    title.loadFont("fonts/Lato-Bold.ttf",TITLE_FONT_SIZE);
+    title.loadFont(GAME_FONT,TITLE_FONT_SIZE);
     title.setAlignment(LEFT_JUSTIFIED);
     title.setColour(WHITE);
     title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
@@ -98,7 +98,7 @@ StateLevelSelect::StateLevelSelect()
     overlay.setPosition(0,0);
     overlay.setAlpha(100);
 #ifdef _DEBUG
-    fpsDisplay.loadFont("fonts/unispace.ttf",24);
+    fpsDisplay.loadFont(DEBUG_FONT,24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);

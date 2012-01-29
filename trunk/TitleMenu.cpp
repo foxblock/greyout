@@ -64,7 +64,7 @@ TitleMenu::TitleMenu()
     }
 
     #ifdef _DEBUG
-    fpsDisplay.loadFont("fonts/Lato-Bold.ttf",24);
+    fpsDisplay.loadFont(GAME_FONT,24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);

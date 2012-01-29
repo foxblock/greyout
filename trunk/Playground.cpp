@@ -105,7 +105,7 @@ void Playground::userInput()
     }
     if (input->isRightClick())
         debugUnits.clear();
-    //input->resetMouseButtons();
+    input->resetMouseButtons();
 #else
     if (input->isLeftClick())
     {
