@@ -223,16 +223,16 @@ void Switch::movementOff(BaseUnit* unit)
 
 void Switch::parameterOn(BaseUnit* unit)
 {
+    if (paramOn.first == "order")
+        unit->resetOrder(true);
     unit->processParameter(paramOn);
-    if (paramOn.first == "order" && !unit->orderRunning)
-        unit->resetOrder();
 }
 
 void Switch::parameterOff(BaseUnit* unit)
 {
+    if (paramOn.first == "order")
+        unit->resetOrder(true);
     unit->processParameter(paramOff);
-    if (paramOn.first == "order" && !unit->orderRunning)
-        unit->resetOrder();
 }
 
 ///---private---

@@ -4,6 +4,7 @@
 #include "Colour.h"
 #include "Vector2di.h"
 #include "SurfaceCache.h"
+#include "gameDefines.h"
 
 StateTitle::StateTitle()
 {
@@ -32,9 +33,9 @@ StateTitle::StateTitle()
     penjin.setAlpha(0);
 
     #ifdef _MEOW
-    text.loadFont("fonts/Lato-Bold.ttf",24);
+    text.loadFont(GAME_FONT,24);
     #else
-    text.loadFont("fonts/Lato-Bold.ttf",48);
+    text.loadFont(GAME_FONT,48);
     #endif
     text.setColour(BLACK);
     text.setBoundaries(Vector2di(0,0),Vector2di(GFX::getXResolution(),GFX::getYResolution()));

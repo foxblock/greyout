@@ -22,7 +22,7 @@ Dialogue::Dialogue()
     rect.setDimensions(GFX::getXResolution(),DIALOGUE_HEIGHT);
     rect.setPosition(0,0);
     rect.setColour(BLACK);
-    text.loadFont("fonts/Lato-Bold.ttf",24);
+    text.loadFont(GAME_FONT,24);
     text.setUpBoundary(Vector2di(GFX::getXResolution()-DIALOGUE_SPACING*2,DIALOGUE_HEIGHT-DIALOGUE_SPACING*2));
     text.setWrapping(true);
     text.setColour(BLACK);

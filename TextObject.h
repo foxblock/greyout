@@ -24,9 +24,10 @@ public:
 
     virtual void explode();
 protected:
-    Text currentText;
+    Text* currentText;
     string line;
     Vector2di size;
+    int fontSize;
 
     enum TextProps
     {

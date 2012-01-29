@@ -45,7 +45,7 @@ public:
     // resets the unit to its initial state (right after loading)
     virtual void reset();
     // restarts the order system
-    void resetOrder();
+    void resetOrder(const bool &clear=false);
     // resets the unit temporary values like collisionInfo
     virtual void resetTemporary();
 

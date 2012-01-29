@@ -2,10 +2,11 @@
 
 #include "Vector2di.h"
 #include "GreySurfaceCache.h"
+#include "gameDefines.h"
 
 StateError::StateError()
 {
-    errorDisplay.loadFont("fonts/Lato-Bold.ttf",36);
+    errorDisplay.loadFont(GAME_FONT,36);
     errorDisplay.setBoundaries(Vector2di(20,20),Vector2di(780,460));
     errorDisplay.setWrapping(true);
     errorDisplay.setRelativity(true);

@@ -193,8 +193,8 @@ protected:
     int timeDisplay;
     bool newRecord;
 
-    Rectangle* hidex;
-    Rectangle* hidey;
+    bool hideHor;
+    bool hideVert;
 };
 
 #endif
