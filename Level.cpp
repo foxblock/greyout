@@ -99,6 +99,8 @@ Level::Level()
     debugText.loadFont(DEBUG_FONT,12);
     debugText.setColour(GREEN);
     debugString = "";
+#endif
+#ifdef PENJIN_CALC_FPS
     fpsDisplay.loadFont(DEBUG_FONT,24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
@@ -215,10 +217,24 @@ void Level::reset()
         unit = removedUnits.erase(unit);
     }
 
+    vector<bool> playersControl;
+    // Check which units are currently taking control
+    for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+        playersControl.push_back((*I)->takesControl);
+
     for (vector<ControlUnit*>::iterator player = players.begin(); player != players.end(); ++player)
     {
         (*player)->reset();
     }
+    // Reset control state
+    for (int I = players.size()-1; I >= 0; --I)
+    {
+        players[I]->takesControl = playersControl[I];
+        playersControl[I] ? players[I]->startingState = "wave" : players[I]->startingState = "stand";
+        players[I]->setSpriteState(players[I]->startingState);
+    }
+    playersControl.clear();
+
     for (vector<BaseUnit*>::iterator unit = units.begin(); unit != units.end(); ++unit)
     {
         (*unit)->reset();
@@ -635,6 +651,8 @@ void Level::render()
     }
     debugText.setPosition(10,10);
     debugText.print(debugString);
+#endif
+#ifdef PENJIN_CALC_FPS
     fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
 #endif
 }
@@ -1008,7 +1026,7 @@ void Level::pauseScreen()
         }
     }
 
-#ifdef _DEBUG
+#ifdef PENJIN_CALC_FPS
     fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
 #endif
 }

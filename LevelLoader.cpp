@@ -32,6 +32,7 @@
 #include "SoundTrigger.h"
 #include "CameraTrigger.h"
 #include "TextObject.h"
+#include "FadingBox.h"
 
 using namespace std;
 
@@ -74,7 +75,8 @@ enum UnitIdent
     ucExitTrigger,
     ucSoundTrigger,
     ucCameraTrigger,
-    ucTextObject
+    ucTextObject,
+    ucFadingBox
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -111,6 +113,7 @@ void createIdentMaps()
     unitClasses["soundtrigger"] = ucSoundTrigger;
     unitClasses["cameratrigger"] = ucCameraTrigger;
     unitClasses["text"] = ucTextObject;
+    unitClasses["fadingbox"] = ucFadingBox;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -500,6 +503,11 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
     case ucTextObject:
     {
         result = new TextObject(parent);
+        break;
+    }
+    case ucFadingBox:
+    {
+        result = new FadingBox(parent);
         break;
     }
     default:

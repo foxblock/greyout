@@ -30,9 +30,7 @@ class Benchmark : public Level
         int currentPhase;
         int boxCount;
         int particleCount;
-        #ifndef _DEBUG
         int fpsCount;
-        #endif
     private:
         static void timerCallback(void* object);
         static void secondCallback(void* object);

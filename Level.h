@@ -1,6 +1,10 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+#if defined(_DEBUG) && !defined(PENJIN_CALC_FPS)
+#define PENJIN_CALC_FPS
+#endif
+
 #include <list>
 #include <map>
 
@@ -175,6 +179,8 @@ protected:
 
     #ifdef _DEBUG
     Text debugText;
+    #endif
+    #ifdef PENJIN_CALC_FPS
     Text fpsDisplay;
     #endif
     SDL_Surface* collisionLayer;
