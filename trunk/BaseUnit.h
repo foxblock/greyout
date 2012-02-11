@@ -73,7 +73,7 @@ public:
     // called after a collision check with the map
     virtual void hitMap(const Vector2df& correctionOverride);
     // checks whether the unit collides with the passed colour
-    bool checkCollisionColour(const Colour& col) const;
+    virtual bool checkCollisionColour(const Colour& col) const;
     // called when a collision with another unit occurs, checks whether this unit
     // wants to be affected by the other
     virtual bool hitUnitCheck(const BaseUnit* const caller) const;

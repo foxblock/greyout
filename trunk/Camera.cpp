@@ -26,8 +26,11 @@ void Camera::update()
 {
     parent->drawOffset += speed;
     if ((speed.x != 0 || speed.y != 0) &&
-        (int)parent->drawOffset.x == (int)dest.x && (int)parent->drawOffset.y == (int)dest.y)
+        fabs(parent->drawOffset.x - dest.x) < 2 && fabs(parent->drawOffset.y - dest.y) < 2)
+    {
         speed = Vector2df(0,0);
+        parent->drawOffset = dest;
+    }
 }
 
 void Camera::centerOnUnit(const BaseUnit* const unit, CRint time)

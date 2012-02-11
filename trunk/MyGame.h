@@ -30,7 +30,7 @@ class MyGame : public Engine
 		virtual void stateManagement();
         virtual PENJIN_ERRORS argHandler(int argc, char **argv);
 
-        #ifdef _DEBUG
+        #ifdef PENJIN_CALC_FPS
         virtual float getFPS() const {return frameCount;}
         #endif
 

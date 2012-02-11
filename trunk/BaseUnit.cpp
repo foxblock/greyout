@@ -469,9 +469,11 @@ void BaseUnit::explode()
         Colour pix = MAGENTA;
         Vector2df vel(0,0);
         int time = 0;
-        for (int X = 0; X < currentSprite->getWidth(); X+=2)
+        // limit number of particles so bigger images will create less
+        int inc = round(max((float)(currentSprite->getWidth() + currentSprite->getHeight()) / 64.0f,2.0f));
+        for (int X = 0; X < currentSprite->getWidth(); X+=inc)
         {
-            for (int Y = 0; Y < currentSprite->getHeight(); Y+=2)
+            for (int Y = 0; Y < currentSprite->getHeight(); Y+=inc)
             {
                 pix = currentSprite->getPixel(X,Y);
                 if (pix != none)

@@ -20,9 +20,7 @@ Benchmark::Benchmark() : Level()
     phases[2] = 20000;
     currentPhase = 0;
     secondIndex.push_back(0);
-    #ifndef _DEBUG
     fpsCount = 0;
-    #endif
 }
 
 Benchmark::~Benchmark()
@@ -67,12 +65,7 @@ void Benchmark::userInput()
 void Benchmark::update()
 {
     Level::update();
-    #ifdef _DEBUG
-    float value = MyGame::getMyGame()->getFPS();
-    fpsData.push_back(value);
-    #else
     ++fpsCount;
-    #endif
     second.update();
     counter.update();
 }
@@ -98,11 +91,6 @@ void Benchmark::generateFPSData()
 
     cout << "----------" << endl;
     cout << "Benchmark results:" << endl;
-    #ifdef _DEBUG
-    cout << "Using interpolated fps data in DEBUG mode." << endl;
-    #else
-    cout << "Using frame count data in RELEASE mode." << endl;
-    #endif
     cout << "----------" << endl;
     cout << "Duration (ms): " << phases[sizeof(phases)/sizeof(phases[0])-1] << endl;
     cout << "Graph update (ms): " << second.getLimit() << endl;
@@ -119,14 +107,10 @@ void Benchmark::generateFPSData()
         cout << " " << averageFPS;
     }
     cout << endl;
-    #ifdef _DEBUG
-    cout << "Update cycles (#): " << fpsData.size() << endl;
-    #else
     fpsCount = 0;
     for (int I = 0; I < fpsData.size(); ++I)
         fpsCount += fpsData[I];
     cout << "Update cycles (#): " << fpsCount << endl;
-    #endif
     cout << "Boxes total (#): " << boxCount << endl;
     cout << "Particles total (#): " << particleCount << endl;
     cout << "----------" << endl;
@@ -135,10 +119,8 @@ void Benchmark::generateFPSData()
 
 void Benchmark::secondUpdate()
 {
-    #ifndef _DEBUG
     fpsData.push_back(fpsCount);
     fpsCount = 0;
-    #endif
     secondIndex.push_back(fpsData.size());
 
     switch (currentPhase)

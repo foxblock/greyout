@@ -3,7 +3,7 @@
 // TODO: Story
 // TODO: "Connected" level type
 // TODO: More levels, organic levels, more assets (trees, gears)
-// TODO: Unit types (temporary platforms, (DONE)timed platforms, (DONE)keys, lasers)
+// TODO: Unit types ((DONE)temporary platforms, (DONE)timed platforms, (DONE)keys, lasers)
 // DONE: Time-trial mode
 // DONE: Change buttons for menu
 // TODO: Show chapter/level names in selection
@@ -15,6 +15,9 @@
 // DONE: Fix not being able to push boxes from the other side of the screen
 // DONE: Fix menu selector speed
 // TODO: Test with notaz' improved SDL
+
+// TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
+// TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red
 
 int main(int argc, char** argv)
 {
