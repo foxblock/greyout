@@ -383,13 +383,13 @@ void StateLevelSelect::render()
         if (gridOffset > 0)
         {
             arrows.setCurrentFrame(0);
-            arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), OFFSET_Y);
+            arrows.setPosition((GFX::getXResolution() - arrows.getWidth()) / 2, OFFSET_Y + 5);
             arrows.render();
         }
         if (activeData->size() - gridOffset * PREVIEW_COUNT_X > PREVIEW_COUNT_X * PREVIEW_COUNT_Y)
         {
             arrows.setCurrentFrame(1);
-            arrows.setPosition(GFX::getXResolution() - arrows.getWidth(), GFX::getYResolution() - arrows.getHeight());
+            arrows.setPosition((GFX::getXResolution() - arrows.getWidth()) / 2, GFX::getYResolution() - arrows.getHeight() - 5);
             arrows.render();
         }
     }
@@ -400,7 +400,7 @@ void StateLevelSelect::render()
 
         // OFFSET_Y is also the height of the rectangle used
         int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (INTERMEDIATE_MENU_ITEM_COUNT-1)) / 2 - OFFSET_Y;
-        string items[2] = {"PLAY","EXPLORE"};
+        string items[INTERMEDIATE_MENU_ITEM_COUNT] = {"PLAY","EXPLORE"};
         for (int I = 0; I < INTERMEDIATE_MENU_ITEM_COUNT; ++I)
         {
             menu.setPosition(0,pos);

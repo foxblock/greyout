@@ -7,7 +7,7 @@ Gear::Gear(Level* newParent) : BaseUnit(newParent)
 
     stringToOrder["rotation"] = goRotation;
 
-    speed = 1;
+    speed = 0;
     angle = 0;
     screenPosition = Vector2df(0,0);
     flags.addFlag(ufNoMapCollision);

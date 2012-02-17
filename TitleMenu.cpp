@@ -63,7 +63,7 @@ TitleMenu::TitleMenu()
         inverseBG.push_back(temp);
     }
 
-    #ifdef _DEBUG
+    #ifdef PENJIN_CALC_FPS
     fpsDisplay.loadFont(GAME_FONT,24);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
@@ -128,7 +128,7 @@ void TitleMenu::render()
 
     EFFECTS->render();
 
-    #ifdef _DEBUG
+    #ifdef PENJIN_CALC_FPS
     fpsDisplay.print(StringUtility::intToString(MyGame::getMyGame()->getFPS()));
     #endif
 }

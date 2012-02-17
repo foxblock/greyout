@@ -5,7 +5,11 @@
 #include "PenjinTypes.h"
 #include "AnimatedSprite.h"
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && !defined(PENJIN_CALC_FPS)
+#define PENJIN_CALC_FPS
+#endif
+
+#ifdef PENJIN_CALC_FPS
 #include "Text.h"
 #endif
 
@@ -35,7 +39,7 @@ class TitleMenu : public BaseState
         SDL_Rect invertRegion;
         int currentFps;
 
-        #ifdef _DEBUG
+        #ifdef PENJIN_CALC_FPS
         Text fpsDisplay;
         #endif
 };

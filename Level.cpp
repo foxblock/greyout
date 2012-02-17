@@ -638,7 +638,7 @@ void Level::render()
     GFX::setPixel(pos+Vector2df(-1,1),RED);
     GFX::setPixel(pos+Vector2df(1,-1),RED);
     GFX::setPixel(pos+Vector2df(-1,-1),RED);
-    GFX::renderPixelBuffer();
+    //GFX::renderPixelBuffer();
 
 #ifdef _DEBUG
     debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
@@ -871,7 +871,10 @@ void Level::pauseInput()
             {
                 int vol = MUSIC_CACHE->getSoundVolume();
                 if (vol > 0)
+                {
                     MUSIC_CACHE->setSoundVolume(vol-8);
+                    MUSIC_CACHE->playSound("sounds/level_select.wav");
+                }
             }
         }
         else if (input->isRight())
@@ -886,7 +889,10 @@ void Level::pauseInput()
             {
                 int vol = MUSIC_CACHE->getSoundVolume();
                 if (vol < MUSIC_CACHE->getMaxVolume())
+                {
                     MUSIC_CACHE->setSoundVolume(vol+8);
+                    MUSIC_CACHE->playSound("sounds/level_select.wav");
+                }
             }
         }
 
