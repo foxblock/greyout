@@ -67,6 +67,16 @@ bool Switch::load(list<PARAMETER_TYPE >& params)
     if (!switchOn || targets.empty())
         result = false;
 
+    if (result)
+    {
+        if (startingState == "off")
+            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+                (this->*switchOff)(*I);
+        else
+            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+                (this->*switchOn)(*I);
+    }
+
     return result;
 }
 
