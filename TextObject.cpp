@@ -7,6 +7,7 @@
 TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
 {
     stringToProp["font"] = tpFont;
+    stringToProp["fontsize"] =tpFontSize;
     stringToProp["text"] = tpText;
 
     flags.addFlag(ufNoMapCollision);
@@ -17,6 +18,7 @@ TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
     line = "";
     currentText = NULL;
     fontSize = 24;
+    size = Vector2di(-1,-1);
 }
 
 TextObject::~TextObject()
@@ -41,7 +43,11 @@ bool TextObject::load(list<PARAMETER_TYPE >& params)
         return false;
     }
     currentText->setColour(col);
-    size = currentText->getDimensions(line);
+    currentText->setWrapping(false);
+
+    // calculate automatically if not passed in level file (often inaccurate!)
+    if (size.x == -1 && size.y == -1)
+        size = currentText->getDimensions(line);
 
     return result;
 }
@@ -69,7 +75,7 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
         }
         break;
     }
-    case BaseUnit::upSize:
+    case tpFontSize:
     {
         int val = StringUtility::stringToInt(value.second);
         if (val > 0)
@@ -80,6 +86,22 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
         }
         else
             parsed = false;
+        break;
+    }
+    case BaseUnit::upSize:
+    {
+        // As Penjin's text size calculation is often incorrect you can manually
+        // overwrite the value to prevent drawing errors
+        // Bloody inconvenient, I am a lazy fuck, deal with it
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        size.x = StringUtility::stringToInt(token[0]);
+        size.y = StringUtility::stringToInt(token[1]);
         break;
     }
     case tpText:

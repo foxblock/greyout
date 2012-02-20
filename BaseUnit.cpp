@@ -20,6 +20,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["invincible"] = ufInvincible;
     stringToFlag["missionobjective"] = ufMissionObjective;
     stringToFlag["noupdate"] = ufNoUpdate;
+    stringToFlag["disregardBoundaries"] = ufDisregardBoundaries;
 
     stringToProp["class"] = upClass;
     stringToProp["state"] = upState;
@@ -97,6 +98,14 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
             cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit with id \""
                  << id << "\" (" << className << ")" << endl;
         }
+    }
+
+    // Not taking the unit's size into account here as it might not be available yet
+    int boundsX = (position.x > parent->getWidth()) - (position.x < 0);
+    int boundsY = (position.y > parent->getHeight()) - (position.y < 0);
+    if ((boundsX + boundsY != 0) && !parent->flags.hasFlag(Level::lfRepeatX) && !parent->flags.hasFlag(Level::lfRepeatY))
+    {
+        flags.addFlag(ufDisregardBoundaries);
     }
 
     if (orderList.size() > 0)
@@ -499,6 +508,7 @@ string BaseUnit::debugInfo()
               "V: " + StringUtility::vecToString(velocity) + " | " +
               "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
               "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + "\n" +
+              "F: " + StringUtility::intToString(flags.flags) + "\n" +
               "S: " + currentState;
     if (currentSprite)
         result += " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
