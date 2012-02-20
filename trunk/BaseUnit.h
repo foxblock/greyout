@@ -123,7 +123,8 @@ public:
         ufMissionObjective=16, // level will restart when this unit is killed (also winCounter increases for ControlUnits)
         ufNoUpdate=32, // update won't be called for this unit (effectively freezing it in place)
         ufNoRender=66, // do not render this unit (includes NoUnitCollision)
-        ufEOL=128
+        ufDisregardBoundaries=128, // don't reset this unit's position when moved outside the level boundaries
+        ufEOL=256
     };
     // converts a string from a level file to a usable flag
     // you can simply add unit-specific flags in child classes
@@ -150,8 +151,8 @@ protected:
         upHealth,
         upID,
         upOrder,
-        upSize,
-        upTarget,
+        upSize, // reserved for child classes (not implemented in BaseUnit)
+        upTarget, // reserved
         upEOL // end of list value, starting point for child classes' lists
     };
     // converts a string from a level file to a propIdent usable in a switch statement

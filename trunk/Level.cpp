@@ -644,6 +644,9 @@ void Level::render()
     debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
     debugString += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
     debugString += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
+    debugString += "Camera: " + StringUtility::vecToString(drawOffset) + " | " +
+        StringUtility::vecToString(cam.getDest()) + " | " +
+        StringUtility::vecToString(cam.getSpeed()) + "\n";
     debugString += "---\n";
     for (vector<BaseUnit*>::const_iterator I = debugUnits.begin(); I != debugUnits.end(); ++I)
     {
@@ -1232,7 +1235,7 @@ void Level::adjustPosition(BaseUnit* const unit)
         unit->position.y -= getHeight() * boundsY;
         changed = true;
     }
-    if ((boundsX + boundsY != 0) && not changed)
+    if ((boundsX + boundsY != 0) && not changed && !unit->flags.hasFlag(BaseUnit::ufDisregardBoundaries))
     {
         unit->position = unit->startingPosition;
         changed = true;

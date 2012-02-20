@@ -66,6 +66,9 @@ bool Chapter::loadFromFile(CRstring filename)
 
         line = StringUtility::stripLineEndings(line);
 
+        if (line[0] == 0) // empty line
+            continue;
+
         vector<string> tokens;
         StringUtility::tokenize(line,tokens,VALUE_STRING);
         if (tokens.size() != 2)

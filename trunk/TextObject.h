@@ -32,6 +32,7 @@ protected:
     enum TextProps
     {
         tpFont=BaseUnit::upEOL,
+        tpFontSize,
         tpText,
         bpEOL
     };
