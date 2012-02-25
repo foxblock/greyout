@@ -12,8 +12,16 @@ public:
     virtual void userInput();
     virtual void render(SDL_Surface* screen);
 
+#ifdef _DEBUG
+    virtual string debugInfo();
+#endif
+
 protected:
     vector<Rectangle*> mouseRects;
+
+#ifdef _DEBUG
+    bool mouseDraw; // switches between drawing and selecting objects
+#endif
 private:
 
 };

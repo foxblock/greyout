@@ -8,7 +8,9 @@
 
 Playground::Playground()
 {
-    //
+#ifdef _DEBUG
+    mouseDraw = true;
+#endif
 }
 
 Playground::~Playground()
@@ -88,41 +90,65 @@ void Playground::userInput()
         input->resetR();
     }
 
-#ifdef _DEBUG
     if (input->isLeftClick())
     {
-        Vector2df pos = input->getMouse() + drawOffset;
-        for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+    #ifdef _DEBUG
+        if (mouseDraw)
         {
-            if (pos.inRect((*I)->getRect()))
-                debugUnits.push_back(*I);
-        }
-        for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
-        {
-            if (pos.inRect((*I)->getRect()))
-                debugUnits.push_back(*I);
-        }
-    }
-    if (input->isRightClick())
-        debugUnits.clear();
-    input->resetMouseButtons();
-#else
-    if (input->isLeftClick())
-    {
+    #endif
+        cout << __LINE__ << " " << mouseDraw << endl;
         Rectangle* temp = new Rectangle;
         temp->setColour(BLACK);
         temp->setDimensions(24,24);
         temp->setPosition(drawOffset + input->getMouse() - Vector2df(12,12));
         mouseRects.push_back(temp);
+    #ifdef _DEBUG
+        }
+        else
+        {
+        cout << __LINE__ << " " << mouseDraw << endl;
+            Vector2df pos = input->getMouse() + drawOffset;
+            for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+            {
+                if (pos.inRect((*I)->getRect()))
+                    debugUnits.push_back(*I);
+            }
+            for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+            {
+                if (pos.inRect((*I)->getRect()))
+                    debugUnits.push_back(*I);
+            }
+        }
+    #endif
     }
     else if (input->isRightClick())
     {
+    #ifdef _DEBUG
+        if (mouseDraw)
+        {
+    #endif
         Rectangle* temp = new Rectangle;
         temp->setColour(WHITE);
         temp->setDimensions(24,24);
         temp->setPosition(input->getMouse() - Vector2df(12,12));
         mouseRects.push_back(temp);
+    #ifdef _DEBUG
+        }
+        else
+        {
+            if (input->isRightClick())
+                debugUnits.clear();
+        }
+    #endif
     }
+#ifdef _DEBUG
+    if (input->isSelect())
+    {
+        mouseDraw = !mouseDraw;
+        input->resetSelect();
+    }
+    if (!mouseDraw)
+        input->resetMouseButtons();
 #endif
 
     for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -178,6 +204,16 @@ void Playground::render(SDL_Surface* screen)
         GFX::renderPixelBuffer();
     }
 }
+
+#ifdef _DEBUG
+string Playground::debugInfo()
+{
+    if (mouseDraw)
+        return "DRAW MODE\n" + Level::debugInfo();
+    else
+        return "SELECT MODE\n" + Level::debugInfo();
+}
+#endif
 
 ///---protected---
 
