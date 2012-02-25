@@ -39,7 +39,8 @@ class PushableBox : public BaseUnit
 
         virtual void move();
 
-        Vector2di sizeTimer;
+        Vector2df sizeTimer; // incremental step for size orders
+        Vector2df dynSize; // floating point size for size orders (to preserve accuracy)
 
         enum BoxOrder
         {

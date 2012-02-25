@@ -91,6 +91,7 @@ public:
     string name;
 
     #ifdef _DEBUG
+    virtual string debugInfo();
     string debugString;
     vector<BaseUnit*> debugUnits;
     #endif

@@ -323,7 +323,7 @@ void Level::userInput()
 
     if ((input->isL() || input->isR()) && not flags.hasFlag(lfDisableSwap))
 #else
-    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick())
+    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick() || input->resetSelect())
         && not flags.hasFlag(lfDisableSwap))
 #endif
     {
@@ -334,6 +334,7 @@ void Level::userInput()
         input->resetL();
         input->resetR();
         input->resetMouseButtons();
+        input->resetSelect();
     }
 
     for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -347,9 +348,6 @@ void Level::userInput()
 
 void Level::update()
 {
-#ifdef _DEBUG
-    debugString = "";
-#endif
     ++timeCounter;
 
     // Check for units to be removed, also reset temporary data
@@ -486,6 +484,14 @@ void Level::update()
     EFFECTS->update();
 
     cam.update();
+
+#ifdef _DEBUG
+    debugString = debugInfo();
+    for (vector<BaseUnit*>::const_iterator I = debugUnits.begin(); I != debugUnits.end(); ++I)
+    {
+        debugString += (*I)->debugInfo();
+    }
+#endif
 }
 
 void Level::render()
@@ -641,17 +647,6 @@ void Level::render()
     //GFX::renderPixelBuffer();
 
 #ifdef _DEBUG
-    debugString += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
-    debugString += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
-    debugString += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
-    debugString += "Camera: " + StringUtility::vecToString(drawOffset) + " | " +
-        StringUtility::vecToString(cam.getDest()) + " | " +
-        StringUtility::vecToString(cam.getSpeed()) + "\n";
-    debugString += "---\n";
-    for (vector<BaseUnit*>::const_iterator I = debugUnits.begin(); I != debugUnits.end(); ++I)
-    {
-        debugString += (*I)->debugInfo();
-    }
     debugText.setPosition(10,10);
     debugText.print(debugString);
 #endif
@@ -1177,6 +1172,19 @@ void Level::addParticle(const BaseUnit* const caller, const Colour& col, const V
     temp->velocity = vel;
     temp->col = col;
     effects.push_back(temp);
+}
+
+string Level::debugInfo()
+{
+    string result = "";
+    result += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
+    result += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
+    result += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
+    result += "Camera: " + StringUtility::vecToString(drawOffset) + " | " +
+        StringUtility::vecToString(cam.getDest()) + " | " +
+        StringUtility::vecToString(cam.getSpeed()) + "\n";
+    result += "---\n";
+    return result;
 }
 
 /// ---protected---

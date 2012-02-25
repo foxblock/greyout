@@ -13,6 +13,8 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
     col = BLACK;
     sizeTimer.x = 0;
     sizeTimer.y = 0;
+    dynSize.x = 0;
+    dynSize.y = 0;
 
     stringToOrder["size"] = boSize;
 }
@@ -186,10 +188,10 @@ bool PushableBox::processOrder(Order& next)
         Vector2di destSize;
         destSize.x = StringUtility::stringToInt(tokens[1]);
         destSize.y = StringUtility::stringToInt(tokens[2]);
-        if (destSize.x != rect.w)
-            sizeTimer.x = ticks / (destSize.x - rect.w);
-        if (destSize.y != rect.h)
-            sizeTimer.y = ticks / (destSize.y - rect.h);
+        sizeTimer.x =  (float)(destSize.x - rect.w) / (float)ticks;
+        sizeTimer.y = (float)(destSize.y - rect.h) / (float)ticks;
+        dynSize.x = rect.w;
+        dynSize.y = rect.h;
         break;
     }
     default:
@@ -217,12 +219,9 @@ bool PushableBox::updateOrder(const Order& curr)
     {
     case boSize:
     {
-        if (sizeTimer.x != 0 && orderTimer % abs(sizeTimer.x) == 0)
-        {
-            rect.w += NumberUtility::sign(sizeTimer.x);
-        }
-        if (sizeTimer.y != 0 && orderTimer % abs(sizeTimer.y) == 0)
-            rect.h += NumberUtility::sign(sizeTimer.y);
+        dynSize += sizeTimer;
+        rect.w = round(dynSize.x);
+        rect.h = round(dynSize.y);
         break;
     }
     default:
