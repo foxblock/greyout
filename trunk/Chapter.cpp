@@ -3,9 +3,11 @@
 #include <fstream>
 
 #include "StringUtility.h"
+#include "FileLister.h"
 
 #include "Savegame.h"
 #include "fileTypeDefines.h"
+#include "gameDefines.h"
 
 Chapter::Chapter()
 {
@@ -19,6 +21,7 @@ Chapter::Chapter()
     stringToProp["image"] = cpImage;
     stringToProp["level"] = cpLevel;
     stringToProp["dialogue"] = cpDialogue;
+    stringToProp["autodetect"] = cpAutoDetect;
 }
 
 Chapter::~Chapter()
@@ -41,7 +44,7 @@ bool Chapter::loadFromFile(CRstring filename)
 {
     clear();
 
-    cout << "Trying to open chapter file \"" << filename << "\"" << endl;
+    printf("Trying to open chapter file \"%s\"\n",filename.c_str());
 
     string line;
     ifstream file(filename.c_str());
@@ -73,7 +76,7 @@ bool Chapter::loadFromFile(CRstring filename)
         StringUtility::tokenize(line,tokens,VALUE_STRING);
         if (tokens.size() != 2)
         {
-            cout << "Error: Incorrect key-value pair on line " << lineNumber << endl;
+            printf("Error: Incorrect key-value pair on line %i\n",lineNumber);
         }
         else
         {
@@ -84,6 +87,31 @@ bool Chapter::loadFromFile(CRstring filename)
 
     if (file.is_open())
         file.close();
+
+    // Check whether levels have to be "auto detected"
+    if (autoDetect)
+    {
+        FileLister levelLister;
+        levelLister.addFilter("txt");
+        levelLister.setPath(path);
+
+        vector<string> files;
+        files = levelLister.getListing();
+        // delete first element which is the current folder and info.txt file
+        files.erase(files.begin());
+        for (vector<string>::iterator I = files.begin(); I != files.end(); ++I)
+        {
+            if (*I == DEFAULT_CHAPTER_INFO_FILE)
+            {
+                files.erase(I);
+                break;
+            }
+        }
+
+        levels.insert(levels.begin(),files.begin(),files.end());
+
+        files.clear();
+    }
 
     // Check for missing initialisation
     if (name[0] == 0)
@@ -204,6 +232,11 @@ bool Chapter::processParameter(const PARAMETER_TYPE& value)
     case cpDialogue:
     {
         dialogueFile = value.second;
+        break;
+    }
+    case cpAutoDetect:
+    {
+        autoDetect = StringUtility::stringToBool(value.second);
         break;
     }
     }

@@ -145,7 +145,7 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
             break;
         }
         default:
-            cout << "Unknown function parameter for switch \"" << id << "\"" << endl;
+            printf("Unknown function parameter for switch \"%s\"\n",id.c_str());
         }
         break;
     }
@@ -186,6 +186,7 @@ void Switch::update()
 {
     if (switchTimer > 0)
         --switchTimer;
+    BaseUnit::update();
 }
 
 bool Switch::hitUnitCheck(const BaseUnit* const caller) const
@@ -236,6 +237,8 @@ void Switch::parameterOn(BaseUnit* unit)
     if (paramOn.first == "order")
         unit->resetOrder(true);
     unit->processParameter(paramOn);
+    if (paramOn.first == "order")
+        unit->resetOrder(false);
 }
 
 void Switch::parameterOff(BaseUnit* unit)
@@ -243,6 +246,8 @@ void Switch::parameterOff(BaseUnit* unit)
     if (paramOn.first == "order")
         unit->resetOrder(true);
     unit->processParameter(paramOff);
+    if (paramOn.first == "order")
+        unit->resetOrder(false);
 }
 
 ///---private---

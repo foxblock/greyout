@@ -184,6 +184,10 @@ protected:
     virtual bool processOrder(Order& next);
     // periodically updates orders
     virtual bool updateOrder(const Order& curr);
+    // finishes up an order, aka makes sure the final position/size/whatever is right
+    // this is just working around the limitations of frame-based movement
+    // Lesson: Don't use frame-based movement in your games, if you can avoid it
+    virtual bool finishOrder(const Order& curr);
     static map<string,int> stringToOrder;
     vector<Order> orderList;
     int currentOrder;

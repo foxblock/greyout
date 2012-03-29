@@ -106,9 +106,6 @@ class StateLevelSelect : public BaseState
         SDL_Thread* chapterThread;
         bool abortChapterLoading; // if true chapter preview generation will exit
 
-        // mutex to prevent threads from writing cout at the same time
-        SDL_mutex* coutLock;
-
         Vector2di size;
         Vector2di spacing;
         Vector2di selection;

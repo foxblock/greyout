@@ -127,9 +127,9 @@ PENJIN_ERRORS MyGame::argHandler(int argc, char **argv)
 {
     for (int I = 0; I < argc; ++I)
     {
-        cout << argv[I] << " ";
+       printf("%s ",argv[I]);
     }
-    cout << endl;
+    printf("\n");
 
     if(argc <= 1)
         return	PENJIN_NO_COMMANDLINE;
@@ -224,7 +224,7 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
     {
     case STATE_ERROR:
 #ifdef _DEBUG
-        cout << "Error state" << endl;
+        printf("Error state\n");
 #endif
         nextState = new StateError;
         ((StateError*)nextState)->errorString = parameter;
@@ -232,19 +232,19 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
         break;
     case STATE_TITLE: // Title: logos, intro
 #ifdef _DEBUG
-        cout << "Title State" << endl;
+        printf("Title State\n");
 #endif
         nextState = new StateTitle;
         break;
     case STATE_MAIN: // Main menu
 #ifdef _DEBUG
-        cout << "Title Menu State" << endl;
+        printf("Title Menu State\n");
 #endif
         nextState = new TitleMenu;
         break;
     case STATE_LEVEL: // Any playable level
 #ifdef _DEBUG
-        cout << "Level State" << endl;
+        printf("Level State\n");
 #endif
         if (currentChapter)
             nextState = LEVEL_LOADER->loadLevelFromFile(parameter,currentChapter->path);
@@ -252,14 +252,14 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
             nextState = LEVEL_LOADER->loadLevelFromFile(parameter);
         if (not nextState)
         {
-            cout << LEVEL_LOADER->errorString << endl;
+            printf("%s\n",LEVEL_LOADER->errorString.c_str());
             string e = "Error: " + LEVEL_LOADER->errorString;
             return createState(STATE_ERROR,e);
         }
         break;
     case STATE_BENCHMARK:
 #ifdef _DEBUG
-        cout << "Benchmark started" << endl;
+        printf("Benchmark started\n");
 #endif
         nextState = LEVEL_LOADER->loadLevelFromFile(BENCHMARK_LEVEL);
         if (not nextState)
@@ -271,12 +271,12 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
         break;
     case STATE_LEVELSELECT:
 #ifdef _DEBUG
-        cout << "Level selection screen" << endl;
+        printf("Level selection screen\n");
 #endif
         nextState = new StateLevelSelect;
         break;
     default:
-        cout << ErrorHandler().getErrorString(PENJIN_UNDEFINED_STATE);
+        printf("%s\n",ErrorHandler().getErrorString(PENJIN_UNDEFINED_STATE).c_str());
         exit(PENJIN_UNDEFINED_STATE);
     }
     return nextState;

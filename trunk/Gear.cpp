@@ -115,7 +115,7 @@ bool Gear::processOrder(Order& next)
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
     int ticks = 1;
     // This is kinda fucked up, because of the frame based movement
-    if (tokens.size() > 0)
+    if (!tokens.empty())
     {
         ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
     }
@@ -134,7 +134,7 @@ bool Gear::processOrder(Order& next)
     {
         if (tokens.size() < 2)
         {
-            cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
+            printf("Error: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
             orderList.erase(orderList.begin() + currentOrder);
             orderTimer = 1; // process next order in next cycle
             return false;

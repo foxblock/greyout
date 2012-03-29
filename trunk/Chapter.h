@@ -52,6 +52,7 @@ public:
     string name; // name of the chapter (mandatory)
     string imageFile; // image displayed in the chapter menu
     string dialogueFile; // file containing the strings loaded as dialogue
+    bool autoDetect; // make this chapter auto-detect level files in the folder
 
     // used for error output
     string errorString;
@@ -64,7 +65,8 @@ public:
         cpName,
         cpImage,
         cpLevel,
-        cpDialogue
+        cpDialogue,
+        cpAutoDetect
     };
     map<string,int> stringToProp;
 protected:

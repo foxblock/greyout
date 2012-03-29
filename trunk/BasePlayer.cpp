@@ -150,6 +150,14 @@ void BasePlayer::hitMap(const Vector2df& correctionOverride)
 
 void BasePlayer::control(SimpleJoy* input)
 {
+    if (!input)
+    {
+        acceleration[0].x = 0;
+        acceleration[1].x = 0;
+        velocity.x = 0;
+        return;
+    }
+
     if (input->isLeft())
     {
         if (direction > 0 || (int)velocity.x == 0)
@@ -177,23 +185,7 @@ void BasePlayer::control(SimpleJoy* input)
         acceleration[0].x = 0;
         acceleration[1].x = 0;
         velocity.x = 0;
-    }/*
-    if (input->isUp())
-    {
-        acceleration[0].y = -2;
-        acceleration[1].y = -16;
     }
-    else if (input->isDown())
-    {
-        acceleration[0].y = 2;
-        acceleration[1].y = 16;
-    }
-    else
-    {
-        acceleration[0].y = 0;
-        acceleration[1].y = 0;
-        velocity.y = 0;
-    }*/
     if ((input->isB() || input->isY()) && canJump)
     {
         acceleration[0].y = -4;

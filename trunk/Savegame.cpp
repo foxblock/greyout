@@ -37,12 +37,12 @@ bool Savegame::setFile(CRstring filename)
 
     if (file.fail())
     {
-        cout << "Failed to open file for read: \"" << filename << "\"" << endl;
+        printf("Failed to open file for read: \"%s\"\n",filename.c_str());
         // file does not exists -> try to open for write
         ofstream file2(filename.c_str());
         if (file2.fail())
         {
-            cout << "Failed to reserve savegame file!" << endl;
+            printf("Failed to reserve savegame file!\n");
             return false;
         }
         this->filename = filename;
@@ -72,7 +72,7 @@ bool Savegame::setFile(CRstring filename)
     if (file.is_open())
         file.close();
 
-    cout << "Savegame successfully loaded!" << endl;
+    printf("Savegame successfully loaded!\n");
 
     this->filename = filename;
     return true;
@@ -85,7 +85,7 @@ bool Savegame::save()
 
     if (file.fail())
     {
-        cout << "Failed to open file for write: \"" << filename << "\"" << endl;
+        printf("Failed to open file for write: \"%s\"\n",filename.c_str());
         return false;
     }
 
@@ -100,7 +100,7 @@ bool Savegame::save()
     if (file.is_open())
     {
         file.close();
-        cout << "Progress saved!" << endl;
+        printf("Progress saved!\n");
         return true;
     }
 

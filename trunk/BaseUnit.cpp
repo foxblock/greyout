@@ -20,7 +20,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["invincible"] = ufInvincible;
     stringToFlag["missionobjective"] = ufMissionObjective;
     stringToFlag["noupdate"] = ufNoUpdate;
-    stringToFlag["disregardBoundaries"] = ufDisregardBoundaries;
+    stringToFlag["disregardboundaries"] = ufDisregardBoundaries;
 
     stringToProp["class"] = upClass;
     stringToProp["state"] = upState;
@@ -95,8 +95,8 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
         if (not processParameter(*value))
         {
             string className = params.front().second;
-            cout << "Warning: Unprocessed parameter \"" << value->first << "\" on unit with id \""
-                 << id << "\" (" << className << ")" << endl;
+            printf("Warning: Unprocessed parameter \"%s\" on unit with id \"%s\" (%s)\n",
+                   value->first.c_str(),id.c_str(),className.c_str());
         }
     }
 
@@ -108,13 +108,7 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
         flags.addFlag(ufDisregardBoundaries);
     }
 
-    if (orderList.size() > 0)
-    {
-        Order temp = {okIdle,"-1"};
-        orderList.push_back(temp); // make unit stop after last order (unless a repeat order is specified)
-        currentOrder = 0;
-        processOrder(orderList.front());
-    }
+    resetOrder(false);
 
     if (imageOverwrite[0] != 0)
     {
@@ -253,6 +247,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 
 void BaseUnit::reset()
 {
+    velocity = Vector2df(0,0);
     acceleration[0] = Vector2df(0,0);
     acceleration[1] = Vector2df(0,0);
     collisionInfo.clear();
@@ -274,7 +269,7 @@ void BaseUnit::resetOrder(const bool &clear)
         orderRunning = false;
         currentOrder = 0;
     }
-    else if (orderList.size() > 0)
+    else if (!orderList.empty())
     {
         currentOrder = 0;
         processOrder(orderList.front());
@@ -363,13 +358,13 @@ void BaseUnit::update()
 
         if (currentSprite)
             currentSprite->update();
-        if (orderRunning && orderTimer > 0 && orderList.size() > 0)
+        if (orderRunning && orderTimer > 0 && !orderList.empty() && currentOrder < orderList.size())
         {
             updateOrder(orderList[currentOrder]);
             if (--orderTimer <= 0)
             {
-                ++currentOrder;
-                if (currentOrder < orderList.size())
+                finishOrder(orderList[currentOrder]);
+                if (++currentOrder < orderList.size())
                     processOrder(orderList[currentOrder]);
                 else
                 {
@@ -418,12 +413,13 @@ AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRbool reset, CRstri
         }
         else
         {
-            cout << "Unrecognized sprite state \"" << newState << "\" and fallback \"" <<
-                 fallbackState << "\" on unit with id \"" << id << "\"" << endl;
+            printf("Unrecognized sprite state \"%s\" and fallback \"%s\" on unit with id \"%s\"\n",
+                   newState.c_str(),fallbackState.c_str(),id.c_str());
         }
     }
     else
-        cout << "Unrecognized sprite state \"" << newState << "\" on unit with id \"" << id << "\"" << endl;
+        printf("Unrecognized sprite state \"%s\" on unit with id \"%s\"\n",
+               newState.c_str(),id.c_str());
     if (reset && currentSprite)
         currentSprite->rewind();
     return currentSprite;
@@ -507,15 +503,23 @@ string BaseUnit::debugInfo()
     result += "P: " + StringUtility::vecToString(position) + " | " + StringUtility::intToString(getWidth()) + "," + StringUtility::intToString(getHeight()) + "\n" +
               "V: " + StringUtility::vecToString(velocity) + " | " +
               "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
-              "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + "\n" +
-              "F: " + StringUtility::intToString(flags.flags) + "\n" +
+              "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + " ";
+    for (vector<UnitCollisionEntry>::const_iterator I = collisionInfo.units.begin(); I != collisionInfo.units.end(); ++I)
+        result += (*I).unit->id + ",";
+    result += "\n";
+    result += "F: " + StringUtility::intToString(flags.flags) + "\n" +
               "S: " + currentState;
     if (currentSprite)
         result += " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
     else
         result += "\n";
     if (!orderList.empty())
-        result += "O: " + StringUtility::intToString(orderList[currentOrder].key) + "," + orderList[currentOrder].value + "(" + StringUtility::intToString(currentOrder) + ")\n";
+    {
+        if (currentOrder < orderList.size())
+            result += "O: " + StringUtility::intToString(orderList[currentOrder].key) + "," + orderList[currentOrder].value + "(" + StringUtility::intToString(currentOrder) + ")\n";
+        else
+            result += "O: finished\n";
+    }
     return result;
 }
 #endif
@@ -536,7 +540,7 @@ bool BaseUnit::processOrder(Order& next)
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
     int ticks = 1;
     // This is kinda fucked up, because of the frame based movement
-    if (tokens.size() > 0)
+    if (!tokens.empty())
     {
         ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
     }
@@ -609,7 +613,7 @@ bool BaseUnit::processOrder(Order& next)
 
     if (badOrder)
     {
-        cout << "Error: Bad order parameter \"" << next.value << "\" on unit id \"" << id << "\"" << endl;
+        printf("Error: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
         if (currentOrder >= 0)
             orderList.erase(orderList.begin() + currentOrder);
         orderTimer = 1; // process next order in next cycle
@@ -633,6 +637,29 @@ bool BaseUnit::updateOrder(const Order& curr)
         col.green = tempColour.y;
         col.blue = tempColour.z;
         break;
+    default:
+        parsed = false;
+    }
+
+    return parsed;
+}
+
+bool BaseUnit::finishOrder(const Order& curr)
+{
+    bool parsed = true;
+
+    vector<string> tokens;
+    StringUtility::tokenize(curr.value,tokens,DELIMIT_STRING);
+
+    switch (curr.key)
+    {
+    case okPosition:
+    {
+        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
+        position = dest;
+        velocity = Vector2df(0,0);
+        break;
+    }
     default:
         parsed = false;
     }

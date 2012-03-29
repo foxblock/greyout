@@ -96,7 +96,6 @@ void Playground::userInput()
         if (mouseDraw)
         {
     #endif
-        cout << __LINE__ << " " << mouseDraw << endl;
         Rectangle* temp = new Rectangle;
         temp->setColour(BLACK);
         temp->setDimensions(24,24);
@@ -106,7 +105,6 @@ void Playground::userInput()
         }
         else
         {
-        cout << __LINE__ << " " << mouseDraw << endl;
             Vector2df pos = input->getMouse() + drawOffset;
             for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
             {

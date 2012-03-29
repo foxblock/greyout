@@ -17,7 +17,7 @@ SDL_Surface* GreySurfaceCache::loadSurface(CRstring filename, CRstring pathOverw
     if (pathOverwrite[0] == 0) // no overwrite specified
         return loadSurface(filename,optimize);
 
-    std::cout << "Trying to load custom image \"" << pathOverwrite + filename << "\"" << std::endl;
+    printf("Trying to load custom image \"%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
 
     verbose = false;
     SDL_Surface* surface = loadSurface(pathOverwrite + filename, optimize);
@@ -25,7 +25,7 @@ SDL_Surface* GreySurfaceCache::loadSurface(CRstring filename, CRstring pathOverw
 
     if (surface == errorSurface || surface == NULL)
     {
-        std::cout << "Custom image not found, loading default!" << std::endl;
+        printf("Custom image not found, loading default!\n");
         surface = loadSurface(filename,optimize);
     }
 
