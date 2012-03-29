@@ -74,13 +74,12 @@ bool MusicCache::playMusic(CRstring filename, CRbool suppressOutput)
         Music* temp = new Music;
 
         if (not suppressOutput)
-            cout << "Loading new music track to cache \"" << filename << "\"" << endl;
+            printf("Loading new music track to cache \"%s\"\n",filename.c_str());
 
         if (temp->loadMusic(filename) != PENJIN_OK)
         {
             if (not suppressOutput)
-                cout << "Error loading music \"" << filename << "\": " <<
-                Mix_GetError() << endl;
+                printf("Error loading music \"%s\": %s\n",filename.c_str(),Mix_GetError());
             delete temp;
             return false;
         }
@@ -96,15 +95,15 @@ bool MusicCache::playMusic(CRstring filename, CRstring pathOverwrite)
     if (pathOverwrite[0] == 0)
         return playMusic(filename);
 
-    cout << "Trying to load custom music track \"" << pathOverwrite + filename << "\"" << endl;
+    printf("Trying to load custom music track \%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
 
     if (not playMusic(pathOverwrite + filename,true))
     {
-        cout << "Custom music track not found, loading default!" << endl;
+        printf("Custom music track not found, loading default!\n");
         return playMusic(filename);
     }
 
-    cout << "Now playing: \"" << pathOverwrite + filename << "\"" << endl;
+    printf("Now playing: \"%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
     return true;
 }
 
@@ -134,12 +133,12 @@ bool MusicCache::playSound(CRstring filename, CRint numLoops, CRbool suppressOut
         Sound* temp = new Sound;
 
         if (not suppressOutput)
-            cout << "Loading new sound to cache \"" << filename << "\"" << endl;
+            printf("Loading new sound to cache \"%s\"\n",filename.c_str());
 
         if (temp->loadSound(filename) != PENJIN_OK)
         {
             if (not suppressOutput)
-                cout << "Error loading sound \"" << filename << "\": " << Mix_GetError << endl;
+                printf("Error loading sound \"%s\": %s\n",filename.c_str(),Mix_GetError());
             delete temp;
             return false;
         }
@@ -158,11 +157,11 @@ bool MusicCache::playSound(CRstring filename, CRstring pathOverwrite, CRint numL
     if (pathOverwrite[0] == 0)
         return playSound(filename,numLoops);
 
-    cout << "Trying to load custom sound \"" << pathOverwrite + filename << "\"" << endl;
+    printf("Trying to load custom sound \"%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
 
     if (not playSound(pathOverwrite + filename,numLoops,true))
     {
-        cout << "Custom sound not found, loading default!" << endl;
+        printf("Custom sound not found, loading default!\n");
         return playSound(filename,numLoops);
     }
     return true;
@@ -215,8 +214,8 @@ void MusicCache::clearMusic(CRbool clearPlaying)
         music.insert(playingM.begin(),playingM.end());
         playingM.clear();
     }
-    cout << "Cleared music cache - deleted " << (musicClear - music.size())
-    << " music tracks (" << music.size() << " still playing)." << endl;
+    printf("Cleared music cache - deleted %i music tracks (%i still playing).\n",
+           musicClear - music.size(),music.size());
 }
 
 void MusicCache::clearSounds(CRbool clearPlaying)
@@ -237,8 +236,8 @@ void MusicCache::clearSounds(CRbool clearPlaying)
         sounds.insert(playingS.begin(),playingS.end());
         playingS.clear();
     }
-    cout << "Cleared sound cache - deleted " << (soundClear - sounds.size())
-    << " sounds (" << sounds.size() << " still playing)." << endl;
+    printf("Cleared sound cache - deleted %i sounds (%i still playing).\n",
+           soundClear - sounds.size(),sounds.size());
 }
 
 
@@ -263,7 +262,7 @@ void MusicCache::play(Music* const item, CRstring file)
     else
         item->play();
     musicPlaying = file;
-    cout << "Now playing: \"" << file << "\"" << endl;
+    printf("Now playing: \"%s\"\n",file.c_str());
 }
 
 void MusicCache::stop(Music* const item)

@@ -16,7 +16,6 @@ StateError::StateError()
     errorString = "An unknown error occurred, sorry about that!\n\
                     At lest the game did not crash...";
 
-    bool fromCache;
     bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
     bg.disableTransparentColour();
     bg.setPosition(0,0);
@@ -24,7 +23,7 @@ StateError::StateError()
 
 StateError::~StateError()
 {
-    cout << errorString << endl;
+    printf("%s\n",errorString.c_str());
 }
 
 void StateError::userInput()

@@ -21,6 +21,8 @@ Benchmark::Benchmark() : Level()
     currentPhase = 0;
     secondIndex.push_back(0);
     fpsCount = 0;
+    boxCount = 0;
+    particleCount = 0;
 }
 
 Benchmark::~Benchmark()
@@ -89,32 +91,32 @@ void Benchmark::generateFPSData()
     }
     averageFPS /= fpsData.size();
 
-    cout << "----------" << endl;
-    cout << "Benchmark results:" << endl;
-    cout << "----------" << endl;
-    cout << "Duration (ms): " << phases[sizeof(phases)/sizeof(phases[0])-1] << endl;
-    cout << "Graph update (ms): " << second.getLimit() << endl;
-    cout << "FPS (min): " << minFPS << endl;
-    cout << "FPS (max): " << maxFPS << endl;
-    cout << "FPS (avg): " << averageFPS << endl;
-    cout << "FPS Graph:";
+    printf("----------\n");
+    printf("Benchmark results:\n");
+    printf("----------\n");
+    printf("Duration (ms): %i\n",phases[sizeof(phases)/sizeof(phases[0])-1]);
+    printf("Graph update (ms): %s",second.getLimit());
+    printf("FPS (min): %f.2\n",minFPS);
+    printf("FPS (max): %f.2\n",maxFPS);
+    printf("FPS (avg): %f.2\n",averageFPS);
+    printf("FPS Graph:");
     for (int I = 0; I < secondIndex.size()-1; ++I)
     {
         averageFPS = 0;
         for (int K = secondIndex[I]; K < secondIndex[I+1]; ++K)
             averageFPS += fpsData[K];
         averageFPS /= secondIndex[I+1] - secondIndex[I];
-        cout << " " << averageFPS;
+        printf(" %f.2",averageFPS);
     }
-    cout << endl;
+    printf("\n");
     fpsCount = 0;
     for (int I = 0; I < fpsData.size(); ++I)
         fpsCount += fpsData[I];
-    cout << "Update cycles (#): " << fpsCount << endl;
-    cout << "Boxes total (#): " << boxCount << endl;
-    cout << "Particles total (#): " << particleCount << endl;
-    cout << "----------" << endl;
-    cout << "Benchmark finished successfully!" << endl;
+    printf("Update cycles (#): %i\n",fpsCount);
+    printf("Boxes total (#): %i\n",boxCount);
+    printf("Particles total (#): %i",particleCount);
+    printf("----------\n");
+    printf("Benchmark finished successfully!\n");
 }
 
 void Benchmark::secondUpdate()

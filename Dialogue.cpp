@@ -45,7 +45,7 @@ Dialogue* Dialogue::getDialogue()
 
 bool Dialogue::loadFromFile(CRstring filename)
 {
-    cout << "Trying to load strings file \"" << filename << "\"" << endl;
+    printf("Trying to load strings file \"%s\"\n",filename.c_str());
 
     string line;
     ifstream file(filename.c_str());
@@ -75,18 +75,18 @@ bool Dialogue::loadFromFile(CRstring filename)
         StringUtility::tokenize(line,tokens,VALUE_STRING);
         if (tokens.size() != 2)
         {
-            cout << "Incorrect key-value pair on line " << lineNumber << endl;
+           printf("Incorrect key-value pair on line %i\n",lineNumber);
         }
         else
         {
             // add to list
             if (lines.find(tokens[0]) != lines.end())
-                cout << "Warning: key \"" << tokens[0] << "\" redefined on line " << lineNumber << "!" << endl;
+                printf("Warning: key \"%s\" redefined on line %i!\n",tokens[0].c_str(),lineNumber);
             lines[tokens[0]] = tokens[1];
         }
     }
 
-    cout << "Successfully loaded " << lines.size() << " strings!" << endl;
+    printf("Successfully loaded %i strings!\n",lines.size());
     return true;
 }
 
@@ -103,12 +103,12 @@ void Dialogue::clear()
 void Dialogue::update()
 {
     timer.update();
-    if (timer.hasFinished() && queue.size() > 0)
+    if (timer.hasFinished() && !queue.empty())
     {
         SDL_FreeSurface(queue.front().surf);
         SAVEGAME->writeTempData(queue.front().key,"true",true);
         queue.erase(queue.begin());
-        if (queue.size() > 0)
+        if (!queue.empty())
         {
             timer.start(queue.front().time);
         }
@@ -117,7 +117,7 @@ void Dialogue::update()
 
 void Dialogue::render()
 {
-    if (queue.size() > 0)
+    if (!queue.empty())
     {
         SDL_Rect temp = {0,GFX::getYResolution()-DIALOGUE_HEIGHT,0,0};
         SDL_BlitSurface(queue.front().surf,NULL,GFX::getVideoSurface(),&temp);
@@ -136,7 +136,7 @@ void Dialogue::queueLine(CRstring key, const BaseUnit* const unit, CRint time)
 {
     if (lines.find(key) == lines.end())
     {
-        cout << "String \"" << key << "\" not found!" << endl;
+        printf("String \"%s\" not found!\n",key.c_str());
         return;
     }
     if (StringUtility::stringToBool(SAVEGAME->getTempData(key))) // line was already queried

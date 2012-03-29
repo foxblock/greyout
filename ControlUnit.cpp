@@ -38,6 +38,14 @@ bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
 
 void ControlUnit::control(SimpleJoy* input)
 {
+    if (!input)
+    {
+        acceleration[0].x = 0;
+        acceleration[1].x = 0;
+        velocity.x = 0;
+        return;
+    }
+
     if (input->isLeft())
     {
         acceleration[0].x = -2;

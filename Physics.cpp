@@ -138,7 +138,7 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
 
     // move unit until the collision is solved (maximum by unit's velocity as we
     // are assuming the unit was in a no-collision state before)
-    bool stillColliding = (collisionDir.size() > 0); // don't check when there are no colliding pixels
+    bool stillColliding = (!collisionDir.empty()); // don't check when there are no colliding pixels
     int correctionX = 0; // total correction to solve collision in this direction
     while (stillColliding && abs(correctionX) <= maximum.x)
     {
@@ -199,7 +199,7 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
         }
     }
 
-    stillColliding = (collisionDir.size() > 0); // don't check when there are no colliding pixels
+    stillColliding = (!collisionDir.empty()); // don't check when there are no colliding pixels
     int correctionY = 0; // total correction to solve collision in this direction
     while (stillColliding && abs(correctionY) <= maximum.y)
     {

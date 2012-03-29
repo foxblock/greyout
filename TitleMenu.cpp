@@ -34,7 +34,6 @@ TitleMenu::TitleMenu()
     invertRegion.x = 0;
     currentFps = 30;
 
-    bool fromCache;
     #ifdef _MEOW
     SDL_Surface* temp = SURFACE_CACHE->loadSurface("images/menu/title_320_240.png");
     #else

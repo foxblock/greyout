@@ -8,6 +8,7 @@
 #include "GreySurfaceCache.h"
 #include "LevelLoader.h"
 #include "MusicCache.h"
+#include "gameDefines.h"
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
@@ -33,7 +34,6 @@
 
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
 #define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
-#define DEFAULT_CHAPTER_INFO_FILE ((string)"info.txt")
 
 
 struct PreviewData
@@ -58,7 +58,6 @@ StateLevelSelect::StateLevelSelect()
 
     // graphic stuff
     // TODO: Use 320x240 bg here (and make that)
-    bool fromCache;
     bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
     bg.disableTransparentColour();
     bg.setPosition(0,0);
@@ -111,7 +110,6 @@ StateLevelSelect::StateLevelSelect()
     chapterLock = SDL_CreateMutex();
     chapterThread = NULL;
     abortChapterLoading = false;
-    coutLock = SDL_CreateMutex();
 
     levelLister.addFilter("txt");
     dirLister.addFilter("DIR");
@@ -126,7 +124,6 @@ StateLevelSelect::~StateLevelSelect()
     SDL_FreeSurface(previewDraw);
     SDL_DestroyMutex(levelLock);
     SDL_DestroyMutex(chapterLock);
-    SDL_DestroyMutex(coutLock);
 }
 
 /// ---public---
@@ -504,18 +501,13 @@ void StateLevelSelect::setLevelDirectory(CRstring dir)
     files = levelLister.getListing();
     files.erase(files.begin()); // delete first element which is the current folder
 
-    //#ifdef _DEBUG
-    PreviewData bench = {BENCHMARK_LEVEL,NULL,false};
-    levelPreviews.push_back(bench);
-    //#endif
-
     // initialize map
     for (vector<string>::const_iterator file = files.begin(); file < files.end(); ++file)
     {
         PreviewData temp = {dir + (*file),NULL,false};
         levelPreviews.push_back(temp);
     }
-    cout << levelPreviews.size() << " files found in level directory" << endl;
+    printf("%i files found in level directory\n",levelPreviews.size());
 
     abortLevelLoading = false;
     levelThread = SDL_CreateThread(StateLevelSelect::loadLevelPreviews, this);
@@ -540,7 +532,6 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
     }
 
     // add single level folder
-    bool fromCache;
     SDL_Surface* img = SURFACE_CACHE->loadSurface("images/general/levelfolder.png");
     if (img->w != size.x || img->h != size.y)
     {
@@ -561,7 +552,7 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
         PreviewData temp2 = {(*item),NULL,false};
         chapterPreviews.push_back(temp2);
     }
-    cout << chapterPreviews.size()-1 << " chapters found" << endl;
+    printf("%i chapters found\n",chapterPreviews.size()-1);
 
     abortChapterLoading = false;
     chapterThread = SDL_CreateThread(StateLevelSelect::loadChapterPreviews,this);
@@ -583,7 +574,7 @@ void StateLevelSelect::exploreChapter(CRstring filename)
         PreviewData temp = {exChapter->path + (*file),NULL,false};
         levelPreviews.push_back(temp);
     }
-    cout << "Chapter has " << levelPreviews.size() << " levels" << endl;
+    printf("Chapter has %i levels\n",levelPreviews.size());
 
     abortLevelLoading = false;
     levelThread = SDL_CreateThread(StateLevelSelect::loadLevelPreviews,this);
@@ -654,17 +645,17 @@ void StateLevelSelect::checkSelection(const vector<PreviewData>& data, Vector2di
 
 int StateLevelSelect::loadLevelPreviews(void* data)
 {
-    cout << "Generating level previews images" << endl;
+    printf("Generating level previews images\n");
     StateLevelSelect* self = (StateLevelSelect*)data;
     vector<PreviewData>::iterator iter = self->levelPreviews.begin();
     int levelNumber = 0;
-    #ifdef _DEBUG
-    int maxUnlocked = 2147483647;
-    #else
     int maxUnlocked = 0;
-    #endif
+    #ifdef _DEBUG
+    maxUnlocked = INT_MAX;
+    #else
     if (self->exChapter)
         maxUnlocked = self->exChapter->getProgress();
+    #endif
 
     while (not self->abortLevelLoading && iter != self->levelPreviews.end())
     {
@@ -704,21 +695,19 @@ int StateLevelSelect::loadLevelPreviews(void* data)
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->levelLock);
             if (LEVEL_LOADER->errorString[0] != 0)
-                cout << LEVEL_LOADER->errorString << endl;
+                printf("%s\n",LEVEL_LOADER->errorString.c_str());
         }
         delete level;
         ++iter;
         ++levelNumber;
     }
-    SDL_mutexP(self->coutLock);
     if (self->abortLevelLoading)
     {
-        cout << "Aborted level preview generation" << endl;
+        printf("Aborted level preview generation\n");
         self->abortLevelLoading = false;
     }
     else
-        cout << "Finished generating level preview images" << endl;
-    SDL_mutexV(self->coutLock);
+        printf("Finished generating level preview images\n");
     return 0;
 }
 
@@ -726,9 +715,7 @@ int StateLevelSelect::loadChapterPreviews(void* data)
 {
     StateLevelSelect* self = (StateLevelSelect*)data;
 
-    SDL_mutexP(self->coutLock);
-    cout << "Loading chapter preview images" << endl;
-    SDL_mutexV(self->coutLock);
+    printf("Loading chapter preview images\n");
     vector<PreviewData>::iterator iter = self->chapterPreviews.begin();
     ++iter; // skip level folder
     Chapter chapter;
@@ -743,7 +730,7 @@ int StateLevelSelect::loadChapterPreviews(void* data)
             SDL_mutexP(self->chapterLock);
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->chapterLock);
-            cout << chapter.errorString << endl;
+            printf("%s\n",chapter.errorString.c_str());
             ++iter;
             continue;
         }
@@ -782,11 +769,9 @@ int StateLevelSelect::loadChapterPreviews(void* data)
         SDL_mutexV(self->chapterLock);
         ++iter;
     }
-    SDL_mutexP(self->coutLock);
     if (self->abortChapterLoading)
-        cout << "Aborted chapter preview generation" << endl;
+        printf("Aborted chapter preview generation\n");
     else
-        cout << "Finished generating chapter preview images" << endl;
-    SDL_mutexV(self->coutLock);
+        printf("Finished generating chapter preview images\n");
     return 0;
 }

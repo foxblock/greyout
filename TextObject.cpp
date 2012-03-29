@@ -34,12 +34,12 @@ bool TextObject::load(list<PARAMETER_TYPE >& params)
 
     if (line[0] == 0)
     {
-        cout << "ERROR: No text specified for TextObject: " << id << endl;
+        printf("ERROR: No text specified for TextObject: %s\n",id.c_str());
         return false;
     }
     if (currentText == NULL)
     {
-        cout << "ERROR: Failed to load or missing font on TextObject: " << id << endl;
+        printf("ERROR: Failed to load or missing font on TextObject: %s\n",id.c_str());
         return false;
     }
     currentText->setColour(col);

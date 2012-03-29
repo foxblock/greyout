@@ -24,8 +24,8 @@ class Camera
         virtual void centerOnUnit(const BaseUnit* const unit, CRint time=0);
         virtual void centerOnPos(const Vector2df& pos, CRint time=0);
 
-        Vector2df getSpeed() {return speed;}
-        Vector2df getDest() {return dest;}
+        Vector2df getSpeed() const {return speed;}
+        Vector2df getDest() const {return dest;}
 
         Level* parent;
         // If false level boundaries will be taken into account when moving

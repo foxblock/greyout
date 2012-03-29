@@ -183,7 +183,7 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
         if (not processParameter(make_pair(value->first,value->second)) && value->first != CLASS_STRING)
         {
             string className = params.front().second;
-            cout << "Warning: Unprocessed parameter \"" << value->first << "\" on level \"" << className << "\"" << endl;
+            printf("Warning: Unprocessed parameter \"%s\" on level \"%s\"\n",value->first.c_str(),className.c_str());
         }
     }
 
@@ -1128,6 +1128,7 @@ void Level::swapControl()
         for (vector<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
         {
             (*unit)->takesControl = not (*unit)->takesControl;
+            (*unit)->control(NULL); // message unit losing of control
             if ((*unit)->takesControl)
                 (*unit)->setSpriteState("wave",true);
         }
@@ -1205,8 +1206,12 @@ void Level::clearRectangle(SDL_Surface* const surface, CRfloat posX, CRfloat pos
     SDL_Rect unitRect;
     unitRect.x = max(posX,0.0f);
     unitRect.y = max(posY,0.0f);
-    unitRect.w = min(surface->w - unitRect.x,width - max((int)-posX,0));
-    unitRect.h = min(surface->h - unitRect.y,height - max((int)-posY,0));
+    int tempW = min(surface->w - unitRect.x,width - max((int)-posX,0));
+    int tempH = min(surface->h - unitRect.y,height - max((int)-posY,0));
+    if (tempW <= 0 || tempH <= 0)
+        return;
+    unitRect.w = tempW;
+    unitRect.h = tempH;
 
     SDL_BlitSurface(levelImage,&unitRect,surface,&unitRect);
 }

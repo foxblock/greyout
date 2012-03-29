@@ -27,17 +27,24 @@ int main(int argc, char** argv)
 	//	Setup game engine
 	game = new MyGame;
 
-	cout << error.getErrorString(game->argHandler(argc,argv));
-	cout << error.getErrorString(game->penjinInit());
-	while(game->stateLoop());	//	Perform main loop until shutdown
-	cout << error.getErrorString(PENJIN_SHUTDOWN);
-
-	//	Tidy up
     if(game)
     {
+        cout << error.getErrorString(game->argHandler(argc,argv));
+        cout << error.getErrorString(game->penjinInit());
+
+        while(game->stateLoop());	//	Perform main loop until shutdown
+
+        cout << error.getErrorString(PENJIN_SHUTDOWN);
+
+	//	Tidy up
         delete game;
         game = NULL;
     }
+    else
+    {
+        cout << "CRITICAL ERROR: Failed to create game class!" << endl;
+    }
+
     cout << error.getErrorString(PENJIN_GOODBYE);
     SDL_Quit();		//	Shut down SDL tidyly
 	return 0;	//	Normal program termination.
