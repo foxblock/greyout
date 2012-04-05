@@ -321,9 +321,9 @@ void Level::userInput()
         debugUnits.clear();
     input->resetMouseButtons();
 
-    if ((input->isL() || input->isR()) && not flags.hasFlag(lfDisableSwap))
+    if ((input->isL() || input->isR() || input->isSelect()) && not flags.hasFlag(lfDisableSwap))
 #else
-    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick() || input->resetSelect())
+    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick() || input->isSelect())
         && not flags.hasFlag(lfDisableSwap))
 #endif
     {
@@ -1175,6 +1175,7 @@ void Level::addParticle(const BaseUnit* const caller, const Colour& col, const V
     effects.push_back(temp);
 }
 
+#ifdef _DEBUG
 string Level::debugInfo()
 {
     string result = "";
@@ -1187,6 +1188,7 @@ string Level::debugInfo()
     result += "---\n";
     return result;
 }
+#endif
 
 /// ---protected---
 
