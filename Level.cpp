@@ -172,6 +172,8 @@ Level::~Level()
 
     // reset background colour
     GFX::setClearColour(BLACK);
+
+    SDL_FreeSurface(pauseSurf);
 }
 
 /// ---public---
@@ -183,13 +185,13 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
         if (not processParameter(make_pair(value->first,value->second)) && value->first != CLASS_STRING)
         {
             string className = params.front().second;
-            printf("Warning: Unprocessed parameter \"%s\" on level \"%s\"\n",value->first.c_str(),className.c_str());
+            printf("WARNING: Unprocessed parameter \"%s\" on level \"%s\"\n",value->first.c_str(),className.c_str());
         }
     }
 
     if (not levelImage)
     {
-        errorString = "Error: No image has been specified! (critical)";
+        errorString = "ERROR: No image has been specified! (critical)";
         return false;
     }
     else

@@ -565,7 +565,7 @@ void StateLevelSelect::exploreChapter(CRstring filename)
 
     if (not exChapter->loadFromFile(filename))
     {
-        ENGINE->stateParameter = "Error loading chapter!";
+        ENGINE->stateParameter = "ERROR loading chapter!";
         setNextState(STATE_ERROR);
     }
 
@@ -695,7 +695,7 @@ int StateLevelSelect::loadLevelPreviews(void* data)
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->levelLock);
             if (LEVEL_LOADER->errorString[0] != 0)
-                printf("%s\n",LEVEL_LOADER->errorString.c_str());
+                printf("ERROR: %s\n",LEVEL_LOADER->errorString.c_str());
         }
         delete level;
         ++iter;
@@ -730,7 +730,7 @@ int StateLevelSelect::loadChapterPreviews(void* data)
             SDL_mutexP(self->chapterLock);
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->chapterLock);
-            printf("%s\n",chapter.errorString.c_str());
+            printf("ERROR: %s\n",chapter.errorString.c_str());
             ++iter;
             continue;
         }

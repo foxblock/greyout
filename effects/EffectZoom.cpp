@@ -3,7 +3,7 @@
 EffectZoom::EffectZoom(CRint time, const Vector2df& pos, const Vector2df& newSize, const Colour& col, CRbool inverted) : BaseEffect()
 {
     if (pos.x < 0 || pos.x > GFX::getXResolution() || pos.y < 0 || pos.y > GFX::getYResolution())
-        printf("Warning: Position passed to EffectZoom is out of bounds (only a position on the screen makes sense here): %f.2,%f.2\n",pos.x,pos.y);
+        printf("WARNING: Position passed to EffectZoom is out of bounds (only a position on the screen makes sense here): %f.2,%f.2\n",pos.x,pos.y);
 
     surf = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
     if (not inverted)

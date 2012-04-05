@@ -200,7 +200,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
                 StringUtility::tokenize(line,tokens,VALUE_STRING,2);
                 if (tokens.size() != 2)
                 {
-                    printf("Error: Incorrect key-value pair on line %i\n",lineNumber);
+                    printf("ERROR: Incorrect key-value pair on line %i\n",lineNumber);
                     error = ecWarning;
                 }
                 else
@@ -266,7 +266,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
             }
             default:
             {
-                printf("Error: Unknown field \"%s\" ending on line %i\n",field.c_str(),lineNumber);
+                printf("ERROR: Unknown field \"%s\" ending on line %i\n",field.c_str(),lineNumber);
                 error = ecWarning;
             }
             }
@@ -291,7 +291,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
     {
         if (level->players.empty())
         {
-            printf("Error: No player unit has been specified in the map, what did you plan to play with?\n");
+            printf("ERROR: No player unit has been specified in the map, what did you plan to play with?\n");
             error = ecWarning;
         }
         vector<ControlUnit*>::const_iterator unit;
@@ -302,7 +302,7 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         }
         if (unit == level->players.end())
         {
-            printf("Warning: No controlable unit found! Push the buttons...(nothing happens)\n");
+            printf("WARNING: No controlable unit found! Push the buttons...(nothing happens)\n");
             error = ecWarning;
         }
         printf("Level has %i players and %i units.\n",level->players.size(),level->units.size());
@@ -314,11 +314,11 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         printf("Successfully loaded level file!\n");
         break;
     case ecWarning:
-        printf("Finished loading level file with minor errors!\n");
+        printf("WARNING: Finished loading level file with minor errors!\n");
         break;
     case ecCritical:
         // clean up and return NULL on critical error
-        printf("Encountered critical error while loading map!\n");
+        printf("ERROR: Encountered critical error while loading map!\n");
         delete level;
         level = NULL;
         break;
@@ -336,7 +336,7 @@ Level* LevelLoader::createLevel(list<PARAMETER_TYPE >& params, CRstring chapterP
 
     if (params.front().first != CLASS_STRING)
     {
-        printf("Error: Level definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
+        printf("ERROR: Level definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
         return NULL;
     }
 
@@ -359,7 +359,7 @@ Level* LevelLoader::createLevel(list<PARAMETER_TYPE >& params, CRstring chapterP
     }
     default:
     {
-        printf("Error: Unknown level class \"%s\"\n",params.front().second.c_str());
+        printf("ERROR: Unknown level class \"%s\"\n",params.front().second.c_str());
         return NULL;
     }
     }
@@ -382,7 +382,7 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
 
     if (params.front().first != CLASS_STRING)
     {
-        printf("Error: Player definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
+        printf("ERROR: Player definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
         return NULL;
     }
 
@@ -411,14 +411,14 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
         break;
     }
     default:
-        printf("Error: Unknown player class \"%s\" on line %i\n", params.front().second.c_str(),lineNumber);
+        printf("ERROR: Unknown player class \"%s\" on line %i\n", params.front().second.c_str(),lineNumber);
         return NULL;
     }
 
     result->parameters.insert(result->parameters.begin(),params.begin(),params.end());
     if (not result->load(result->parameters))
     {
-        printf("Error loading unit id \"%s\"\n",result->id.c_str());
+        printf("ERROR loading unit id \"%s\"\n",result->id.c_str());
         delete result;
         result = NULL;
     }
@@ -433,7 +433,7 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
 
     if (params.front().first != CLASS_STRING)
     {
-        printf("Error: Unit definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
+        printf("ERROR: Unit definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
         return NULL;
     }
 
@@ -510,14 +510,14 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
         break;
     }
     default:
-        printf("Error: Unknown unit class \"%s\" on line %i\n",params.front().second.c_str(),lineNumber);
+        printf("ERROR: Unknown unit class \"%s\" on line %i\n",params.front().second.c_str(),lineNumber);
         return NULL;
     }
 
     result->parameters.insert(result->parameters.begin(),params.begin(),params.end());
     if (not result->load(result->parameters))
     {
-        printf("Error loading unit id \"%s\"\n",result->id.c_str());
+        printf("ERROR loading unit id \"%s\"\n",result->id.c_str());
         delete result;
         result = NULL;
     }

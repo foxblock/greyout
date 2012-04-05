@@ -95,7 +95,7 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
         if (not processParameter(*value))
         {
             string className = params.front().second;
-            printf("Warning: Unprocessed parameter \"%s\" on unit with id \"%s\" (%s)\n",
+            printf("WARNING: Unprocessed parameter \"%s\" on unit with id \"%s\" (%s)\n",
                    value->first.c_str(),id.c_str(),className.c_str());
         }
     }
@@ -613,7 +613,7 @@ bool BaseUnit::processOrder(Order& next)
 
     if (badOrder)
     {
-        printf("Error: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
+        printf("ERROR: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
         if (currentOrder >= 0)
             orderList.erase(orderList.begin() + currentOrder);
         orderTimer = 1; // process next order in next cycle

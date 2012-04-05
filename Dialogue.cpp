@@ -81,7 +81,7 @@ bool Dialogue::loadFromFile(CRstring filename)
         {
             // add to list
             if (lines.find(tokens[0]) != lines.end())
-                printf("Warning: key \"%s\" redefined on line %i!\n",tokens[0].c_str(),lineNumber);
+                printf("WARNING: key \"%s\" redefined on line %i!\n",tokens[0].c_str(),lineNumber);
             lines[tokens[0]] = tokens[1];
         }
     }

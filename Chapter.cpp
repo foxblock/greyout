@@ -16,6 +16,7 @@ Chapter::Chapter()
     errorString = "";
     name = "";
     imageFile = "";
+    autoDetect = false;
 
     stringToProp["name"] = cpName;
     stringToProp["image"] = cpImage;
@@ -76,7 +77,7 @@ bool Chapter::loadFromFile(CRstring filename)
         StringUtility::tokenize(line,tokens,VALUE_STRING);
         if (tokens.size() != 2)
         {
-            printf("Error: Incorrect key-value pair on line %i\n",lineNumber);
+            printf("ERROR: Incorrect key-value pair on line %i\n",lineNumber);
         }
         else
         {
@@ -97,19 +98,17 @@ bool Chapter::loadFromFile(CRstring filename)
 
         vector<string> files;
         files = levelLister.getListing();
-        // delete first element which is the current folder and info.txt file
+        // delete first element which is the current folder
         files.erase(files.begin());
         for (vector<string>::iterator I = files.begin(); I != files.end(); ++I)
         {
-            if (*I == DEFAULT_CHAPTER_INFO_FILE)
+            // skip info.txt file and files already present
+            if (*I != DEFAULT_CHAPTER_INFO_FILE &&
+                getLevelIndex(path + *I) < 0)
             {
-                files.erase(I);
-                break;
+                levels.push_back(*I);
             }
         }
-
-        levels.insert(levels.begin(),files.begin(),files.end());
-
         files.clear();
     }
 
@@ -226,7 +225,10 @@ bool Chapter::processParameter(const PARAMETER_TYPE& value)
     }
     case cpLevel:
     {
-        levels.push_back(value.second);
+        if (getLevelIndex(path + value.second) < 0)
+            levels.push_back(value.second);
+        else
+            printf("WARNING: Duplicate level \"%s\" on chapter \"%s\"\n",value.second.c_str(),name.c_str());
         break;
     }
     case cpDialogue:
