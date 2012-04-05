@@ -180,7 +180,7 @@ bool PushableBox::processOrder(Order& next)
     {
         if (tokens.size() < 3)
         {
-            printf("Error: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
+            printf("ERROR: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
             orderList.erase(orderList.begin() + currentOrder);
             orderTimer = 1; // process next order in next cycle
             return false;

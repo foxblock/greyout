@@ -22,6 +22,7 @@ MyGame::MyGame()
     returnState = STATE_MAIN;
     timeTrial = false;
     restartCounter = 0;
+    icon = NULL;
 }
 
 MyGame::~MyGame()
@@ -34,6 +35,7 @@ MyGame::~MyGame()
     SAVEGAME->save();
     SURFACE_CACHE->clear();
     MUSIC_CACHE->clear();
+    SDL_FreeSurface(icon);
 }
 
 MyGame *MyGame::getMyGame()
@@ -46,7 +48,8 @@ PENJIN_ERRORS MyGame::init()
     //Set up first level password and filename
     setInitialState(STATE_TITLE);
     gameTimer->start();
-    SDL_WM_SetIcon(IMG_Load("images/general/icon_win.png"),NULL);
+    icon = IMG_Load("images/general/icon_win.png");
+    SDL_WM_SetIcon(icon,NULL);
     #ifdef _MEOW
     GFX::setResolution(320,240);
     #elif defined(PLATFORM_PANDORA)
@@ -252,8 +255,8 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
             nextState = LEVEL_LOADER->loadLevelFromFile(parameter);
         if (not nextState)
         {
-            printf("%s\n",LEVEL_LOADER->errorString.c_str());
-            string e = "Error: " + LEVEL_LOADER->errorString;
+            printf("ERROR: %s\n",LEVEL_LOADER->errorString.c_str());
+            string e = "ERROR: " + LEVEL_LOADER->errorString;
             return createState(STATE_ERROR,e);
         }
         break;

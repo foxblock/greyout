@@ -49,6 +49,8 @@ class MyGame : public Engine
         // creates a state from a defined set, gets called by MyGame::stateManangement()
         BaseState* createState(CRuint stateID, CRstring parameter="");
 
+        SDL_Surface* icon;
+
 };
 
 

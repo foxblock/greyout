@@ -79,7 +79,7 @@ bool MusicCache::playMusic(CRstring filename, CRbool suppressOutput)
         if (temp->loadMusic(filename) != PENJIN_OK)
         {
             if (not suppressOutput)
-                printf("Error loading music \"%s\": %s\n",filename.c_str(),Mix_GetError());
+                printf("ERROR loading music \"%s\": %s\n",filename.c_str(),Mix_GetError());
             delete temp;
             return false;
         }
@@ -138,7 +138,7 @@ bool MusicCache::playSound(CRstring filename, CRint numLoops, CRbool suppressOut
         if (temp->loadSound(filename) != PENJIN_OK)
         {
             if (not suppressOutput)
-                printf("Error loading sound \"%s\": %s\n",filename.c_str(),Mix_GetError());
+                printf("ERROR loading sound \"%s\": %s\n",filename.c_str(),Mix_GetError());
             delete temp;
             return false;
         }

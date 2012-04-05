@@ -23,7 +23,7 @@ StateError::StateError()
 
 StateError::~StateError()
 {
-    printf("%s\n",errorString.c_str());
+    printf("ERROR: %s\n",errorString.c_str());
 }
 
 void StateError::userInput()
