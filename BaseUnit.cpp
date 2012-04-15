@@ -42,6 +42,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToOrder["colour"] = okColour;
     stringToOrder["explode"] = okExplode;
     stringToOrder["remove"] = okRemove;
+    stringToOrder["increment"] = okIncrement;
 
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
@@ -607,6 +608,17 @@ bool BaseUnit::processOrder(Order& next)
         toBeRemoved = true;
         break;
     }
+    case okIncrement:
+    {
+        if (tokens.size() < 3)
+        {
+            badOrder = true;
+            break;
+        }
+        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
+        velocity = dest / (float)ticks; // set speed to pixels per framerate
+        break;
+    }
     default:
         return false;
     }
@@ -657,6 +669,11 @@ bool BaseUnit::finishOrder(const Order& curr)
     {
         Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
         position = dest;
+        velocity = Vector2df(0,0);
+        break;
+    }
+    case okIncrement:
+    {
         velocity = Vector2df(0,0);
         break;
     }
