@@ -60,6 +60,13 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
     return parsed;
 }
 
+void PushableBox::reset()
+{
+    rect.w = 32;
+    rect.h = 32;
+    BaseUnit::reset();
+}
+
 int PushableBox::getHeight() const
 {
     return rect.h;

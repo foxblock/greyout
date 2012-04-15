@@ -2,12 +2,14 @@
 
 #include "StringUtility.h"
 #include "Level.h"
+#include "ControlUnit.h"
 
 BaseTrigger::BaseTrigger(Level* newParent) : BaseUnit(newParent)
 {
     stringToProp["size"] = BaseUnit::upSize;
     stringToProp["enabled"] = bpEnabled;
     stringToProp["action"] = bpAction;
+    stringToProp["activator"] = bpActivator;
     width = 32;
     height = 32;
     collisionColours.insert(Colour(BLACK).getIntColour());
@@ -23,7 +25,8 @@ BaseTrigger::BaseTrigger(Level* newParent) : BaseUnit(newParent)
 
 BaseTrigger::~BaseTrigger()
 {
-    //
+    targets.clear();
+    activators.clear();
 }
 
 ///---public---
@@ -80,6 +83,29 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
         targetParam.second = tokens.back();
         break;
     }
+    case bpActivator:
+    {
+        activators.clear();
+        vector<string> tokens;
+        StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
+        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
+        {
+            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    activators.push_back(*I);
+            }
+        }
+        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
+        {
+            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    activators.push_back(*I);
+            }
+        }
+        break;
+    }
     default:
         parsed = false;
     }
@@ -88,6 +114,14 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
         return BaseUnit::processParameter(value);
 
     return parsed;
+}
+
+void BaseTrigger::reset()
+{
+    enabled = true;
+    width = 32;
+    height = 32;
+    BaseUnit::reset();
 }
 
 void BaseTrigger::render(SDL_Surface* surf)
@@ -119,19 +153,44 @@ bool BaseTrigger::hitUnitCheck(const BaseUnit* const caller) const
 
 void BaseTrigger::hitUnit(const UnitCollisionEntry& entry)
 {
-    if (entry.unit->isPlayer && enabled)
+    if (enabled)
     {
-        doTrigger(entry);
-        for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+        if (!activators.empty())
         {
-            (*I)->processParameter(targetParam);
-            // orders need an additional kickstart to work
-            if (targetParam.first == "order" && !(*I)->orderRunning)
-                (*I)->resetOrder();
+            bool found = false;
+            for (vector<BaseUnit*>::iterator I = activators.begin(); I != activators.end(); ++I)
+            {
+                if (*I == entry.unit)
+                {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                return; // not hit by activator unit, exit here
+        }
+        // activator units may be non-player units
+        if ((!activators.empty() || entry.unit->isPlayer))
+        {
+            doTrigger(entry);
+            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+            {
+                (*I)->processParameter(targetParam);
+                // orders need an additional kickstart to work
+                if (targetParam.first == "order" && !(*I)->orderRunning)
+                    (*I)->resetOrder();
+            }
         }
     }
 }
 
+bool BaseTrigger::checkCollisionColour(const Colour& col) const
+{
+    set<int>::const_iterator iter = collisionColours.find(col.getIntColour());
+    if (iter != collisionColours.end())
+        return true;
+    return false;
+}
 
 #ifdef _DEBUG
 string BaseTrigger::debugInfo()

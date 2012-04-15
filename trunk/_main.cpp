@@ -15,6 +15,7 @@
 // DONE: Fix not being able to push boxes from the other side of the screen
 // DONE: Fix menu selector speed
 // TODO: Test with notaz' improved SDL
+// DONE: Add reset functions to PushableBox,BaseTrigger,etc. to always get back to default values
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red

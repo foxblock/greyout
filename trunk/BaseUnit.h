@@ -178,6 +178,7 @@ protected:
         okColour,
         okExplode,
         okRemove,
+        okIncrement,
         okEOL
     };
     // processes the next order to start

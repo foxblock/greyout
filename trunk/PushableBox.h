@@ -21,6 +21,8 @@ class PushableBox : public BaseUnit
 
         virtual bool processParameter(const PARAMETER_TYPE& value);
 
+        virtual void reset();
+
         virtual int getHeight() const;
         virtual int getWidth() const;
         virtual Vector2df getPixel(const SimpleDirection& dir) const;
