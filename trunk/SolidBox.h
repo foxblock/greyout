@@ -9,7 +9,6 @@ class SolidBox : public PushableBox
         SolidBox(Level* newParent);
         virtual ~SolidBox();
 
-        virtual bool hitUnitCheck(const BaseUnit* const caller) const;
         virtual void hitUnit(const UnitCollisionEntry& entry);
     protected:
         void move();

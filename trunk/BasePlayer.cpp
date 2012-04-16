@@ -3,7 +3,7 @@
 #include "Level.h"
 
 #define SPRITESHEET_W 8
-#define SPRITESHEET_H 7
+#define SPRITESHEET_H 9
 #define FRAMERATE DECI_SECONDS
 
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
@@ -39,32 +39,35 @@ bool BasePlayer::load(list<PARAMETER_TYPE >& params)
     }
     SDL_Surface* surf = getSurface(imageOverwrite);
     AnimatedSprite* temp;
+
     loadFrames(surf,0,1,false,"stand");
-    temp = loadFrames(surf,1,7,true,"fallRight");
-    temp->setPlayMode(pmReverse);
-    temp = loadFrames(surf,8,3,false,"turnRight");
-    temp->setFrameRate(FIFTEEN_FRAMES);
-    temp = loadFrames(surf,12,4,true,"pushRight");
-    temp->setPlayMode(pmPulse);
-    temp = loadFrames(surf,16,6,true,"runRight");
-    temp->setPlayMode(pmPulse);
-    loadFrames(surf,22,2,false,"jumpRight");
-    loadFrames(surf,23,1,false,"flyRight");
-    temp = loadFrames(surf,25,7,true,"fallLeft");
-    temp->setPlayMode(pmReverse);
-    temp = loadFrames(surf,32,3,false,"turnLeft");
-    temp->setFrameRate(FIFTEEN_FRAMES);
-    temp = loadFrames(surf,36,4,true,"pushLeft");
-    temp->setPlayMode(pmPulse);
-    temp = loadFrames(surf,40,6,true,"runLeft");
-    temp->setPlayMode(pmPulse);
-    loadFrames(surf,46,2,false,"jumpLeft");
-    loadFrames(surf,47,1,false,"flyLeft");
-    temp = loadFrames(surf,48,3,false,"wave");
+    temp = loadFrames(surf,1,3,false,"wave");
     temp->setLooping(2);
     temp->setPlayMode(pmPulse);
     temp->setFrameRate(FIFTEEN_FRAMES);
 
+    loadFrames(surf,32,7,true,"fallRight");
+    temp = loadFrames(surf,8,3,false,"turnRight");
+    temp->setFrameRate(FIFTEEN_FRAMES);
+    temp = loadFrames(surf,48,7,true,"pushRight");
+    temp->setFrameRate(CUSTOM);
+    temp->setTimerScaler(1000/7);
+    temp = loadFrames(surf,16,6,true,"runRight");
+    temp->setPlayMode(pmPulse);
+    loadFrames(surf,64,2,false,"jumpRight");
+    loadFrames(surf,65,1,false,"flyRight");
+
+    temp = loadFrames(surf,40,7,true,"fallLeft");
+    temp = loadFrames(surf,11,3,false,"turnLeft");
+    temp->setFrameRate(FIFTEEN_FRAMES);
+    temp = loadFrames(surf,56,7,true,"pushLeft");
+    temp->setFrameRate(CUSTOM);
+    temp->setTimerScaler(1000/7);
+    temp->setPlayMode(pmReverse);
+    temp = loadFrames(surf,24,6,true,"runLeft");
+    temp->setPlayMode(pmPulse);
+    loadFrames(surf,66,2,false,"jumpLeft");
+    loadFrames(surf,67,1,false,"flyLeft");
 
     if (startingState[0] == 0 || startingState == "default")
     {
@@ -73,7 +76,6 @@ bool BasePlayer::load(list<PARAMETER_TYPE >& params)
         else
             startingState = "stand";
     }
-
     setSpriteState(startingState,true);
 
     return result;

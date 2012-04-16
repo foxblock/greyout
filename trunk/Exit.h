@@ -11,7 +11,6 @@ public:
 
     virtual bool load(list<PARAMETER_TYPE >& params);
 
-    virtual bool hitUnitCheck(const BaseUnit* const caller) const;
     virtual void hitUnit(const UnitCollisionEntry& entry);
 protected:
 

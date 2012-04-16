@@ -95,9 +95,12 @@ public:
     int direction; // the direction the unit is facing (use for sprite orientation)
     set<int> collisionColours;
     CollisionObject collisionInfo; // contains colliding pixels, correction, etc.
+    unsigned int unitCollisionMode; // 0 - never collide (be affected by other units),
+                                    // 1 - always, 2 - yes, but check collision colours
     SimpleFlags flags;
     string imageOverwrite; // used for level-specific customisation
     Colour col; // the colour of this unit
+
 
     // this is only a "working" pointer, it will not get deleted
     AnimatedSprite* currentSprite;
@@ -117,7 +120,7 @@ public:
     enum UnitFlag
     {
         ufNoMapCollision=1, // no map collision check for this unit
-        ufNoUnitCollision=2, // does not let other units affect this unit
+        ufNoUnitCollision=2, // does not let other units affect this unit (depracated!)
         ufNoGravity=4,
         ufInvincible=8, // will not explode by environmental hazards
         ufMissionObjective=16, // level will restart when this unit is killed (also winCounter increases for ControlUnits)
@@ -139,7 +142,7 @@ protected:
 
     enum UnitProp // enum used for string-int conversion in loading
     {
-        upUnknown,
+        upUnknown=0,
         upClass,
         upState,
         upPosition,
@@ -153,6 +156,7 @@ protected:
         upOrder,
         upSize, // reserved for child classes (not implemented in BaseUnit)
         upTarget, // reserved
+        upCollisionMode,
         upEOL // end of list value, starting point for child classes' lists
     };
     // converts a string from a level file to a propIdent usable in a switch statement
@@ -171,7 +175,7 @@ protected:
     };
     enum OrderKey
     {
-        okUnknown,
+        okUnknown=0,
         okIdle,
         okPosition,
         okRepeat,

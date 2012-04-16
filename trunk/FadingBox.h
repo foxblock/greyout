@@ -13,7 +13,6 @@ public:
 
     virtual void update();
 
-    virtual bool hitUnitCheck(const BaseUnit* const caller) const;
     virtual void hitUnit(const UnitCollisionEntry& entry);
     virtual bool checkCollisionColour(const Colour& col) const;
 

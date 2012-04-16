@@ -11,8 +11,8 @@ Gear::Gear(Level* newParent) : BaseUnit(newParent)
     angle = 0;
     screenPosition = Vector2df(0,0);
     flags.addFlag(ufNoMapCollision);
-    flags.addFlag(ufNoUnitCollision);
     flags.addFlag(ufNoGravity);
+    unitCollisionMode = 0;
 }
 
 Gear::~Gear()

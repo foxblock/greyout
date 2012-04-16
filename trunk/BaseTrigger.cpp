@@ -16,7 +16,7 @@ BaseTrigger::BaseTrigger(Level* newParent) : BaseUnit(newParent)
     collisionColours.insert(Colour(WHITE).getIntColour());
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoUnitCollision);
+    unitCollisionMode = 0;
     triggerCol = YELLOW;
     enabled = true;
     targetParam.first = "";
@@ -146,11 +146,6 @@ void BaseTrigger::render(SDL_Surface* surf)
 #endif
 }
 
-bool BaseTrigger::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
-}
-
 void BaseTrigger::hitUnit(const UnitCollisionEntry& entry)
 {
     if (enabled)
@@ -175,10 +170,12 @@ void BaseTrigger::hitUnit(const UnitCollisionEntry& entry)
             doTrigger(entry);
             for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
             {
+                if (targetParam.first == "order")
+                    (*I)->resetOrder(true); // clear order list
                 (*I)->processParameter(targetParam);
                 // orders need an additional kickstart to work
-                if (targetParam.first == "order" && !(*I)->orderRunning)
-                    (*I)->resetOrder();
+                if (targetParam.first == "order")
+                    (*I)->resetOrder(false);
             }
         }
     }
@@ -204,6 +201,13 @@ string BaseTrigger::debugInfo()
     {
         result += "T: ";
         for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+            result += (*I)->id + ", ";
+        result += "\n";
+    }
+    if (!activators.empty())
+    {
+        result += "U: ";
+        for (vector<BaseUnit*>::iterator I = activators.begin(); I != activators.end(); ++I)
             result += (*I)->id + ", ";
         result += "\n";
     }

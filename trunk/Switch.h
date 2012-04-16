@@ -13,7 +13,6 @@ public:
     virtual bool processParameter(const PARAMETER_TYPE& value);
     virtual void reset();
 
-    virtual bool hitUnitCheck(const BaseUnit* const caller) const;
     virtual void hitUnit(const UnitCollisionEntry& entry);
 
     virtual void update();
