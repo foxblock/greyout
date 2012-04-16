@@ -30,16 +30,19 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["collision"] = upCollision;
     stringToProp["imageoverwrite"] = upImageOverwrite;
     stringToProp["colour"] = upColour;
+    stringToProp["color"] = upColour;
     stringToProp["health"] = upHealth;
     stringToProp["id"] = upID;
     stringToProp["order"] = upOrder;
     stringToProp["size"] = upSize;
     stringToProp["target"] = upTarget;
+    stringToProp["collisionmode"] = upCollisionMode;
 
     stringToOrder["idle"] = okIdle;
     stringToOrder["position"] = okPosition;
     stringToOrder["repeat"] = okRepeat;
     stringToOrder["colour"] = okColour;
+    stringToOrder["color"] = okColour;
     stringToOrder["explode"] = okExplode;
     stringToOrder["remove"] = okRemove;
     stringToOrder["increment"] = okIncrement;
@@ -64,6 +67,7 @@ BaseUnit::BaseUnit(Level* newParent)
     orderRunning = false;
     orderTimer = 0;
     currentOrder = 0;
+    unitCollisionMode = 2;
 }
 
 BaseUnit::BaseUnit(const BaseUnit& source)
@@ -180,6 +184,8 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         for (vector<string>::const_iterator flag = token.begin(); flag != token.end(); ++flag)
         {
             flags.addFlag(stringToFlag[*flag]);
+            if (stringToFlag[*flag] == ufNoUnitCollision)
+                unitCollisionMode = 0;
         }
         break;
     }
@@ -237,6 +243,18 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             Order temp = {stringToOrder[token.front()],token.back()};
             orderList.push_back(temp);
         }
+        break;
+    }
+    case upCollisionMode:
+    {
+        if (value.second == "false" || value.second == "0" || value.second == "never")
+            unitCollisionMode = 0;
+        else if (value.second == "true" || value.second == "1" || value.second == "always")
+            unitCollisionMode = 1;
+        else if (value.second == "colour" || value.second == "color")
+            unitCollisionMode = 2;
+        else
+            parsed = false;
         break;
     }
     default:
@@ -454,9 +472,19 @@ bool BaseUnit::checkCollisionColour(const Colour& col) const
 
 bool BaseUnit::hitUnitCheck(const BaseUnit* const caller) const
 {
-    if (not caller->checkCollisionColour(col) && not checkCollisionColour(caller->col))
+    switch (unitCollisionMode)
+    {
+    case 0:
         return false;
-
+        break;
+    case 1:
+        return true;
+        break;
+    default:
+        if (not caller->checkCollisionColour(col) && not checkCollisionColour(caller->col))
+            return false;
+        break;
+    }
     return true;
 }
 

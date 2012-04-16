@@ -12,7 +12,7 @@ TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
 
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoUnitCollision);
+    unitCollisionMode = 0;
 
     col = BLACK;
     line = "";
@@ -125,11 +125,6 @@ void TextObject::render(SDL_Surface* screen)
 {
     currentText->setColour(col);
     currentText->print(screen,line);
-}
-
-bool TextObject::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
 }
 
 void TextObject::explode()

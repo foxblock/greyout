@@ -17,8 +17,6 @@ public:
     virtual void updateScreenPosition(const Vector2di& offset);
     virtual void render(SDL_Surface* surf);
 
-    virtual bool hitUnitCheck(const BaseUnit* const caller) const;
-
     virtual int getWidth() const {return size.x;}
     virtual int getHeight() const {return size.y;}
 

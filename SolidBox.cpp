@@ -4,8 +4,8 @@ SolidBox::SolidBox(Level* newParent) : PushableBox(newParent)
 {
     flags.addFlag(ufNoGravity);
     flags.addFlag(ufNoMapCollision);
-    flags.addFlag(ufNoUnitCollision);
     flags.addFlag(ufInvincible);
+    unitCollisionMode = 0;
 }
 
 SolidBox::~SolidBox()
@@ -13,15 +13,9 @@ SolidBox::~SolidBox()
     //
 }
 
-bool SolidBox::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
-}
-
 void SolidBox::hitUnit(const UnitCollisionEntry& entry)
 {
     // this moves a carried player unit when moving horizontally
-    // this also only is called when the noUnitCollision flag is removed, use SolidPlatform for that purpose
     if (!flags.hasFlag(ufNoUpdate))
     {
         if (entry.overlap.x > entry.overlap.y && entry.unit->position.y < position.y && velocity.x != 0)

@@ -11,7 +11,7 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
 {
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoUnitCollision);
+    unitCollisionMode = 0;
 
     col = Colour(50,217,54);
     collisionColours.insert(Colour(BLACK).getIntColour());
@@ -187,11 +187,6 @@ void Switch::update()
     if (switchTimer > 0)
         --switchTimer;
     BaseUnit::update();
-}
-
-bool Switch::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
 }
 
 void Switch::hitUnit(const UnitCollisionEntry& entry)

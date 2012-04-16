@@ -96,8 +96,8 @@ Level::Level()
     trialEnd = false;
 
 #ifdef _DEBUG
-    debugText.loadFont(DEBUG_FONT,12);
-    debugText.setColour(GREEN);
+    debugText.loadFont(DEBUG_FONT,8);
+    debugText.setColour(50,217,54);
     debugString = "";
 #endif
 #ifdef PENJIN_CALC_FPS
@@ -431,7 +431,7 @@ void Level::update()
         for (vector<UnitCollisionEntry>::iterator item = (*unit)->collisionInfo.units.begin();
             item != (*unit)->collisionInfo.units.end(); ++item)
         {
-            if (not item->unit->flags.hasFlag(BaseUnit::ufNoUnitCollision) && item->unit->hitUnitCheck(*unit))
+            if (item->unit->hitUnitCheck(*unit))
                 (*unit)->hitUnit(*item);
         }
     }

@@ -6,7 +6,7 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
 {
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoUnitCollision);
+    unitCollisionMode = 0;
 
     col = Colour(50,217,54);
     collisionColours.insert(Colour(BLACK).getIntColour());
@@ -50,11 +50,6 @@ bool Exit::load(list<PARAMETER_TYPE >& params)
     setSpriteState(startingState,true);
 
     return result;
-}
-
-bool Exit::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
 }
 
 void Exit::hitUnit(const UnitCollisionEntry& entry)

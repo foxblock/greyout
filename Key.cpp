@@ -6,7 +6,7 @@ Key::Key(Level* newParent) : BaseUnit(newParent)
 {
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
-    flags.addFlag(ufNoUnitCollision);
+    unitCollisionMode = 0;
 
     col = Colour(50,217,54);
     collisionColours.insert(Colour(BLACK).getIntColour());
@@ -91,11 +91,6 @@ void Key::reset()
     BaseUnit::reset();
     for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
         (*I)->setSpriteState("closed");
-}
-
-bool Key::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
 }
 
 void Key::hitUnit(const UnitCollisionEntry& entry)

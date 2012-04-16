@@ -7,8 +7,8 @@ FadingBox::FadingBox(Level* newParent) : PushableBox(newParent)
 {
     flags.addFlag(ufNoGravity);
     flags.addFlag(ufNoMapCollision);
-    flags.addFlag(ufNoUnitCollision);
     flags.addFlag(ufInvincible);
+    unitCollisionMode = 0;
 
     stringToProp["farcolour"] = fpFarColour;
     stringToProp["faderadius"] = fpFadeRadius;
@@ -105,11 +105,6 @@ void FadingBox::update()
         col.green = colours.first.green + (float)(colours.second.green - colours.first.green) / (fadeRadius.y - fadeRadius.x) * distance;
         col.blue = colours.first.blue + (float)(colours.second.blue - colours.first.blue) / (fadeRadius.y - fadeRadius.x) * distance;
     }
-}
-
-bool FadingBox::hitUnitCheck(const BaseUnit* const caller) const
-{
-    return false;
 }
 
 void FadingBox::hitUnit(const UnitCollisionEntry& entry)
