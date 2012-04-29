@@ -167,6 +167,7 @@ protected:
         lpMusic,
         lpDialogue,
         lpGravity,
+        lpTerminalVelocity,
         lpEOL
     };
     static map<string,int> stringToProp;

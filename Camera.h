@@ -18,11 +18,12 @@ class Camera
         Camera();
         virtual ~Camera();
 
-        virtual void update();
+        void update();
+        void reset();
 
         // If time is set to 0 the move will be instant
-        virtual void centerOnUnit(const BaseUnit* const unit, CRint time=0);
-        virtual void centerOnPos(const Vector2df& pos, CRint time=0);
+        void centerOnUnit(const BaseUnit* const unit, CRint time=0);
+        void centerOnPos(const Vector2df& pos, CRint time=0);
 
         Vector2df getSpeed() const {return speed;}
         Vector2df getDest() const {return dest;}

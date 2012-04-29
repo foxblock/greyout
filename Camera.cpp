@@ -33,6 +33,12 @@ void Camera::update()
     }
 }
 
+void Camera::reset()
+{
+    speed = Vector2df(0,0);
+    dest = Vector2df(0,0);
+}
+
 void Camera::centerOnUnit(const BaseUnit* const unit, CRint time)
 {
     if (not parent || not unit)

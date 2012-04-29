@@ -46,28 +46,30 @@ bool BasePlayer::load(list<PARAMETER_TYPE >& params)
     temp->setPlayMode(pmPulse);
     temp->setFrameRate(FIFTEEN_FRAMES);
 
-    loadFrames(surf,32,7,true,"fallRight");
-    temp = loadFrames(surf,8,3,false,"turnRight");
+    temp = loadFrames(surf,32,7,true,"fallright");
+    temp->setPlayMode(pmReverse);
+    temp = loadFrames(surf,8,3,false,"turnright");
     temp->setFrameRate(FIFTEEN_FRAMES);
-    temp = loadFrames(surf,48,7,true,"pushRight");
+    temp = loadFrames(surf,48,7,true,"pushright");
     temp->setFrameRate(CUSTOM);
     temp->setTimerScaler(1000/7);
-    temp = loadFrames(surf,16,6,true,"runRight");
+    temp = loadFrames(surf,16,6,true,"runright");
     temp->setPlayMode(pmPulse);
-    loadFrames(surf,64,2,false,"jumpRight");
-    loadFrames(surf,65,1,false,"flyRight");
+    loadFrames(surf,64,2,false,"jumpright");
+    loadFrames(surf,65,1,false,"flyright");
 
-    temp = loadFrames(surf,40,7,true,"fallLeft");
-    temp = loadFrames(surf,11,3,false,"turnLeft");
+    temp = loadFrames(surf,40,7,true,"fallleft");
+    temp->setPlayMode(pmReverse);
+    temp = loadFrames(surf,11,3,false,"turnleft");
     temp->setFrameRate(FIFTEEN_FRAMES);
-    temp = loadFrames(surf,56,7,true,"pushLeft");
+    temp = loadFrames(surf,56,7,true,"pushleft");
     temp->setFrameRate(CUSTOM);
     temp->setTimerScaler(1000/7);
     temp->setPlayMode(pmReverse);
-    temp = loadFrames(surf,24,6,true,"runLeft");
+    temp = loadFrames(surf,24,6,true,"runleft");
     temp->setPlayMode(pmPulse);
-    loadFrames(surf,66,2,false,"jumpLeft");
-    loadFrames(surf,67,1,false,"flyLeft");
+    loadFrames(surf,66,2,false,"jumpleft");
+    loadFrames(surf,67,1,false,"flyleft");
 
     if (startingState[0] == 0 || startingState == "default")
     {
@@ -98,9 +100,9 @@ void BasePlayer::update()
         if (currentState == "stand")
         {
             if (velocity.x < 0.0f)
-                setSpriteState("runLeft");
+                setSpriteState("runleft");
             else if (velocity.x > 0.0f)
-                setSpriteState("runRight");
+                setSpriteState("runright");
         }
     }
     else // air
@@ -114,17 +116,17 @@ void BasePlayer::update()
                     if (velocity.y > 3.0f)
                     {
                         if (direction < 0)
-                            setSpriteState("fallLeft");
+                            setSpriteState("fallleft");
                         else
-                            setSpriteState("fallRight");
+                            setSpriteState("fallright");
                     }
                 }
                 else if (not canJump)
                 {
                     if (direction < 0)
-                        setSpriteState("flyLeft");
+                        setSpriteState("flyleft");
                     else
-                        setSpriteState("flyRight");
+                        setSpriteState("flyright");
                 }
             }
         }
@@ -162,18 +164,18 @@ void BasePlayer::control(SimpleJoy* input)
 
     if (input->isLeft())
     {
-        if (direction > 0 || (int)velocity.x == 0)
+        if ((direction > 0 || (int)velocity.x == 0) && ((int)velocity.y == 0))
         {
-            setSpriteState("turnLeft",true);
+            setSpriteState("turnleft",true);
         }
         acceleration[0].x = -1;
         acceleration[1].x = -4;
     }
     else if (input->isRight())
     {
-        if (direction < 0 || (int)velocity.x == 0)
+        if ((direction < 0 || (int)velocity.x == 0) && ((int)velocity.y == 0))
         {
-            setSpriteState("turnRight",true);
+            setSpriteState("turnright",true);
         }
         acceleration[0].x = 1;
         acceleration[1].x = 4;
@@ -184,9 +186,17 @@ void BasePlayer::control(SimpleJoy* input)
         {
             setSpriteState("stand");
         }
-        acceleration[0].x = 0;
-        acceleration[1].x = 0;
-        velocity.x = 0;
+        if ((int)collisionInfo.correction.y != 0)
+        {
+            acceleration[0].x = 0;
+            acceleration[1].x = 0;
+            velocity.x = 0;
+        }
+        else
+        {
+            acceleration[0].x = (float)NumberUtility::sign(velocity.x) / -4.0f;
+            acceleration[1].x = 0;
+        }
     }
     if ((input->isB() || input->isY()) && canJump)
     {
@@ -195,9 +205,9 @@ void BasePlayer::control(SimpleJoy* input)
         //velocity.y = -10;
         canJump = false;
         if (direction < 0)
-            setSpriteState("jumpLeft",true);
+            setSpriteState("jumpleft",true);
         else
-            setSpriteState("jumpRight",true);
+            setSpriteState("jumpright",true);
         fallCounter.start();
     }
 }

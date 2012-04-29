@@ -78,6 +78,7 @@ Level::Level()
     stringToProp["music"] = lpMusic;
     stringToProp["dialogue"] = lpDialogue;
     stringToProp["gravity"] = lpGravity;
+    stringToProp["terminalvelocity"] = lpTerminalVelocity;
 
     levelImage = NULL;
     collisionLayer = NULL;
@@ -136,6 +137,8 @@ Level::Level()
 
     hideHor = false;
     hideVert = false;
+
+    PHYSICS->reset();
 }
 
 Level::~Level()
@@ -232,7 +235,8 @@ void Level::reset()
     for (int I = players.size()-1; I >= 0; --I)
     {
         players[I]->takesControl = playersControl[I];
-        playersControl[I] ? players[I]->startingState = "wave" : players[I]->startingState = "stand";
+        if (players[I]->startingState == "wave" || players[I]->startingState == "stand")
+            playersControl[I] ? players[I]->startingState = "wave" : players[I]->startingState = "stand";
         players[I]->setSpriteState(players[I]->startingState);
     }
     playersControl.clear();
@@ -249,6 +253,7 @@ void Level::reset()
 
     firstLoad = false;
     ENGINE->restartCounter++;
+    cam.reset();
 
     init();
 }
@@ -1361,6 +1366,19 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
             break;
         }
+        break;
+    }
+    case lpTerminalVelocity:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        PHYSICS->maximum.x = StringUtility::stringToFloat(token[0]);
+        PHYSICS->maximum.y = StringUtility::stringToFloat(token[1]);
         break;
     }
     default:

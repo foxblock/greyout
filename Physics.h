@@ -56,6 +56,9 @@ public:
     // simple rectangular check between two units, returns true on collision
     bool checkUnitCollision(const Level* const level, const BaseUnit* const unitA, const BaseUnit* const unitB) const;
 
+    // resets to initial state
+    void reset();
+
     Vector2df gravity;
     Vector2df maximum; // the maximum, absolute value a unit is allowed to move (limit)
 private:

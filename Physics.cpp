@@ -41,6 +41,12 @@ Physics* Physics::GetSingleton()
     return self;
 }
 
+void Physics::reset()
+{
+    gravity = DEFAULT_GRAVITY;
+    maximum = DEFAULT_MAXIMUM;
+}
+
 void Physics::applyPhysics(BaseUnit* const unit) const
 {
     // Acceleration

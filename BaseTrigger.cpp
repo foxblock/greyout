@@ -68,6 +68,14 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
                     targets.push_back(*I);
             }
         }
+        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
+        {
+            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    targets.push_back(*I);
+            }
+        }
         break;
     }
     case bpAction:
@@ -164,18 +172,21 @@ void BaseTrigger::hitUnit(const UnitCollisionEntry& entry)
             if (!found)
                 return; // not hit by activator unit, exit here
         }
-        // activator units may be non-player units
+        // activator units may be any explicitly named unit or any player (by default)
         if ((!activators.empty() || entry.unit->isPlayer))
         {
             doTrigger(entry);
-            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+            if (targetParam.first[0] != 0)
             {
-                if (targetParam.first == "order")
-                    (*I)->resetOrder(true); // clear order list
-                (*I)->processParameter(targetParam);
-                // orders need an additional kickstart to work
-                if (targetParam.first == "order")
-                    (*I)->resetOrder(false);
+                for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+                {
+                    if (targetParam.first == "order")
+                        (*I)->resetOrder(true); // clear order list
+                    (*I)->processParameter(targetParam);
+                    // orders need an additional kickstart to work
+                    if (targetParam.first == "order")
+                        (*I)->resetOrder(false);
+                }
             }
         }
     }
