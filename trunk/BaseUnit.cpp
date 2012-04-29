@@ -20,6 +20,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["invincible"] = ufInvincible;
     stringToFlag["missionobjective"] = ufMissionObjective;
     stringToFlag["noupdate"] = ufNoUpdate;
+    stringToFlag["norender"] = ufNoRender;
     stringToFlag["disregardboundaries"] = ufDisregardBoundaries;
 
     stringToProp["class"] = upClass;
@@ -95,11 +96,12 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
     if (id[0] == 0) // always set ID to increasing number (per level) - may be overriden in level file
         id = StringUtility::intToString(++(parent->idCounter));
 
+    string className = params.front().second;
+
     for (list<PARAMETER_TYPE >::iterator value = params.begin(); value != params.end(); ++value)
     {
         if (not processParameter(*value))
         {
-            string className = params.front().second;
             printf("WARNING: Unprocessed parameter \"%s\" on unit with id \"%s\" (%s)\n",
                    value->first.c_str(),id.c_str(),className.c_str());
         }
@@ -115,7 +117,7 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 
     resetOrder(false);
 
-    if (imageOverwrite[0] != 0)
+    if (imageOverwrite[0] != 0 && className == "generic")
     {
         SDL_Surface* surf = getSurface(imageOverwrite);
         AnimatedSprite* temp = new AnimatedSprite;
