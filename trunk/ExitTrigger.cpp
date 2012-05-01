@@ -4,7 +4,7 @@
 
 ExitTrigger::ExitTrigger(Level* newParent) : BaseTrigger(newParent)
 {
-    triggerCol = LIGHT_RED;
+    triggerCol = LIGHT_GREEN;
 }
 
 ExitTrigger::~ExitTrigger()

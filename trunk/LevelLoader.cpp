@@ -33,6 +33,7 @@
 #include "CameraTrigger.h"
 #include "TextObject.h"
 #include "FadingBox.h"
+#include "LevelTrigger.h"
 
 using namespace std;
 
@@ -76,7 +77,8 @@ enum UnitIdent
     ucSoundTrigger,
     ucCameraTrigger,
     ucTextObject,
-    ucFadingBox
+    ucFadingBox,
+    ucLevelTrigger
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -114,6 +116,7 @@ void createIdentMaps()
     unitClasses["cameratrigger"] = ucCameraTrigger;
     unitClasses["text"] = ucTextObject;
     unitClasses["fadingbox"] = ucFadingBox;
+    unitClasses["leveltrigger"] = ucLevelTrigger;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -365,7 +368,7 @@ Level* LevelLoader::createLevel(list<PARAMETER_TYPE >& params, CRstring chapterP
     }
 
     result->chapterPath = chapterPath;
-
+    result->parameters.insert(result->parameters.begin(),params.begin(),params.end());
     if (not result->load(params))
     {
         errorString = result->errorString;
@@ -509,12 +512,21 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
         result = new FadingBox(parent);
         break;
     }
+    case ucLevelTrigger:
+    {
+        result = new LevelTrigger(parent);
+        break;
+    }
     default:
         printf("ERROR: Unknown unit class \"%s\" on line %i\n",params.front().second.c_str(),lineNumber);
         return NULL;
     }
 
+    // I forgot why I copy the parameters here (and have the variable public)
+    // instead of in the load function... but I am sure there is a good reason
+    // for that (chances are it's just me being stupid, though)
     result->parameters.insert(result->parameters.begin(),params.begin(),params.end());
+
     if (not result->load(result->parameters))
     {
         printf("ERROR loading unit id \"%s\"\n",result->id.c_str());
