@@ -86,9 +86,8 @@ Level::Level()
     chapterPath = "";
     errorString = "";
     drawOffset = Vector2df(0,0);
-    startingOffset = drawOffset;
     idCounter = 0;
-    PHYSICS->gravity = DEFAULT_GRAVITY;
+    PHYSICS->reset();
 
     eventTimer.init(1000,MILLI_SECONDS);
     eventTimer.setRewind(STOP_AND_REWIND);
@@ -137,8 +136,6 @@ Level::Level()
 
     hideHor = false;
     hideVert = false;
-
-    PHYSICS->reset();
 }
 
 Level::~Level()
@@ -177,6 +174,8 @@ Level::~Level()
     GFX::setClearColour(BLACK);
 
     SDL_FreeSurface(pauseSurf);
+
+    parameters.clear();
 }
 
 /// ---public---
@@ -207,6 +206,127 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
         hideVert = true;
 
     return true;
+}
+
+bool Level::processParameter(const PARAMETER_TYPE& value)
+{
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case lpImage:
+    {
+        levelImage = SURFACE_CACHE->loadSurface(value.second,chapterPath);
+        if (levelImage)
+        {
+            if (levelImage->w < GFX::getXResolution())
+                drawOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
+            if (levelImage->h < GFX::getYResolution())
+                drawOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2.0f;
+        }
+        else
+            parsed = false;
+        break;
+    }
+    case lpFlags:
+    {
+        vector<string> props;
+        StringUtility::tokenize(value.second,props,",");
+        for (vector<string>::const_iterator str = props.begin(); str < props.end(); ++str)
+            flags.addFlag(stringToFlag[*str]);
+        break;
+    }
+    case lpFilename:
+    {
+        levelFileName = value.second;
+        break;
+    }
+    case lpOffset:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        drawOffset.x = StringUtility::stringToFloat(token[0]);
+        drawOffset.y = StringUtility::stringToFloat(token[1]);
+        break;
+    }
+    case lpBackground:
+    {
+        int val = StringUtility::stringToInt(value.second);
+        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
+            GFX::setClearColour(Colour(val));
+        else // string colour code
+            GFX::setClearColour(Colour(value.second));
+        break;
+    }
+    case lpBoundaries:
+    {
+        cam.disregardBoundaries = not StringUtility::stringToBool(value.second);
+        break;
+    }
+    case lpName:
+    {
+        name = StringUtility::upper(value.second);
+        break;
+    }
+    case lpMusic:
+    {
+        if (ENGINE->currentState != STATE_LEVELSELECT)
+        {
+            if (value.second == "none")
+                MUSIC_CACHE->stopMusic();
+            else
+                MUSIC_CACHE->playMusic(value.second,chapterPath);
+        }
+        break;
+    }
+    case lpDialogue:
+    {
+        if (ENGINE->currentState != STATE_LEVELSELECT)
+            DIALOGUE->loadFromFile(chapterPath + value.second);
+        break;
+    }
+    case lpGravity:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        PHYSICS->gravity = Vector2df(0,0);
+        switch (token.size())
+        {
+        case 1:
+            PHYSICS->gravity.x = StringUtility::stringToFloat(token[0]);
+            break;
+        case 2:
+            PHYSICS->gravity.x = StringUtility::stringToFloat(token[0]);
+            PHYSICS->gravity.y = StringUtility::stringToFloat(token[1]);
+            break;
+        default:
+            parsed = false;
+            break;
+        }
+        break;
+    }
+    case lpTerminalVelocity:
+    {
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        PHYSICS->maximum.x = StringUtility::stringToFloat(token[0]);
+        PHYSICS->maximum.y = StringUtility::stringToFloat(token[1]);
+        break;
+    }
+    default:
+        parsed = false;
+    }
+    return parsed;
 }
 
 void Level::reset()
@@ -254,7 +374,10 @@ void Level::reset()
     firstLoad = false;
     ENGINE->restartCounter++;
     cam.reset();
+    PHYSICS->reset();
+    drawOffset = Vector2df(0,0);
 
+    load(parameters);
     init();
 }
 
@@ -278,7 +401,6 @@ void Level::init()
     timeCounter = 0;
     newRecord = false;
 
-    drawOffset = startingOffset;
     SDL_BlitSurface(levelImage,NULL,collisionLayer,NULL);
 }
 
@@ -1262,129 +1384,6 @@ void Level::adjustPosition(BaseUnit* const unit)
         unit->position = unit->startingPosition;
         changed = true;
     }
-}
-
-bool Level::processParameter(const PARAMETER_TYPE& value)
-{
-    bool parsed = true;
-
-    switch (stringToProp[value.first])
-    {
-    case lpImage:
-    {
-        levelImage = SURFACE_CACHE->loadSurface(value.second,chapterPath);
-        if (levelImage)
-        {
-            if (levelImage->w < GFX::getXResolution())
-                drawOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
-            if (levelImage->h < GFX::getYResolution())
-                drawOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2.0f;
-            startingOffset = drawOffset;
-        }
-        else
-            parsed = false;
-        break;
-    }
-    case lpFlags:
-    {
-        vector<string> props;
-        StringUtility::tokenize(value.second,props,",");
-        for (vector<string>::const_iterator str = props.begin(); str < props.end(); ++str)
-            flags.addFlag(stringToFlag[*str]);
-        break;
-    }
-    case lpFilename:
-    {
-        levelFileName = value.second;
-        break;
-    }
-    case lpOffset:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        drawOffset.x = StringUtility::stringToFloat(token[0]);
-        drawOffset.y = StringUtility::stringToFloat(token[1]);
-        startingOffset = drawOffset;
-        break;
-    }
-    case lpBackground:
-    {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
-            GFX::setClearColour(Colour(val));
-        else // string colour code
-            GFX::setClearColour(Colour(value.second));
-        break;
-    }
-    case lpBoundaries:
-    {
-        cam.disregardBoundaries = not StringUtility::stringToBool(value.second);
-        break;
-    }
-    case lpName:
-    {
-        name = StringUtility::upper(value.second);
-        break;
-    }
-    case lpMusic:
-    {
-        if (ENGINE->currentState != STATE_LEVELSELECT)
-        {
-            if (value.second == "none")
-                MUSIC_CACHE->stopMusic();
-            else
-                MUSIC_CACHE->playMusic(value.second,chapterPath);
-        }
-        break;
-    }
-    case lpDialogue:
-    {
-        if (ENGINE->currentState != STATE_LEVELSELECT)
-            DIALOGUE->loadFromFile(chapterPath + value.second);
-        break;
-    }
-    case lpGravity:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        PHYSICS->gravity = Vector2df(0,0);
-        switch (token.size())
-        {
-        case 1:
-            PHYSICS->gravity.x = StringUtility::stringToFloat(token[0]);
-            break;
-        case 2:
-            PHYSICS->gravity.x = StringUtility::stringToFloat(token[0]);
-            PHYSICS->gravity.y = StringUtility::stringToFloat(token[1]);
-            break;
-        default:
-            parsed = false;
-            break;
-        }
-        break;
-    }
-    case lpTerminalVelocity:
-    {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        PHYSICS->maximum.x = StringUtility::stringToFloat(token[0]);
-        PHYSICS->maximum.y = StringUtility::stringToFloat(token[1]);
-        break;
-    }
-    default:
-        parsed = false;
-    }
-    return parsed;
 }
 
 string Level::ticksToTimeString(CRint ticks)

@@ -129,9 +129,9 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
                 velocity.x += entry.overlap.x * entry.dir.xDirection() * -1 - diff;
                 entry.unit->velocity.x = vel;
                 if (entry.unit->direction > 0)
-                    entry.unit->setSpriteState("pushRight");
+                    entry.unit->setSpriteState("pushright");
                 else
-                    entry.unit->setSpriteState("pushLeft");
+                    entry.unit->setSpriteState("pushleft");
             }
         }
     }

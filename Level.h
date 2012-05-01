@@ -39,6 +39,11 @@ public:
     // returns true on success and false otherwise
     virtual bool load(const list<PARAMETER_TYPE >& params);
 
+    // processes a single key=value pair for loading
+    // this function can be overwritten in child classes to allow for custom data fiels
+    // return true if the data has been successfully processed, false otherwise
+    virtual bool processParameter(const PARAMETER_TYPE& value);
+
     // reset level to initial state
     virtual void reset();
 
@@ -116,7 +121,6 @@ public:
     static map<string,int> stringToFlag;
 
     Vector2df drawOffset;
-    Vector2df startingOffset;
     Camera cam;
 
     // essentially counts how many players have left through exits
@@ -124,6 +128,8 @@ public:
     int timeCounter;
 
     int idCounter;
+
+    list<PARAMETER_TYPE > parameters;
 
 protected:
     // deletes the passed unit from the collision surface (to avoid checking
@@ -140,11 +146,6 @@ protected:
 
     // checks whether the unit has left the bounds and adjust position accordingly
     void adjustPosition(BaseUnit* const unit);
-
-    // processes a single key=value pair for loading
-    // this function can be overwritten in child classes to allow for custom data fiels
-    // return true if the data has been successfully processed, false otherwise
-    virtual bool processParameter(const PARAMETER_TYPE& value);
 
     static string ticksToTimeString(CRint ticks);
 
