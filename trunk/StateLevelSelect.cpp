@@ -1,6 +1,7 @@
 #include "StateLevelSelect.h"
 
 #include "GFX.h"
+#include <limits.h>
 
 #include "MyGame.h"
 #include "Level.h"
@@ -500,6 +501,11 @@ void StateLevelSelect::setLevelDirectory(CRstring dir)
     vector<string> files;
     files = levelLister.getListing();
     files.erase(files.begin()); // delete first element which is the current folder
+
+    //#ifdef _DEBUG
+    PreviewData bench = {BENCHMARK_LEVEL,NULL,false};
+    levelPreviews.push_back(bench);
+    //#endif
 
     // initialize map
     for (vector<string>::const_iterator file = files.begin(); file < files.end(); ++file)

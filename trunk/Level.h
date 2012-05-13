@@ -38,6 +38,7 @@ public:
     // passes each pair to processParameter
     // returns true on success and false otherwise
     virtual bool load(const list<PARAMETER_TYPE >& params);
+    void tilingSetup();
 
     // processes a single key=value pair for loading
     // this function can be overwritten in child classes to allow for custom data fiels
