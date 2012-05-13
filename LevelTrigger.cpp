@@ -41,6 +41,7 @@ bool LevelTrigger::processParameter(const PARAMETER_TYPE& value)
 void LevelTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
     targetLvl->processParameter(targetParam);
+    targetLvl->tilingSetup(); // re-set variables set once after load-call, which might be invalid now
     enabled = false;
 }
 

@@ -200,12 +200,18 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
     {
         collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->w,levelImage->h,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
     }
+
+    tilingSetup();
+
+    return true;
+}
+
+void Level::tilingSetup()
+{
     if (getWidth() < GFX::getXResolution())
         hideHor = true;
     if (getHeight() < GFX::getYResolution())
         hideVert = true;
-
-    return true;
 }
 
 bool Level::processParameter(const PARAMETER_TYPE& value)
@@ -230,6 +236,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
     }
     case lpFlags:
     {
+        flags.clear();
         vector<string> props;
         StringUtility::tokenize(value.second,props,",");
         for (vector<string>::const_iterator str = props.begin(); str < props.end(); ++str)
@@ -1314,6 +1321,7 @@ string Level::debugInfo()
     result += "Camera: " + StringUtility::vecToString(drawOffset) + " | " +
         StringUtility::vecToString(cam.getDest()) + " | " +
         StringUtility::vecToString(cam.getSpeed()) + "\n";
+    result += "Flags: " + StringUtility::intToString(flags.flags) + "\n";
     result += "---\n";
     return result;
 }
