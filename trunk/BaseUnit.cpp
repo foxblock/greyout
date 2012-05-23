@@ -22,6 +22,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["noupdate"] = ufNoUpdate;
     stringToFlag["norender"] = ufNoRender;
     stringToFlag["disregardboundaries"] = ufDisregardBoundaries;
+    stringToFlag["alwaysontop"] = ufAlwaysOnTop;
 
     stringToProp["class"] = upClass;
     stringToProp["state"] = upState;
@@ -187,7 +188,10 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         {
             flags.addFlag(stringToFlag[*flag]);
             if (stringToFlag[*flag] == ufNoUnitCollision)
+            {
                 unitCollisionMode = 0;
+                printf("WARNING: Using deprecated flag noUnitCollision on unit with ID \"%s\", use CollisionMode=0 instead!\n",id.c_str());
+            }
         }
         break;
     }

@@ -73,6 +73,8 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
 
     if (parsed == false)
         return PushableBox::processParameter(value);
+
+    return parsed;
 }
 
 void FadingBox::update()

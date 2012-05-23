@@ -127,7 +127,8 @@ public:
         ufNoUpdate=32, // update won't be called for this unit (effectively freezing it in place)
         ufNoRender=66, // do not render this unit (includes NoUnitCollision)
         ufDisregardBoundaries=128, // don't reset this unit's position when moved outside the level boundaries
-        ufEOL=256
+        ufAlwaysOnTop=256, // render this unit again at the end of the cycle to ensure it's shown
+        ufEOL=512
     };
     // converts a string from a level file to a usable flag
     // you can simply add unit-specific flags in child classes

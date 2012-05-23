@@ -4,7 +4,11 @@
 
 GreySurfaceCache::GreySurfaceCache() : SurfaceCache()
 {
-    //
+    #ifdef _DEBUG
+    superVerbose = true;
+    #else
+    superVerbose = false;
+    #endif
 }
 
 GreySurfaceCache::~GreySurfaceCache()
@@ -17,7 +21,8 @@ SDL_Surface* GreySurfaceCache::loadSurface(CRstring filename, CRstring pathOverw
     if (pathOverwrite[0] == 0) // no overwrite specified
         return loadSurface(filename,optimize);
 
-    printf("Trying to load custom image \"%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
+    if (superVerbose)
+        printf("Trying to load custom image \"%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
 
     verbose = false;
     SDL_Surface* surface = loadSurface(pathOverwrite + filename, optimize);
@@ -25,7 +30,8 @@ SDL_Surface* GreySurfaceCache::loadSurface(CRstring filename, CRstring pathOverw
 
     if (surface == errorSurface || surface == NULL)
     {
-        printf("Custom image not found, loading default!\n");
+        if (superVerbose)
+            printf("Custom image not found, loading default!\n");
         surface = loadSurface(filename,optimize);
     }
 

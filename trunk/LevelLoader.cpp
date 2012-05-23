@@ -214,7 +214,6 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
                     else
                         params.push_back(make_pair(tokens[0],tokens[1]));
                 }
-
             }
         }
 
