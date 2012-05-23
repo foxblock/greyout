@@ -27,6 +27,7 @@ class GreySurfaceCache : public SurfaceCache
         SDL_Surface* loadSurface(CRstring filename, CRbool optimize = false) {return SurfaceCache::loadSurface(filename,optimize);}
 
     protected:
+        bool superVerbose;
 };
 
 

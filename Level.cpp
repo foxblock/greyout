@@ -477,6 +477,8 @@ void Level::userInput()
     {
         if ((*curr)->takesControl)
             (*curr)->control(input);
+        else
+            (*curr)->control(NULL);
     }
     input->resetB();
     input->resetY();
@@ -596,6 +598,15 @@ void Level::update()
         if (not (*curr)->flags.hasFlag(BaseUnit::ufNoUpdate))
             (*curr)->update();
         renderUnit(collisionLayer,(*curr),Vector2df(0,0));
+    }
+
+    // units always on top
+    // This is hacked as fuck to work around my brain-dead render system, but at
+    // this point I just don't care and can't be bothered to fix it properly
+    for (vector<BaseUnit*>::iterator curr = units.begin(); curr != units.end(); ++curr)
+    {
+        if ((*curr)->flags.hasFlag(BaseUnit::ufAlwaysOnTop))
+            renderUnit(collisionLayer,*curr,Vector2df(0,0));
     }
 
     // player-map collision
@@ -1264,7 +1275,6 @@ void Level::swapControl()
         for (vector<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
         {
             (*unit)->takesControl = not (*unit)->takesControl;
-            (*unit)->control(NULL); // message unit losing of control
             if ((*unit)->takesControl)
                 (*unit)->setSpriteState("wave",true);
         }

@@ -27,6 +27,8 @@ BaseTrigger::~BaseTrigger()
 {
     targets.clear();
     activators.clear();
+    targetIDs.clear();
+    activatorIDs.clear();
 }
 
 ///---public---
@@ -57,25 +59,10 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
     }
     case BaseUnit::upTarget:
     {
-        targets.clear();
+        targetIDs.clear();
         vector<string> tokens;
         StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
-        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
-        {
-            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
+        targetIDs.insert(targetIDs.begin(),tokens.begin(),tokens.end());
         break;
     }
     case bpAction:
@@ -93,25 +80,10 @@ bool BaseTrigger::processParameter(const PARAMETER_TYPE& value)
     }
     case bpActivator:
     {
-        activators.clear();
+        activatorIDs.clear();
         vector<string> tokens;
         StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    activators.push_back(*I);
-            }
-        }
-        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
-        {
-            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    activators.push_back(*I);
-            }
-        }
+        activatorIDs.insert(activatorIDs.begin(),tokens.begin(),tokens.end());
         break;
     }
     default:
@@ -130,6 +102,53 @@ void BaseTrigger::reset()
     width = 32;
     height = 32;
     BaseUnit::reset();
+}
+
+void BaseTrigger::update()
+{
+    if (!targetIDs.empty())
+    {
+        targets.clear();
+        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
+        {
+            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    targets.push_back(*I);
+            }
+        }
+        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
+        {
+            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    targets.push_back(*I);
+            }
+        }
+        targetIDs.clear();
+    }
+    if (!activatorIDs.empty())
+    {
+        activators.clear();
+        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
+        {
+            for (vector<string>::iterator str = activatorIDs.begin(); str != activatorIDs.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    activators.push_back(*I);
+            }
+        }
+        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
+        {
+            for (vector<string>::iterator str = activatorIDs.begin(); str != activatorIDsna.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    activators.push_back(*I);
+            }
+        }
+        activatorIDs.clear();
+    }
+    BaseUnit::update();
 }
 
 void BaseTrigger::render(SDL_Surface* surf)

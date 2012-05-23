@@ -13,6 +13,7 @@ public:
 
     virtual void reset();
 
+    virtual void update();
     virtual void render(SDL_Surface* surf);
 
     virtual void hitUnit(const UnitCollisionEntry& entry);
@@ -34,7 +35,9 @@ protected:
     int height;
     Colour triggerCol;
     vector<BaseUnit*> targets;
+    vector<std::string> targetIDs;
     vector<BaseUnit*> activators;
+    vector<std::string> activatorIDs;
     PARAMETER_TYPE targetParam;
 
     enum BaseTriggerProps

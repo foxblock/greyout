@@ -179,7 +179,7 @@ void StateTitle::render()
         text.print("\n\n");
         text.print("Shift");
         text.print("\n");
-        text.print("by Tony");
+        text.print("by Antony Lavelle");
         text.print("\n");
         text.print("http://armorgames.com/play/751/shift");
         text.print("\n\n");

@@ -30,6 +30,7 @@ protected:
 
     int switchTimer;
     vector<BaseUnit*> targets;
+    vector<std::string> targetIDs;
 
     enum SwitchProp
     {

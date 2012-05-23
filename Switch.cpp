@@ -31,6 +31,7 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
 Switch::~Switch()
 {
     targets.clear();
+    targetIDs.clear();
 }
 
 ///---public---
@@ -64,8 +65,16 @@ bool Switch::load(list<PARAMETER_TYPE >& params)
         startingState = "off";
     setSpriteState(startingState,true);
 
-    if (!switchOn || targets.empty())
+    if (!switchOn)
+    {
         result = false;
+        printf("ERROR: No Function specified for switch with ID \"%s\"\n",id.c_str());
+    }
+    if (targetIDs.empty())
+    {
+        result = false;
+        printf("ERROR: No targets specified for switch with ID \"%s\"\n",id.c_str());
+    }
 
     if (result)
     {
@@ -151,17 +160,10 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
     }
     case BaseUnit::upTarget:
     {
-        targets.clear();
+        targetIDs.clear();
         vector<string> tokens;
         StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
+        targetIDs.insert(targetIDs.begin(),tokens.begin(),tokens.end());
         break;
     }
     default:
@@ -184,6 +186,27 @@ void Switch::reset()
 
 void Switch::update()
 {
+    if (!targetIDs.empty())
+    {
+        targets.clear();
+        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
+        {
+            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    targets.push_back(*I);
+            }
+        }
+        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
+        {
+            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
+            {
+                if ((*I)->id == (*str))
+                    targets.push_back(*I);
+            }
+        }
+        targetIDs.clear();
+    }
     if (switchTimer > 0)
         --switchTimer;
     BaseUnit::update();
@@ -229,6 +252,11 @@ void Switch::movementOff(BaseUnit* unit)
 
 void Switch::parameterOn(BaseUnit* unit)
 {
+    if (paramOn.first == "state")
+    {
+        unit->setSpriteState(paramOn.second,true);
+        return;
+    }
     if (paramOn.first == "order")
         unit->resetOrder(true);
     unit->processParameter(paramOn);
@@ -238,10 +266,15 @@ void Switch::parameterOn(BaseUnit* unit)
 
 void Switch::parameterOff(BaseUnit* unit)
 {
-    if (paramOn.first == "order")
+    if (paramOff.first == "state")
+    {
+        unit->setSpriteState(paramOff.second,true);
+        return;
+    }
+    if (paramOff.first == "order")
         unit->resetOrder(true);
     unit->processParameter(paramOff);
-    if (paramOn.first == "order")
+    if (paramOff.first == "order")
         unit->resetOrder(false);
 }
 
