@@ -535,24 +535,23 @@ void Level::update()
     // and update (velocity, gravity, etc.)
     for (vector<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
     {
-        PHYSICS->applyPhysics((*curr));
+        PHYSICS->applyPhysics(*curr);
         PHYSICS->particleMapCollision(this,collisionLayer,(*curr));
         (*curr)->update();
     }
 
-
     // physics (acceleration, friction, etc)
     for (vector<BaseUnit*>::iterator unit = units.begin();  unit != units.end(); ++unit)
     {
-        adjustPosition((*unit));
-        PHYSICS->applyPhysics((*unit));
+        adjustPosition(*unit);
+        PHYSICS->applyPhysics(*unit);
     }
     // cache unit collision data for ALL units
     for (vector<ControlUnit*>::iterator player = players.begin(); player != players.end(); ++player)
     {
         clearUnitFromCollision(collisionLayer,*player);
-        adjustPosition((*player));
-        PHYSICS->applyPhysics((*player));
+        adjustPosition( *player, true );
+        PHYSICS->applyPhysics(*player);
         for (vector<BaseUnit*>::iterator unit = units.begin();  unit != units.end(); ++unit)
         {
             PHYSICS->playerUnitCollision(this,(*player),(*unit));
@@ -648,94 +647,166 @@ void Level::render()
     render(GFX::getVideoSurface());
 
     // if level is smaller hide outside area
-    if (hideHor) // left and right
-    {
-        if (flags.hasFlag(lfRepeatX) && flags.hasFlag(lfDrawPattern))
-        {
-            SDL_Rect src;
-            src.w = ((int)GFX::getXResolution() - getWidth()) / 2.0f;
-            src.h = min((int)GFX::getYResolution(), getHeight());
-            src.x = getWidth() - src.w;
-            src.y = max(drawOffset.y,0.0f);
-            SDL_Rect dst;
-            dst.x = 0;
-            dst.y = ((int)GFX::getYResolution() - src.h) / 2.0f;
-            SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-            src.x = 0;
-            dst.x = (int)GFX::getXResolution() - src.w;
-            SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-        }
-        else
-        {
-            SDL_Rect rect;
-            rect.x = 0;
-            rect.y = 0;
-            rect.w = (GFX::getXResolution() - getWidth()) / 2.0f;
-            rect.h = GFX::getYResolution();
-            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
-            rect.x = getWidth() - drawOffset.x;
-            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
-        }
-    }
-    if (hideVert) // top and bottom
-    {
-        if (flags.hasFlag(lfRepeatY) && flags.hasFlag(lfDrawPattern))
-        {
-            SDL_Rect src;
-            src.w = min((int)GFX::getXResolution(), getWidth());
-            src.h = ((int)GFX::getYResolution() - getHeight()) / 2.0f;
-            src.x = max(drawOffset.x,0.0f);
-            src.y = getHeight() - src.h;
-            SDL_Rect dst;
-            dst.x = ((int)GFX::getXResolution() - src.w) / 2.0f;
-            dst.y = 0;
-            SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-            src.y = 0;
-            dst.y = (int)GFX::getYResolution() - src.h;
-            SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-        }
-        else
-        {
-            SDL_Rect rect;
-            rect.y = 0;
-            if (flags.hasFlag(lfRepeatX))
-            {
-                rect.x = 0;
-                rect.w = GFX::getXResolution();
-            }
-            else
-            {
-                rect.x = max(-drawOffset.x,0.0f);
-                rect.w = GFX::getXResolution() - max((int)GFX::getXResolution() - getWidth(),0);
-            }
-            rect.h = (GFX::getYResolution() - getHeight()) / 2.0f;
-            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
-            rect.y = getHeight() - drawOffset.y;
-            SDL_FillRect(GFX::getVideoSurface(),&rect,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()));
-        }
-    }
-    if (hideHor && hideVert && flags.hasFlag(lfRepeatX) && flags.hasFlag(lfRepeatY)
-        && flags.hasFlag(lfDrawPattern)) // corners
-    {
-        SDL_Rect src;
-        src.w = ((int)GFX::getXResolution() - getWidth()) / 2.0f;
-        src.h = ((int)GFX::getYResolution() - getHeight()) / 2.0f;
-        src.x = getWidth() - src.w;
-        src.y = getHeight() - src.h;
-        SDL_Rect dst;
-        dst.x = 0;
-        dst.y = 0;
-        SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-        src.x = 0;
-        dst.x = (int)GFX::getXResolution() - src.w;
-        SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-        src.y = 0;
-        dst.y = (int)GFX::getYResolution() - src.h;
-        SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-        src.x = getWidth() - src.w;
-        dst.x = 0;
-        SDL_BlitSurface(collisionLayer,&src,GFX::getVideoSurface(),&dst);
-    }
+    SimpleFlags sides;
+    SDL_Rect src, dst;
+	dst.w = 0;
+	dst.h = 0;
+    if ( drawOffset.x < 0.0f ) // level has void on left side
+	{
+		sides.addFlag( 1 );
+		dst.x = 0.0f;
+		dst.y = max( -drawOffset.y, 0.0f );
+		if ( flags.hasFlag( lfRepeatX ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = max( getWidth() + drawOffset.x, 0.0f );
+			src.y = max( drawOffset.y, 0.0f );
+			src.w = -drawOffset.x;
+			src.h = min( getHeight(), (int)GFX::getYResolution() );
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = -drawOffset.x;
+			dst.h = min( getHeight(), (int)GFX::getYResolution() );
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( getWidth() - drawOffset.x < GFX::getXResolution() ) // void on right side
+	{
+		sides.addFlag( 2 );
+		dst.x = getWidth() - drawOffset.x;
+		dst.y = max( -drawOffset.y, 0.0f );
+		if ( flags.hasFlag( lfRepeatX ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = 0.0f;
+			src.y = max( drawOffset.y, 0.0f );
+			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+			src.h = min( getHeight(), (int)GFX::getYResolution() );
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+			dst.h = min( getHeight(), (int)GFX::getYResolution() );
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( drawOffset.y < 0.0f ) // void on top
+	{
+		sides.addFlag( 4 );
+		dst.x = max( -drawOffset.x, 0.0f );
+		dst.y = 0.0f;
+		if ( flags.hasFlag( lfRepeatY ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = max( drawOffset.x, 0.0f );
+			src.y = max( getHeight() + drawOffset.y, 0.0f );
+			src.w = min( getWidth(), (int)GFX::getXResolution() );
+			src.h = -drawOffset.y;
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = min( getWidth(), (int)GFX::getXResolution() );
+			dst.h = -drawOffset.y;
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( getHeight() - drawOffset.y < GFX::getYResolution() ) // void on bottom
+	{
+		sides.addFlag( 8 );
+		dst.x = max( -drawOffset.x, 0.0f );
+		dst.y = getHeight() - drawOffset.y;
+		if ( flags.hasFlag( lfRepeatY ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = max( drawOffset.x, 0.0f );
+			src.y = 0.0f;
+			src.w = min( getWidth(), (int)GFX::getXResolution() );
+			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = min( getWidth(), (int)GFX::getXResolution() );
+			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( sides.hasFlag( 1 ) && sides.hasFlag( 4 ) ) // top-left corner
+	{
+		dst.x = 0.0f;
+		dst.y = 0.0f;
+		if ( flags.hasFlag( lfRepeatX ) && flags.hasFlag( lfRepeatY ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = max( getWidth() + drawOffset.x, 0.0f );
+			src.y = max( getHeight() + drawOffset.y, 0.0f );
+			src.w = -drawOffset.x;
+			src.h = -drawOffset.y;
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = -drawOffset.x;
+			dst.h = -drawOffset.y;
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( sides.hasFlag( 2 ) && sides.hasFlag( 4 ) ) // top-right corner
+	{
+		dst.x = getWidth() - drawOffset.x;
+		dst.y = 0.0f;
+		if ( flags.hasFlag( lfRepeatX ) && flags.hasFlag( lfRepeatY ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = 0.0f;
+			src.y = max( getHeight() + drawOffset.y, 0.0f );
+			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+			src.h = -drawOffset.y;
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+			dst.h = -drawOffset.y;
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( sides.hasFlag( 1 ) && sides.hasFlag( 8 ) ) // bottom-left corner
+	{
+		dst.x = 0.0f;
+		dst.y = getHeight() - drawOffset.y;
+		if ( flags.hasFlag( lfRepeatX ) && flags.hasFlag( lfRepeatY ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = max( getWidth() + drawOffset.x, 0.0f );
+			src.y = 0.0f;
+			src.w = -drawOffset.x;
+			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = -drawOffset.x;
+			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
+	if ( sides.hasFlag( 2 ) && sides.hasFlag( 8 ) ) // bottom-right corner
+	{
+		dst.x = getWidth() - drawOffset.x;
+		dst.y = getHeight() - drawOffset.y;
+		if ( flags.hasFlag( lfRepeatX ) && flags.hasFlag( lfRepeatY ) && flags.hasFlag( lfDrawPattern ) )
+		{
+			src.x = 0.0f;
+			src.y = 0.0f;
+			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+		}
+		else
+		{
+			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+		}
+	}
 
     // scaling (very unoptimized and slow!)
     // TODO: Implement properly
@@ -1380,7 +1451,7 @@ void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const V
     }
 }
 
-void Level::adjustPosition(BaseUnit* const unit)
+bool Level::adjustPosition( BaseUnit* const unit, const bool adjustCamera )
 {
     // 1 = out of right/bottom bounds, -1 = out of left/top bounds
     int boundsX = (unit->position.x > getWidth()) - (unit->position.x + unit->getWidth() < 0);
@@ -1390,11 +1461,15 @@ void Level::adjustPosition(BaseUnit* const unit)
     if (boundsX != 0 && flags.hasFlag(lfRepeatX))
     {
         unit->position.x -= getWidth() * boundsX;
+        if ( adjustCamera && getWidth() > GFX::getXResolution() )
+			drawOffset.x -= getWidth() * boundsX;
         changed = true;
     }
     if (boundsY != 0 && flags.hasFlag(lfRepeatY))
     {
         unit->position.y -= getHeight() * boundsY;
+        if ( adjustCamera && getHeight() > GFX::getYResolution() )
+			drawOffset.y -= getHeight() * boundsY;
         changed = true;
     }
     if ((boundsX + boundsY != 0) && not changed && !unit->flags.hasFlag(BaseUnit::ufDisregardBoundaries))
@@ -1402,6 +1477,7 @@ void Level::adjustPosition(BaseUnit* const unit)
         unit->position = unit->startingPosition;
         changed = true;
     }
+    return changed;
 }
 
 string Level::ticksToTimeString(CRint ticks)

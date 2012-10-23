@@ -452,15 +452,15 @@ AnimatedSprite* BaseUnit::setSpriteState(CRstring newState, CRbool reset, CRstri
 
 void BaseUnit::hitMap(const Vector2df& correctionOverride)
 {
-    if (correctionOverride.y < 0.0f) // hitting the ground
+    if ( correctionOverride.y != 0.0f ) // hitting the ground
     {
         position.y += velocity.y + correctionOverride.y;
         velocity.y = 0;
-        velocity.x += correctionOverride.x;
     }
-    else
+    if ( correctionOverride.x != 0.0f )
     {
-        velocity += correctionOverride;
+        position.x += velocity.x + correctionOverride.x;
+        velocity.x = 0;
     }
     position += collisionInfo.positionCorrection;
 }

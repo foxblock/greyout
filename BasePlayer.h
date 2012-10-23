@@ -30,6 +30,7 @@ class BasePlayer : public ControlUnit
         AnimatedSprite* loadFrames(SDL_Surface* const surf, CRint skip, CRint num, CRbool loop, CRstring state);
 
         bool canJump;
+        bool isJumping;
         CountDown fallCounter;
 
     private:
