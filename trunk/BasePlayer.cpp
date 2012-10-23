@@ -9,6 +9,7 @@
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
 {
     canJump = false;
+    isJumping = false;
     flags.addFlag(ufMissionObjective);
     fallCounter.init(500,MILLI_SECONDS);
 }
@@ -121,7 +122,7 @@ void BasePlayer::update()
                             setSpriteState("fallright");
                     }
                 }
-                else if (not canJump)
+                else if (isJumping)
                 {
                     if (direction < 0)
                         setSpriteState("flyleft");
@@ -143,7 +144,7 @@ void BasePlayer::hitMap(const Vector2df& correctionOverride)
     BaseUnit::hitMap(correctionOverride);
 
     if (correctionOverride.y < 0.0f)
-        canJump = true;
+        isJumping = false;
     else if (correctionOverride.y > 0.0f)
     {
         acceleration[0].y = 0;
@@ -198,18 +199,21 @@ void BasePlayer::control(SimpleJoy* input)
             acceleration[1].x = 0;
         }
     }
-    if ((input->isB() || input->isY()) && canJump)
+    if ((input->isB() || input->isY()) && canJump && !isJumping)
     {
         acceleration[0].y = -4;
         acceleration[1].y = -9;
         //velocity.y = -10;
         canJump = false;
+        isJumping = true;
         if (direction < 0)
             setSpriteState("jumpleft",true);
         else
             setSpriteState("jumpright",true);
         fallCounter.start();
     }
+    if (!(input->isB() || input->isY()))
+		canJump = true;
 }
 
 ///---private---

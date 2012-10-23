@@ -47,7 +47,10 @@ bool Key::load(list<PARAMETER_TYPE >& params)
     setSpriteState(startingState,true);
 
     if (targets.empty())
+    {
+        printf("ERROR: Key \"%s\" without a target exit!\n",id.c_str());
         result = false;
+    }
 
     return result;
 }

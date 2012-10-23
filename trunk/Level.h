@@ -146,7 +146,7 @@ protected:
     void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
 
     // checks whether the unit has left the bounds and adjust position accordingly
-    void adjustPosition(BaseUnit* const unit);
+    bool adjustPosition(BaseUnit* const unit, const bool adjustCamera = false);
 
     static string ticksToTimeString(CRint ticks);
 

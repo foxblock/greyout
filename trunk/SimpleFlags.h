@@ -17,7 +17,7 @@ public:
 
     /// All of the following functions also work with multiple (combined) flags passed as "var"
     // Checks whether the passed flag is in flags
-    bool hasFlag(const int &var) const
+    inline bool hasFlag(const int &var) const
     {
         if (var <= 0)
             return false;
@@ -25,7 +25,7 @@ public:
     };
 
     // Adds a flag to flags
-    void addFlag(const int &var)
+    inline void addFlag(const int &var)
     {
         if (var <= 0)
             return;
@@ -33,7 +33,7 @@ public:
     };
 
     // Removes a flag from var (making sure it was actually present)
-    void removeFlag(const int &var)
+    inline void removeFlag(const int &var)
     {
         if (var <= 0)
             return;

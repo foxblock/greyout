@@ -140,7 +140,7 @@ void BaseTrigger::update()
         }
         for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
         {
-            for (vector<string>::iterator str = activatorIDs.begin(); str != activatorIDsna.end(); ++str)
+            for (vector<string>::iterator str = activatorIDs.begin(); str != activatorIDs.end(); ++str)
             {
                 if ((*I)->id == (*str))
                     activators.push_back(*I);
