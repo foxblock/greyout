@@ -124,7 +124,7 @@ public:
     Vector2df drawOffset;
     Camera cam;
 
-    // essentially counts how many players have left through exits
+    // counts how many players have left through exits
     int winCounter;
     int timeCounter;
 

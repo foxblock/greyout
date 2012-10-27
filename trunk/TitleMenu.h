@@ -37,7 +37,6 @@ class TitleMenu : public BaseState
         AnimatedSprite marker;
         int selection;
         SDL_Rect invertRegion;
-        int currentFps;
 
         #ifdef PENJIN_CALC_FPS
         Text fpsDisplay;

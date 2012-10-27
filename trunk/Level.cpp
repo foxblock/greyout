@@ -48,6 +48,8 @@
 #define TIME_TRIAL_MENU_OFFSET_Y 80
 #endif
 
+#define END_TIMER_ANIMATION_STEP 30
+
 #define XOR(a,b) ((a) && !(b)) || (!(a) && (b))
 
 map<string,int> Level::stringToFlag;
@@ -1152,7 +1154,7 @@ void Level::pauseUpdate()
     if (trialEnd)
     {
         if (timeDisplay < timeCounter)
-            timeDisplay += min(timeCounter - timeDisplay, timeCounter / 30);
+            timeDisplay += min(timeCounter - timeDisplay, timeCounter / END_TIMER_ANIMATION_STEP);
         else
         {
             if (newRecord)
@@ -1348,6 +1350,12 @@ void Level::swapControl()
             (*unit)->takesControl = not (*unit)->takesControl;
             if ((*unit)->takesControl)
                 (*unit)->setSpriteState("wave",true);
+			else
+			{
+				(*unit)->velocity.x = 0;
+				(*unit)->acceleration[0].x = 0;
+				(*unit)->acceleration[1].x = 0;
+			}
         }
     }
 }
@@ -1485,7 +1493,7 @@ string Level::ticksToTimeString(CRint ticks)
     if (ticks < 0)
         return "NONE";
 
-    int time = (float)ticks / 30.0f * 100.0f; // convert to centi-seconds
+    int time = (float)ticks / (float)FRAME_RATE * 100.0f; // convert to centi-seconds
     string cs = "00" + StringUtility::intToString(time % 100);
     string s = "00" + StringUtility::intToString((time / 100) % 60);
     string m = "";
