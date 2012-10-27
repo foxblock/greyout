@@ -70,6 +70,7 @@ BaseUnit::BaseUnit(Level* newParent)
     orderTimer = 0;
     currentOrder = 0;
     unitCollisionMode = 2;
+    initOrders = true;
 }
 
 BaseUnit::BaseUnit(const BaseUnit& source)
@@ -116,7 +117,7 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
         flags.addFlag(ufDisregardBoundaries);
     }
 
-    resetOrder(false);
+	initOrders = true;
 
     if (imageOverwrite[0] != 0 && className == "generic")
     {
@@ -365,6 +366,12 @@ SDL_Rect BaseUnit::getRect() const
 
 void BaseUnit::update()
 {
+	if (initOrders)
+	{
+		resetOrder( false );
+		initOrders = false;
+	}
+
     if (not flags.hasFlag(ufInvincible) && not collisionInfo.isHealthy(velocity))
     {
         explode();

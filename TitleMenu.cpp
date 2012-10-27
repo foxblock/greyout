@@ -32,7 +32,6 @@ TitleMenu::TitleMenu()
     invertRegion.w = GFX::getXResolution();
     invertRegion.h = MENU_ITEM_HEIGHT;
     invertRegion.x = 0;
-    currentFps = 30;
 
     #ifdef _MEOW
     SDL_Surface* temp = SURFACE_CACHE->loadSurface("images/menu/title_320_240.png");

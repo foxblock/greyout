@@ -16,6 +16,7 @@ BaseTrigger::BaseTrigger(Level* newParent) : BaseUnit(newParent)
     collisionColours.insert(Colour(WHITE).getIntColour());
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
+    flags.addFlag(ufInvincible);
     unitCollisionMode = 0;
     triggerCol = YELLOW;
     enabled = true;

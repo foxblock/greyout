@@ -198,6 +198,7 @@ protected:
     vector<Order> orderList;
     int currentOrder;
     int orderTimer;
+    bool initOrders;
 
     Vector3df tempColour;
     Vector3df tempColourChange;
