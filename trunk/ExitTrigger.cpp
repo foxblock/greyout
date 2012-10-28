@@ -20,7 +20,8 @@ bool ExitTrigger::load(list<PARAMETER_TYPE >& params)
 
     states["open"] = NULL;
     states["closed"] = NULL;
-    startingState = "open";
+	if (startingState[0] == 0 || startingState == "default")
+		startingState = "open";
     setSpriteState(startingState);
 
     return result;
@@ -36,6 +37,7 @@ void ExitTrigger::doTrigger(const UnitCollisionEntry& entry)
         parent->swapControl();
         if (entry.unit->flags.hasFlag(ufMissionObjective))
             parent->winCounter--;
+		enabled = false;
     }
 }
 
