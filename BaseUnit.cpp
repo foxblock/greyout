@@ -258,8 +258,8 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             unitCollisionMode = 0;
         else if (value.second == "true" || value.second == "1" || value.second == "always")
             unitCollisionMode = 1;
-        else if (value.second == "colour" || value.second == "color")
-            unitCollisionMode = 2;
+        else if (value.second == "colour" || value.second == "color" || value.second == "2")
+			unitCollisionMode = 2;
         else
             parsed = false;
         break;
