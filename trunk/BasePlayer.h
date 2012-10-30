@@ -32,6 +32,7 @@ class BasePlayer : public ControlUnit
         bool canJump;
         bool isJumping;
         CountDown fallCounter;
+        int standDelay;
 
     private:
 

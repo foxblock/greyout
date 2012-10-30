@@ -5,6 +5,7 @@
 #define SPRITESHEET_W 8
 #define SPRITESHEET_H 9
 #define FRAMERATE DECI_SECONDS
+#define STAND_DELAY_MAX 2
 
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
 {
@@ -12,6 +13,7 @@ BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
     isJumping = false;
     flags.addFlag(ufMissionObjective);
     fallCounter.init(500,MILLI_SECONDS);
+    standDelay = 0;
 }
 
 BasePlayer::~BasePlayer()
@@ -100,6 +102,7 @@ void BasePlayer::update()
     {
         if (currentState == "stand")
         {
+        	standDelay = 0;
             if (velocity.x < 0.0f)
                 setSpriteState("runleft");
             else if (velocity.x > 0.0f)
@@ -110,26 +113,30 @@ void BasePlayer::update()
     {
         if (currentState == "stand")
         {
-            if (true)
-            {
-                if (fallCounter.hasFinished() || not fallCounter.isStarted())
-                {
-                    if (velocity.y > 3.0f)
-                    {
-                        if (direction < 0)
-                            setSpriteState("fallleft");
-                        else
-                            setSpriteState("fallright");
-                    }
-                }
-                else if (isJumping)
-                {
-                    if (direction < 0)
-                        setSpriteState("flyleft");
-                    else
-                        setSpriteState("flyright");
-                }
-            }
+			if (fallCounter.hasFinished() || not fallCounter.isStarted())
+			{
+				if (velocity.y > 3.0f)
+				{
+					if (direction < 0)
+						setSpriteState("fallleft");
+					else
+						setSpriteState("fallright");
+				}
+				else if (++standDelay < STAND_DELAY_MAX)
+				{
+					if (velocity.x < 0.0f)
+						setSpriteState("runleft");
+					else if (velocity.x > 0.0f)
+						setSpriteState("runright");
+				}
+			}
+			else if (isJumping)
+			{
+				if (direction < 0)
+					setSpriteState("flyleft");
+				else
+					setSpriteState("flyright");
+			}
         }
     }
 

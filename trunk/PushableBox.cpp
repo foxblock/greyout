@@ -151,9 +151,10 @@ void PushableBox::explode()
     {
         Vector2df vel(0,0);
         int time = 0;
-        for (int X = 0; X < getWidth(); X+=2)
+        int inc = round(max((float)(getWidth() + getHeight()) / 64.0f,2.0f));
+        for (int X = 0; X < getWidth(); X+=inc)
         {
-            for (int Y = 0; Y < getHeight(); Y+=2)
+            for (int Y = 0; Y < getHeight(); Y+=inc)
             {
                 vel.x = Random::nextFloat(-5,5);
                 vel.y = Random::nextFloat(-8,-3);
