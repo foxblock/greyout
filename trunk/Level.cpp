@@ -552,7 +552,7 @@ void Level::update()
     for (vector<ControlUnit*>::iterator player = players.begin(); player != players.end(); ++player)
     {
         clearUnitFromCollision(collisionLayer,*player);
-        adjustPosition( *player, true );
+        adjustPosition( *player, (*player)->takesControl );
         PHYSICS->applyPhysics(*player);
         for (vector<BaseUnit*>::iterator unit = units.begin();  unit != units.end(); ++unit)
         {
