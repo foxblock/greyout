@@ -117,22 +117,15 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
 {
     if (velocity.y < 4 && entry.unit->isPlayer) // if not falling
     {
-        if (entry.overlap.y > entry.unit->velocity.y && entry.overlap.y > entry.overlap.x)
+        if (entry.overlap.y > entry.unit->velocity.y && entry.overlap.y > entry.overlap.x
+			 && entry.unit->velocity.x != 0 )
         {
-            // horizontal collision
-            float diff = entry.unit->velocity.x;
-            // limit speed of pushing unit
-            float vel = PUSHING_SPEED * NumberUtility::sign(entry.unit->velocity.x);
-            diff -= vel;
-            if (abs(diff) <= abs(entry.overlap.x))
-            {
-                velocity.x += entry.overlap.x * entry.dir.xDirection() * -1 - diff;
-                entry.unit->velocity.x = vel;
-                if (entry.unit->direction > 0)
-                    entry.unit->setSpriteState("pushright");
-                else
-                    entry.unit->setSpriteState("pushleft");
-            }
+        	velocity.x = PUSHING_SPEED * NumberUtility::sign( entry.unit->velocity.x );
+        	//entry.unit->velocity.x = entry.overlap.x + velocity.x;
+			if (entry.unit->direction > 0)
+				entry.unit->setSpriteState("pushright");
+			else
+				entry.unit->setSpriteState("pushleft");
         }
     }
 
