@@ -76,16 +76,6 @@ bool Switch::load(list<PARAMETER_TYPE >& params)
         printf("ERROR: No targets specified for switch with ID \"%s\"\n",id.c_str());
     }
 
-    if (result)
-    {
-        if (startingState == "off")
-            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-                (this->*switchOff)(*I);
-        else
-            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-                (this->*switchOn)(*I);
-    }
-
     return result;
 }
 
@@ -205,8 +195,17 @@ void Switch::update()
                     targets.push_back(*I);
             }
         }
+
+        if (startingState == "off")
+            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+                (this->*switchOff)(*I);
+        else
+            for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+                (this->*switchOn)(*I);
+
         targetIDs.clear();
     }
+
     if (switchTimer > 0)
         --switchTimer;
     BaseUnit::update();
