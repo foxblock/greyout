@@ -269,16 +269,12 @@ void StateLevelSelect::userInput()
         if (ACCEPT_KEY)
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
-            // make sure the map has not returned an error on load already
-            if (levelPreviews[value].surface && levelPreviews[value].hasBeenLoaded)
-            {
-                abortLevelLoading = true;
-                if (not exChapter) // level from level folder
-                    ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
-                else // exploring chapter -> start chapter at selected level
-                    ENGINE->playChapter(exChapter->filename,value);
-                MUSIC_CACHE->playSound("sounds/drip.wav");
-            }
+			abortLevelLoading = true;
+			if (not exChapter) // level from level folder
+				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
+			else // exploring chapter -> start chapter at selected level
+				ENGINE->playChapter(exChapter->filename,value);
+			MUSIC_CACHE->playSound("sounds/drip.wav");
         }
         checkSelection(levelPreviews,selection);
     }
