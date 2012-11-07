@@ -225,6 +225,8 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
     case lpImage:
     {
         levelImage = SURFACE_CACHE->loadSurface(value.second,chapterPath);
+        if (levelImage == SURFACE_CACHE->getErrorSurface())
+			levelImage = NULL;
         if (levelImage)
         {
             if (levelImage->w < GFX::getXResolution())
