@@ -1448,6 +1448,9 @@ void Level::clearRectangle(SDL_Surface* const surface, CRfloat posX, CRfloat pos
 
 void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset)
 {
+	if ( unit->flags.hasFlag(BaseUnit::ufNoRender) )
+		return;
+
     unit->updateScreenPosition(offset);
     unit->render(surface);
     Vector2df pos2 = boundsCheck(unit);
