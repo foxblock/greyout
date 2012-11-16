@@ -398,17 +398,17 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
     case pcBlack:
     {
         // unit specific parameters as this is merely an alias for a customized BasePlayer
-        params.push_back(make_pair("collision","black,red"));
-        params.push_back(make_pair("imageoverwrite","images/player/black_big.png"));
-        params.push_back(make_pair("colour","black"));
+        params.push_front(make_pair("collision","black,red"));
+        params.push_front(make_pair("imageoverwrite","images/player/black_big.png"));
+        params.push_front(make_pair("colour","black"));
         result = new BasePlayer(parent);
         break;
     }
     case pcWhite:
     {
-        params.push_back(make_pair("collision","red,white"));
-        params.push_back(make_pair("imageoverwrite","images/player/white_big.png"));
-        params.push_back(make_pair("colour","white"));
+        params.push_front(make_pair("collision","red,white"));
+        params.push_front(make_pair("imageoverwrite","images/player/white_big.png"));
+        params.push_front(make_pair("colour","white"));
         result = new BasePlayer(parent);
         break;
     }

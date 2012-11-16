@@ -31,6 +31,8 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["flags"] = upFlags;
     stringToProp["collision"] = upCollision;
     stringToProp["imageoverwrite"] = upImageOverwrite;
+    stringToProp["tiles"] = upTilesheet;
+    stringToProp["framerate"] = upFramerate;
     stringToProp["colour"] = upColour;
     stringToProp["color"] = upColour;
     stringToProp["health"] = upHealth;
@@ -53,7 +55,6 @@ BaseUnit::BaseUnit(Level* newParent)
     position = Vector2df(0.0f,0.0f);
     startingPosition = Vector2df(0.0f,0.0f);
     velocity = Vector2df(0.0f,0.0f);
-    gravity = Vector2df(0.0f,0.0f);
     acceleration[0] = Vector2df(0.0f,0.0f);
     acceleration[1] = Vector2df(0.0f,0.0f);
     toBeRemoved = false;
@@ -61,6 +62,8 @@ BaseUnit::BaseUnit(Level* newParent)
     tag = "";
     id = "";
     imageOverwrite = "";
+    tiles = Vector2di(1,1);
+    framerate = 10;
     col = WHITE;
     currentState = "";
     startingState = "";
@@ -123,7 +126,8 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
     {
         SDL_Surface* surf = getSurface(imageOverwrite);
         AnimatedSprite* temp = new AnimatedSprite;
-        temp->loadFrames(surf,1,1,0,1);
+        temp->loadFrames(surf,tiles.x,tiles.y,0,0);
+        temp->setFrameRate(framerate);
         temp->setTransparentColour(MAGENTA);
         states["default"] = temp;
         startingState = "default";
@@ -216,6 +220,24 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         imageOverwrite = value.second;
         break;
     }
+    case upTilesheet:
+	{
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        if (token.size() != 2)
+        {
+            parsed = false;
+            break;
+        }
+        tiles.x = StringUtility::stringToFloat(token[0]);
+        tiles.y = StringUtility::stringToFloat(token[1]);
+		break;
+	}
+	case upFramerate:
+	{
+		framerate = StringUtility::stringToInt(value.second);
+		break;
+	}
     case upColour:
     {
         int val = StringUtility::stringToInt(value.second);
@@ -570,7 +592,7 @@ string BaseUnit::debugInfo()
 
 void BaseUnit::move()
 {
-    position += velocity + gravity;
+    position += velocity;
 }
 
 bool BaseUnit::processOrder(Order& next)
