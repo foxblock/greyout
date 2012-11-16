@@ -90,7 +90,6 @@ public:
     Vector2df position;
     Vector2df startingPosition;
     Vector2df velocity; // velocity caused by the unit's movement
-    Vector2df gravity;  // velocity caused by gravity (NOT IMPLEMENTED)
     Vector2df acceleration[2]; // 0 - increment, 1 - maximum
     int direction; // the direction the unit is facing (use for sprite orientation)
     set<int> collisionColours;
@@ -98,7 +97,6 @@ public:
     unsigned int unitCollisionMode; // 0 - never collide (be affected by other units),
                                     // 1 - always, 2 - yes, but check collision colours
     SimpleFlags flags;
-    string imageOverwrite; // used for level-specific customisation
     Colour col; // the colour of this unit
 
 
@@ -151,6 +149,8 @@ protected:
         upFlags,
         upCollision,
         upImageOverwrite,
+        upTilesheet,
+        upFramerate,
         upColour,
         upHealth,
         upID,
@@ -202,6 +202,10 @@ protected:
 
     Vector3df tempColour;
     Vector3df tempColourChange;
+
+    string imageOverwrite; // used for level-specific customisation
+    Vector2di tiles;
+    int framerate;
 
 private:
 };
