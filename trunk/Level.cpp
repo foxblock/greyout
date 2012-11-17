@@ -1338,7 +1338,7 @@ void Level::swapControl()
     // check whether there is a player without control
     for (vector<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
     {
-        if (not (*unit)->takesControl)
+        if (not (*unit)->takesControl && not (*unit)->toBeRemoved)
         {
             valid = true;
             break;

@@ -33,6 +33,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["imageoverwrite"] = upImageOverwrite;
     stringToProp["tiles"] = upTilesheet;
     stringToProp["framerate"] = upFramerate;
+    stringToProp["loops"] = upFramerate;
     stringToProp["colour"] = upColour;
     stringToProp["color"] = upColour;
     stringToProp["health"] = upHealth;
@@ -64,6 +65,8 @@ BaseUnit::BaseUnit(Level* newParent)
     imageOverwrite = "";
     tiles = Vector2di(1,1);
     framerate = 10;
+    loops = 1;
+    transCol = MAGENTA;
     col = WHITE;
     currentState = "";
     startingState = "";
@@ -128,7 +131,8 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
         AnimatedSprite* temp = new AnimatedSprite;
         temp->loadFrames(surf,tiles.x,tiles.y,0,0);
         temp->setFrameRate(framerate);
-        temp->setTransparentColour(MAGENTA);
+        temp->setTransparentColour(transCol);
+        temp->setLooping(loops);
         states["default"] = temp;
         startingState = "default";
         setSpriteState(startingState,true);
@@ -238,6 +242,20 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		framerate = StringUtility::stringToInt(value.second);
 		break;
 	}
+	case upLoops:
+	{
+		loops = StringUtility::stringToInt(value.second);
+		break;
+	}
+    case upTransCol:
+    {
+        int val = StringUtility::stringToInt(value.second);
+        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
+            transCol = Colour(val);
+        else // string colour code
+            transCol = Colour(value.second);
+        break;
+    }
     case upColour:
     {
         int val = StringUtility::stringToInt(value.second);

@@ -151,6 +151,8 @@ protected:
         upImageOverwrite,
         upTilesheet,
         upFramerate,
+        upLoops,
+        upTransCol,
         upColour,
         upHealth,
         upID,
@@ -206,6 +208,9 @@ protected:
     string imageOverwrite; // used for level-specific customisation
     Vector2di tiles;
     int framerate;
+    int loops;
+    Colour transCol;
+
 
 private:
 };
