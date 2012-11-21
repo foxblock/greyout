@@ -183,6 +183,7 @@ protected:
 
     #ifdef _DEBUG
     Text debugText;
+    bool frameLimiter;
     #endif
     #ifdef PENJIN_CALC_FPS
     Text fpsDisplay;

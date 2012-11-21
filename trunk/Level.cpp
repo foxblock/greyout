@@ -101,6 +101,7 @@ Level::Level()
     debugText.loadFont(DEBUG_FONT,8);
     debugText.setColour(50,217,54);
     debugString = "";
+    frameLimiter = true;
 #endif
 #ifdef PENJIN_CALC_FPS
     fpsDisplay.loadFont(DEBUG_FONT,24);
@@ -170,6 +171,7 @@ Level::~Level()
     effects.clear();
     #ifdef _DEBUG
     debugUnits.clear();
+    ENGINE->setFrameRate(FRAME_RATE);
     #endif
 
     // reset background colour
@@ -461,6 +463,15 @@ void Level::userInput()
         debugUnits.clear();
     input->resetMouseButtons();
 
+    if (input->isKey("b"))
+	{
+		if (frameLimiter)
+			ENGINE->setFrameRate(1000);
+		else
+			ENGINE->setFrameRate(FRAME_RATE);
+		frameLimiter = !frameLimiter;
+	}
+
     if ((input->isL() || input->isR() || input->isSelect()) && not flags.hasFlag(lfDisableSwap))
 #else
     if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick() || input->isSelect())
@@ -586,7 +597,7 @@ void Level::update()
         clearUnitFromCollision(collisionLayer,(*curr));
         // check for overwritten units by last clearUnitFromCollision call and redraw them
         for (vector<UnitCollisionEntry>::iterator item = (*curr)->collisionInfo.units.begin();
-        item != (*curr)->collisionInfo.units.end(); ++item)
+			item != (*curr)->collisionInfo.units.end(); ++item)
         {
             if (not item->unit->isPlayer)
                 renderUnit(collisionLayer,item->unit,Vector2df(0,0));
@@ -900,7 +911,7 @@ void Level::render(SDL_Surface* screen)
             renderUnit(collisionLayer,(*curr),Vector2df(0,0));
         }
 
-        // sort players (not efficient, but we are talking low numbers here, usually =2)
+        // sort players (not efficient, but we are talking low numbers here, usually 2)
         vector<ControlUnit*> temp;
         for (vector<ControlUnit*>::const_iterator curr = players.begin(); curr != players.end(); ++curr)
         {
