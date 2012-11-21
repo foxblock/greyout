@@ -273,7 +273,10 @@ void StateLevelSelect::userInput()
 			if (not exChapter) // level from level folder
 				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 			else // exploring chapter -> start chapter at selected level
-				ENGINE->playChapter(exChapter->filename,value);
+			{
+				if (value <= exChapter->getProgress())
+					ENGINE->playChapter(exChapter->filename,value);
+			}
 			MUSIC_CACHE->playSound("sounds/drip.wav");
         }
         checkSelection(levelPreviews,selection);
