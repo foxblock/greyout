@@ -435,11 +435,8 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
         maxUnlocked = exChapter->getProgress();
     }
 
-    for (int I = numOffset + max(addOffset,0); I < (numOffset + PREVIEW_COUNT_X * PREVIEW_COUNT_Y); ++I)
+    for (int I = numOffset + max(addOffset,0); (I < (numOffset + PREVIEW_COUNT_X * PREVIEW_COUNT_Y)) && (I < data.size()); ++I)
     {
-        if (I >= data.size())
-            break;
-
         // calculate position of object to render
         Vector2di pos;
         pos.x = (I % PREVIEW_COUNT_X) * size.x + (I % PREVIEW_COUNT_X + 1) * spacing.x;
@@ -655,12 +652,8 @@ int StateLevelSelect::loadLevelPreviews(void* data)
     vector<PreviewData>::iterator iter = self->levelPreviews.begin();
     int levelNumber = 0;
     int maxUnlocked = 0;
-    #ifdef _DEBUG
-    maxUnlocked = INT_MAX;
-    #else
     if (self->exChapter)
         maxUnlocked = self->exChapter->getProgress();
-    #endif
 
     while (not self->abortLevelLoading && iter != self->levelPreviews.end())
     {
