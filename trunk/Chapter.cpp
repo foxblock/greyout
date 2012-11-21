@@ -1,6 +1,7 @@
 #include "Chapter.h"
 
 #include <fstream>
+#include <limits.h>
 
 #include "StringUtility.h"
 #include "FileLister.h"
@@ -158,7 +159,13 @@ int Chapter::getLevelIndex(CRstring filename)
 int Chapter::getProgress() const
 {
     if (filename[0] != 0)
+	{
+	#ifdef _DEBUG
+		return INT_MAX;
+	#else
         return SAVEGAME->getChapterProgress(filename);
+	#endif
+	}
     return -1;
 }
 
