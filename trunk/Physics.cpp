@@ -396,16 +396,18 @@ void Physics::unitMapCollision(SDL_Surface* const colImage, BaseUnit* const unit
 void Physics::playerUnitCollision(const Level* const level, BaseUnit* const player, BaseUnit* const unit) const
 {
     /// TODO: Optimize this and remove redundant stuff (aka this is a mess!)
-    Vector2df proPosPlayer = player->position + player->velocity;
-    Vector2df proPosUnit = unit->position + unit->velocity;
+    Vector2df proPosPlayer(player->position + player->velocity);
+    Vector2df proPosUnit(unit->position + unit->velocity);
+    Vector2df playerSize(player->getSize());
+    Vector2df unitSize(unit->getSize());
     float xPos = max(proPosPlayer.x, proPosUnit.x);
     float yPos = max(proPosPlayer.y, proPosUnit.y);
-    float xPosMax = min(proPosPlayer.x + player->getWidth(), proPosUnit.x + unit->getWidth());
-    float yPosMax = min(proPosPlayer.y + player->getHeight(), proPosUnit.y + unit->getHeight());
+    float xPosMax = min(proPosPlayer.x + playerSize.x, proPosUnit.x + unitSize.x);
+    float yPosMax = min(proPosPlayer.y + playerSize.y, proPosUnit.y + unitSize.y);
     if (xPosMax > xPos && yPosMax > yPos)
     {
-        float diffX = min(proPosPlayer.x + player->getWidth(), proPosUnit.x + unit->getWidth()) - max(proPosPlayer.x, proPosUnit.x);
-        float diffY = min(proPosPlayer.y + player->getHeight(), proPosUnit.y + unit->getHeight()) - max(proPosPlayer.y, proPosUnit.y);
+		float diffX = xPosMax - xPos;
+		float diffY = yPosMax - yPos;
         SimpleDirection dir;
         if (player->position.x < unit->position.x)
             dir = diLEFT;
@@ -424,14 +426,14 @@ void Physics::playerUnitCollision(const Level* const level, BaseUnit* const play
     {
         proPosPlayer = pos2p + player->velocity;
         proPosUnit = pos2u + unit->velocity;
-        float xPos = max(proPosPlayer.x, proPosUnit.x);
-        float yPos = max(proPosPlayer.y, proPosUnit.y);
-        float xPosMax = min(proPosPlayer.x + player->getWidth(), proPosUnit.x + unit->getWidth());
-        float yPosMax = min(proPosPlayer.y + player->getHeight(), proPosUnit.y + unit->getHeight());
+        xPos = max(proPosPlayer.x, proPosUnit.x);
+        yPos = max(proPosPlayer.y, proPosUnit.y);
+        xPosMax = min(proPosPlayer.x + playerSize.x, proPosUnit.x + unitSize.x);
+        yPosMax = min(proPosPlayer.y + playerSize.y, proPosUnit.y + unitSize.y);
         if (xPosMax > xPos && yPosMax > yPos)
         {
-            float diffX = min(proPosPlayer.x + player->getWidth(), proPosUnit.x + unit->getWidth()) - max(proPosPlayer.x, proPosUnit.x);
-            float diffY = min(proPosPlayer.y + player->getHeight(), proPosUnit.y + unit->getHeight()) - max(proPosPlayer.y, proPosUnit.y);
+            float diffX = xPosMax - xPos;
+            float diffY = yPosMax - yPos;
             SimpleDirection dir;
             if (pos2p.x < pos2u.x)
                 dir = diLEFT;

@@ -1433,6 +1433,9 @@ string Level::debugInfo()
 
 void Level::clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const unit)
 {
+	if ( unit->flags.hasFlag(BaseUnit::ufNoRender) )
+		return;
+
     clearRectangle(surface,unit->position.x,unit->position.y,unit->getWidth(),unit->getHeight());
 
     Vector2df pos2 = boundsCheck(unit);

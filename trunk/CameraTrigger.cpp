@@ -56,7 +56,7 @@ bool CameraTrigger::processParameter(const PARAMETER_TYPE& value)
 string CameraTrigger::debugInfo()
 {
     string result = BaseTrigger::debugInfo();
-    result += StringUtility::vecToString(dest) + "," + StringUtility::intToString(time);
+    result += StringUtility::vecToString(dest) + "," + StringUtility::intToString(time) + "\n";
     return result;
 }
 #endif
