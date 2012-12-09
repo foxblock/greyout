@@ -111,6 +111,7 @@ void MusicCache::stopMusic()
 {
     if (musicPlaying[0] != 0)
         stop(music.find(musicPlaying)->second);
+	musicPlaying = "";
 }
 
 void MusicCache::setMusicVolume(CRint newVol)
