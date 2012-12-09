@@ -33,6 +33,7 @@ public:
     void stopMusic();
     void setMusicVolume(CRint newVol);
     int getMusicVolume() const {return musicVolume;}
+    string getPlaying() const {return musicPlaying;}
 
     bool playSound(CRstring filename, CRint numLoops = 0, CRbool suppressOutput = false);
     bool playSound(CRstring filename, CRstring pathOverwrite, CRint numLoops = 0);

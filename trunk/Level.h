@@ -14,6 +14,7 @@
 #include "Rectangle.h"
 #include "CountDown.h"
 #include "BaseState.h"
+#include "FileLister.h"
 
 #include "SimpleFlags.h"
 #include "Camera.h"
@@ -206,6 +207,12 @@ protected:
 
     bool hideHor;
     bool hideVert;
+
+#ifdef _MUSIC
+	void saveMusicToFile(CRstring musicFile);
+	FileLister musicLister;
+	bool showMusicList;
+#endif
 };
 
 #endif

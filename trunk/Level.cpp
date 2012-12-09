@@ -22,8 +22,6 @@
 #define NAME_RECT_HEIGHT 35
 #endif
 
-#define PAUSE_MENU_ITEM_COUNT 5
-#define TIME_TRIAL_ITEM_COUNT 3
 #ifdef _MEOW
 #define PAUSE_MENU_SPACING 4
 #define PAUSE_MENU_OFFSET_Y -20
@@ -37,6 +35,7 @@
 #else
 #define PAUSE_VOLUME_SLIDER_SIZE 400
 #endif
+#define PAUSE_MENU_SPACING_EXTRA 20
 
 #ifdef _MEOW
 #define TIME_TRIAL_OFFSET_Y 5
@@ -97,6 +96,17 @@ Level::Level()
     firstLoad = true;
     trialEnd = false;
 
+#ifdef _MUSIC
+	musicLister.loadFont(GAME_FONT,32);
+    musicLister.setTextColour(WHITE);
+    musicLister.setTextSelectionColour(RED);
+    musicLister.addFilter("ogg");
+    musicLister.addFilter("mp3");
+    musicLister.addFilter("wav");
+    musicLister.setPath("music");
+    showMusicList = false;
+#endif
+
 #ifdef _DEBUG
     debugText.loadFont(DEBUG_FONT,8);
     debugText.setColour(50,217,54);
@@ -143,6 +153,11 @@ Level::Level()
 
 Level::~Level()
 {
+#ifdef _MUSIC
+	if (ENGINE->currentState != STATE_LEVELSELECT)
+		saveMusicToFile(MUSIC_CACHE->getPlaying());
+#endif
+
     SDL_FreeSurface(collisionLayer);
     for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
     {
@@ -1000,6 +1015,9 @@ void Level::onPause()
     else
     {
         pauseSelection = 2;
+	#ifdef _MUSIC
+		pauseItems.push_back("MUSIC FILE:");
+	#endif
         pauseItems.push_back("MUSIC VOL:");
         pauseItems.push_back("SOUND VOL:");
         pauseItems.push_back("RETURN");
@@ -1027,6 +1045,9 @@ void Level::onResume()
     timeTrialText.setAlignment(RIGHT_JUSTIFIED);
     timeTrialText.setColour(WHITE);
     pauseItems.clear();
+    #ifdef _MUSIC
+    showMusicList = false;
+    #endif
 }
 
 void Level::pauseInput()
@@ -1041,6 +1062,30 @@ void Level::pauseInput()
     }
 #endif
 
+#ifdef _MUSIC
+	if (showMusicList)
+	{
+        if(input->isUp())
+            musicLister.menuUp();
+        else if(input->isDown())
+            musicLister.menuDown();
+
+		if (ACCEPT_KEY)
+		{
+			string file = musicLister.enter();
+			MUSIC_CACHE->playMusic(file);
+		}
+		else if (CANCEL_KEY)
+			showMusicList = false;
+
+        if (input->isStart())
+            pauseToggle();
+
+		input->resetKeys();
+		return;
+	}
+#endif
+
     if (trialEnd)
     {
         if (input->isUp() && pauseSelection > 0)
@@ -1048,7 +1093,7 @@ void Level::pauseInput()
             --pauseSelection;
             input->resetUp();
         }
-        if (input->isDown() && pauseSelection < TIME_TRIAL_ITEM_COUNT-1)
+        if (input->isDown() && pauseSelection < pauseItems.size()-1)
         {
             ++pauseSelection;
             input->resetDown();
@@ -1084,7 +1129,7 @@ void Level::pauseInput()
             --pauseSelection;
             input->resetUp();
         }
-        if (input->isDown() && pauseSelection < PAUSE_MENU_ITEM_COUNT-1)
+        if (input->isDown() && pauseSelection < pauseItems.size()-1)
         {
             ++pauseSelection;
             input->resetDown();
@@ -1092,13 +1137,13 @@ void Level::pauseInput()
 
         if (input->isLeft())
         {
-            if (pauseSelection == 0)
+            if (pauseItems[pauseSelection] == "MUSIC VOL:")
             {
                 int vol = MUSIC_CACHE->getMusicVolume();
                 if (vol > 0)
                     MUSIC_CACHE->setMusicVolume(vol-8);
             }
-            else if (pauseSelection == 1)
+            else if (pauseItems[pauseSelection] == "SOUND VOL:")
             {
                 int vol = MUSIC_CACHE->getSoundVolume();
                 if (vol > 0)
@@ -1110,13 +1155,13 @@ void Level::pauseInput()
         }
         else if (input->isRight())
         {
-            if (pauseSelection == 0)
+            if (pauseItems[pauseSelection] == "MUSIC VOL:")
             {
                 int vol = MUSIC_CACHE->getMusicVolume();
                 if (vol < MUSIC_CACHE->getMaxVolume())
                     MUSIC_CACHE->setMusicVolume(vol+8);
             }
-            else if (pauseSelection == 1)
+            else if (pauseItems[pauseSelection] == "SOUND VOL:")
             {
                 int vol = MUSIC_CACHE->getSoundVolume();
                 if (vol < MUSIC_CACHE->getMaxVolume())
@@ -1129,33 +1174,43 @@ void Level::pauseInput()
 
         if (ACCEPT_KEY)
         {
-            switch (pauseSelection)
-            {
-            case 2:
+            if (pauseItems[pauseSelection] == "RETURN")
                 pauseToggle();
-                break;
-            #ifdef _DEBUG
-            case 3:
+			else if (pauseItems[pauseSelection] == "RELOAD")
                 setNextState(STATE_LEVEL);
-                break;
-            #else
-            case 3:
+            else if (pauseItems[pauseSelection] == "RESTART")
+            {
                 pauseToggle();
                 for (vector<ControlUnit*>::iterator iter = players.begin(); iter != players.end(); ++iter)
                 {
                     (*iter)->explode();
                 }
                 lose();
-                break;
-            #endif
-            case 4:
+			}
+            else if (pauseItems[pauseSelection] == "EXIT")
+			{
                 setNextState(STATE_MAIN);
                 MUSIC_CACHE->playSound("sounds/menu_back.wav");
-                break;
-            default:
-                break;
-            }
+			}
+			#ifdef _MUSIC
+			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
+			{
+				showMusicList = true;
+				input->resetKeys();
+			}
+			#endif
         }
+        if (CANCEL_KEY)
+		{
+            if (pauseItems[pauseSelection] == "MUSIC VOL:")
+				MUSIC_CACHE->setMusicVolume(0);
+            else if (pauseItems[pauseSelection] == "SOUND VOL:")
+				MUSIC_CACHE->setSoundVolume(0);
+		#ifdef _MUSIC
+			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
+				MUSIC_CACHE->stopMusic();
+		#endif
+		}
 
         if (input->isStart())
             pauseToggle();
@@ -1174,11 +1229,25 @@ void Level::pauseUpdate()
                 timeTrialText.setColour(ORANGE);
         }
     }
+    #ifdef _MUSIC
+    if (showMusicList)
+	{
+		musicLister.update();
+	}
+	#endif
 }
 
 void Level::pauseScreen()
 {
     SDL_BlitSurface(pauseSurf,NULL,GFX::getVideoSurface(),NULL);
+
+#ifdef _MUSIC
+	if (showMusicList)
+	{
+		musicLister.render();
+		return;
+	}
+#endif
 
     int offset = 0;
     if (trialEnd)
@@ -1189,7 +1258,11 @@ void Level::pauseScreen()
     {
         offset = PAUSE_MENU_OFFSET_Y;
     }
-    int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (PAUSE_MENU_ITEM_COUNT-1)) / 2 + offset;
+    #ifdef _MUSIC
+    int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - PAUSE_MENU_OFFSET_X * 2;
+    #else
+    int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + offset;
+    #endif
 
     // render text and selection
     for (int I = 0; I < pauseItems.size(); ++I)
@@ -1209,35 +1282,40 @@ void Level::pauseScreen()
         nameRect.render();
         nameText.print(pauseItems[I]);
 
-        if (not trialEnd)
-        {
-            if (I == 0)
-            {
-                // render volume sliders
-                float factor = (float)MUSIC_CACHE->getMusicVolume() / (float)MUSIC_CACHE->getMaxVolume();
-                nameRect.setDimensions((float)PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
-                nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
-                if (pauseSelection == 0)
-                    nameRect.setColour(BLACK);
-                else
-                    nameRect.setColour(WHITE);
-                nameRect.render();
-                nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
-            }
-            else if (I == 1)
-            {
-                float factor = (float)MUSIC_CACHE->getSoundVolume() / (float)MUSIC_CACHE->getMaxVolume();
-                nameRect.setDimensions(PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
-                nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
-                if (pauseSelection == 1)
-                    nameRect.setColour(BLACK);
-                else
-                    nameRect.setColour(WHITE);
-                nameRect.render();
-                nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
-                pos += 20; // extra offset
-            }
-        }
+		if (pauseItems[I] == "MUSIC VOL:")
+		{
+			// render volume sliders
+			float factor = (float)MUSIC_CACHE->getMusicVolume() / (float)MUSIC_CACHE->getMaxVolume();
+			nameRect.setDimensions((float)PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
+			nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
+			if (pauseSelection == I)
+				nameRect.setColour(BLACK);
+			else
+				nameRect.setColour(WHITE);
+			nameRect.render();
+			nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+		}
+		else if (pauseItems[I] == "SOUND VOL:")
+		{
+			float factor = (float)MUSIC_CACHE->getSoundVolume() / (float)MUSIC_CACHE->getMaxVolume();
+			nameRect.setDimensions(PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
+			nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
+			if (pauseSelection == I)
+				nameRect.setColour(BLACK);
+			else
+				nameRect.setColour(WHITE);
+			nameRect.render();
+			nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+			pos += PAUSE_MENU_SPACING_EXTRA; // extra offset
+		}
+	#ifdef _MUSIC
+		else if (pauseItems[I] == "MUSIC FILE:")
+		{
+			nameText.setPosition( nameText.getPosition().x + PAUSE_MENU_OFFSET_X, nameText.getPosition().y );
+			nameText.print(MUSIC_CACHE->getPlaying());
+			pos += PAUSE_MENU_SPACING_EXTRA; // extra offset
+		}
+	#endif
 
         pos += NAME_RECT_HEIGHT + PAUSE_MENU_SPACING;
     }
@@ -1552,3 +1630,42 @@ bool Level::playersVisible() const
     }
     return true;
 }
+
+#ifdef _MUSIC
+void Level::saveMusicToFile(CRstring musicFile)
+{
+	string line;
+	fstream file(levelFileName.c_str(), fstream::in);
+	vector<string> lines;
+
+    if (file.fail())
+    {
+        errorString = "Failed to open file to write music info!";
+        return;
+    }
+
+    while (file.good())
+	{
+        getline(file,line);
+        lines.push_back(line);
+	}
+
+	for (vector<string>::iterator I = lines.begin(); I != lines.end(); ++I)
+	{
+		if (StringUtility::lower((*I).substr(0,5)) == "music")
+		{
+			if (musicFile[0] == 0)
+				(*I) = "music=none";
+			else
+				(*I) = "music=" + musicFile;
+			break;
+		}
+	}
+	file.close();
+	file.open(levelFileName.c_str(), fstream::out | fstream::trunc);
+	for (vector<string>::const_iterator I = lines.begin(); I != lines.end(); ++I)
+	{
+		file << *I << endl;
+	}
+}
+#endif
