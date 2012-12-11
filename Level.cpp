@@ -1202,6 +1202,24 @@ void Level::pauseInput()
                 setNextState(STATE_MAIN);
                 MUSIC_CACHE->playSound("sounds/menu_back.wav");
 			}
+			else if (pauseItems[pauseSelection] == "MUSIC VOL:")
+			{
+				if (input->isLeftClick())
+				{
+					float factor = (float)(lastPos.x - (GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X)) / (float)PAUSE_VOLUME_SLIDER_SIZE;
+					if (factor >= 0.0f && factor <= 1.0f)
+						MUSIC_CACHE->setMusicVolume((float)MUSIC_CACHE->getMaxVolume() * factor);
+				}
+			}
+			else if (pauseItems[pauseSelection] == "SOUND VOL:")
+			{
+				if (input->isLeftClick())
+				{
+					float factor = (float)(lastPos.x - (GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X)) / (float)PAUSE_VOLUME_SLIDER_SIZE;
+					if (factor >= 0.0f && factor <= 1.0f)
+						MUSIC_CACHE->setSoundVolume((float)MUSIC_CACHE->getMaxVolume() * factor);
+				}
+			}
 			#ifdef _MUSIC
 			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
 			{
