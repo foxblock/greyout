@@ -149,14 +149,22 @@ Level::Level()
 
     hideHor = false;
     hideVert = false;
+
+    lastPos = Vector2di(0,0);
+
+	if (ENGINE->currentState != STATE_LEVELSELECT)
+		GFX::showCursor(false);
 }
 
 Level::~Level()
 {
-#ifdef _MUSIC
 	if (ENGINE->currentState != STATE_LEVELSELECT)
+	{
+#ifdef _MUSIC
 		saveMusicToFile(MUSIC_CACHE->getPlaying());
 #endif
+		GFX::showCursor(true);
+	}
 
     SDL_FreeSurface(collisionLayer);
     for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
@@ -1030,6 +1038,7 @@ void Level::onPause()
     }
     nameText.setAlignment(LEFT_JUSTIFIED);
     input->resetKeys();
+    GFX::showCursor(true);
 }
 
 void Level::onResume()
@@ -1048,6 +1057,7 @@ void Level::onResume()
     #ifdef _MUSIC
     showMusicList = false;
     #endif
+    GFX::showCursor(false);
 }
 
 void Level::pauseInput()
@@ -1098,7 +1108,7 @@ void Level::pauseInput()
             ++pauseSelection;
             input->resetDown();
         }
-        if (ACCEPT_KEY)
+        if (ACCEPT_KEY || input->isLeftClick())
         {
             switch (pauseSelection)
             {
@@ -1172,7 +1182,7 @@ void Level::pauseInput()
             }
         }
 
-        if (ACCEPT_KEY)
+        if (ACCEPT_KEY || input->isLeftClick())
         {
             if (pauseItems[pauseSelection] == "RETURN")
                 pauseToggle();
@@ -1212,7 +1222,7 @@ void Level::pauseInput()
 		#endif
 		}
 
-        if (input->isStart())
+        if (input->isStart() || input->isRightClick())
             pauseToggle();
     }
 }
@@ -1259,14 +1269,25 @@ void Level::pauseScreen()
         offset = PAUSE_MENU_OFFSET_Y;
     }
     #ifdef _MUSIC
-    int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - PAUSE_MENU_OFFSET_X * 2;
+    int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - PAUSE_MENU_OFFSET_X * 2 + offset;
     #else
     int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + offset;
     #endif
 
     // render text and selection
+	Vector2di mousePos = input->getMouse();
+	if (mousePos != lastPos)
+		lastPos = mousePos;
+	else
+		mousePos = Vector2di(-1,-1);
     for (int I = 0; I < pauseItems.size(); ++I)
     {
+    	// NOTE: do mouse selection handling here, so I don't have to copy code
+		if (mousePos.y >= pos && mousePos.y <= pos + NAME_RECT_HEIGHT)
+		{
+			pauseSelection = I;
+		}
+
         nameRect.setPosition(0,pos);
         nameText.setPosition(PAUSE_MENU_OFFSET_X,pos + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
         if (I == pauseSelection)

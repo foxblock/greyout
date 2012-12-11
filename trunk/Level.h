@@ -208,6 +208,8 @@ protected:
     bool hideHor;
     bool hideVert;
 
+    Vector2di lastPos;
+
 #ifdef _MUSIC
 	void saveMusicToFile(CRstring musicFile);
 	FileLister musicLister;
