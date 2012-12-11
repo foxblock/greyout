@@ -113,6 +113,7 @@ class StateLevelSelect : public BaseState
         int gridOffset; // the topmost column to render (=offset)
         int lastDraw; // indicates the last drawn preview image to speed up rendering
         bool firstDraw; // if true the all preview images will be rendered (also set on scrolling)
+        Vector2di lastPos, mousePos;
 
         FileLister levelLister;
         FileLister dirLister;
