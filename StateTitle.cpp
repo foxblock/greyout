@@ -93,10 +93,10 @@ void StateTitle::userInput()
             return;
         }
     #endif
-    if(input->isAny())
+    if(input->isAny() || input->isLeftClick())
     {
-      setNextState(STATE_MAIN);
-      input->resetKeys();
+		setNextState(STATE_MAIN);
+		input->resetKeys();
     }
 }
 

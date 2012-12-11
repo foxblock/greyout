@@ -56,6 +56,7 @@ StateLevelSelect::StateLevelSelect()
     firstDraw = true;
     selection = Vector2di(0,0);
     intermediateSelection = 0;
+    lastPos = Vector2di(0,0);
 
     // graphic stuff
     // TODO: Use 320x240 bg here (and make that)
@@ -193,6 +194,7 @@ void StateLevelSelect::userInput()
         return;
     }
 #endif
+	mousePos = input->getMouse();
     if (state != lsIntermediate) // grid navigation
     {
         if (input->isLeft())
@@ -215,6 +217,48 @@ void StateLevelSelect::userInput()
             ++selection.y;
             MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
+
+        if (mousePos != lastPos)
+		{
+			Vector2di newPos(-1,-1);
+			for (int I = 0; I < PREVIEW_COUNT_X; ++I)
+			{
+				if (mousePos.x >= spacing.x * (I+1) + size.x * I &&
+					mousePos.x <= spacing.x * (I+1) + size.x * (I+1))
+				{
+					newPos.x = I;
+					break;
+				}
+			}
+			for (int I = 0; I < PREVIEW_COUNT_Y; ++I)
+			{
+				if (mousePos.y >= OFFSET_Y + spacing.y * (I+1) + size.y * I &&
+					mousePos.y <= OFFSET_Y + spacing.y * (I+1) + size.y * (I+1))
+				{
+					newPos.y = I;
+					break;
+				}
+			}
+			if (newPos.y >= 0)
+				newPos.y += gridOffset;
+			if (newPos.x >= 0 && newPos.y >= 0)
+				selection = newPos;
+
+			lastPos = mousePos;
+		}
+		if (input->isLeftClick())
+		{
+			if (mousePos.y > OFFSET_Y + spacing.y * PREVIEW_COUNT_Y + size.y * PREVIEW_COUNT_Y)
+			{
+				++selection.y;
+				input->resetMouseButtons();
+			}
+			else if (mousePos.y < OFFSET_Y + spacing.y)
+			{
+				--selection.y;
+				input->resetMouseButtons();
+			}
+		}
     }
     else // intermediate menu navigation
     {
@@ -232,8 +276,22 @@ void StateLevelSelect::userInput()
                 ++intermediateSelection;
             }
         }
+        if (mousePos != lastPos)
+		{
+			int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (INTERMEDIATE_MENU_ITEM_COUNT-1)) / 2 - OFFSET_Y;
+			for (int I = 0; I < INTERMEDIATE_MENU_ITEM_COUNT; ++I)
+			{
+				if (mousePos.y >= pos && mousePos.y <= pos + OFFSET_Y)
+				{
+					intermediateSelection = I;
+					break;
+				}
+				pos += OFFSET_Y + INTERMEDIATE_MENU_SPACING;
+			}
+			lastPos = mousePos;
+		}
 
-        if (ACCEPT_KEY)
+        if (ACCEPT_KEY || input->isLeftClick())
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             switch (intermediateSelection)
@@ -250,7 +308,7 @@ void StateLevelSelect::userInput()
                 break;
             }
         }
-        else if (CANCEL_KEY)
+        else if (CANCEL_KEY || input->isRightClick())
         {
             switchState(lsChapter);
         }
@@ -259,14 +317,14 @@ void StateLevelSelect::userInput()
 
     if (state == lsLevel)
     {
-        if (CANCEL_KEY) // return to chapter selection
+        if (CANCEL_KEY || input->isRightClick()) // return to chapter selection
         {
             abortLevelLoading = true;
             switchState(lsChapter);
             input->resetKeys();
             return;
         }
-        if (ACCEPT_KEY)
+        if (ACCEPT_KEY || input->isLeftClick())
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
 			abortLevelLoading = true;
@@ -283,7 +341,7 @@ void StateLevelSelect::userInput()
     }
     else if (state == lsChapter)
     {
-        if (CANCEL_KEY) // return to menu
+        if (CANCEL_KEY || input->isRightClick()) // return to menu
         {
             abortLevelLoading = true;
             setNextState(STATE_MAIN);
@@ -291,7 +349,7 @@ void StateLevelSelect::userInput()
             MUSIC_CACHE->playSound("sounds/menu_back.wav");
             return;
         }
-        if (ACCEPT_KEY)
+        if (ACCEPT_KEY || input->isLeftClick())
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             if (value == 0) // level folder
@@ -421,6 +479,9 @@ void StateLevelSelect::render()
 
 #ifdef _DEBUG
     fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
+	fpsDisplay.setPosition(GFX::getXResolution(),40);
+	fpsDisplay.print(StringUtility::vecToString(lastPos));
+	fpsDisplay.setPosition(GFX::getXResolution(),0);
 #endif
 }
 

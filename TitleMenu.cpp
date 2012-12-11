@@ -14,12 +14,12 @@
 #define MENU_ITEM_COUNT 4
 
 #ifdef _MEOW
-#define MENU_OFFSET_X 101
+#define MENU_OFFSET_Y 101
 #define MENU_ITEM_HEIGHT 27
 #define MENU_ITEM_SPACING 0
 #define MARKER_SPEED 3
 #else
-#define MENU_OFFSET_X 173
+#define MENU_OFFSET_Y 173
 #define MENU_ITEM_HEIGHT 61
 #define MENU_ITEM_SPACING 0
 #define MARKER_SPEED 5
@@ -49,6 +49,7 @@ TitleMenu::TitleMenu()
     #endif
     marker.setX(0);
     setSelection(true);
+    lastPos = Vector2di(0,0);
 
     // cache the inverted surfaces for faster drawing
     for (int I = 0; I < bg.frameCount(); ++I)
@@ -95,13 +96,23 @@ void TitleMenu::userInput()
         return;
     }
 #endif
+	if (lastPos != input->getMouse() && input->getMouseY() > MENU_OFFSET_Y &&
+		input->getMouseY() < MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * MENU_ITEM_COUNT)
+	{
+		int prevSel = selection;
+		selection = (input->getMouseY() - MENU_OFFSET_Y) / (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING);
+		setSelection(false);
+		lastPos = input->getMouse();
+		if (selection != prevSel)
+			MUSIC_CACHE->playSound("sounds/menu.wav");
+	}
 
     if (input->isUp())
         decSelection();
     else if (input->isDown())
         incSelection();
 
-    if (ACCEPT_KEY)
+    if (ACCEPT_KEY || input->isLeftClick())
         doSelection();
 
     input->resetKeys();
@@ -133,7 +144,7 @@ void TitleMenu::render()
 
 void TitleMenu::setSelection(CRbool immediate)
 {
-    int destination = MENU_OFFSET_X + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * selection;
+    int destination = MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * selection;
 
     if (immediate)
     {
