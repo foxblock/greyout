@@ -241,8 +241,11 @@ void StateLevelSelect::userInput()
 			}
 			if (newPos.y >= 0)
 				newPos.y += gridOffset;
-			if (newPos.x >= 0 && newPos.y >= 0)
+			if (newPos.x >= 0 && newPos.y >= 0 && newPos != selection)
+			{
 				selection = newPos;
+				MUSIC_CACHE->playSound("sounds/level_select.wav");
+			}
 
 			lastPos = mousePos;
 		}
@@ -251,11 +254,13 @@ void StateLevelSelect::userInput()
 			if (mousePos.y > OFFSET_Y + spacing.y * PREVIEW_COUNT_Y + size.y * PREVIEW_COUNT_Y)
 			{
 				++selection.y;
+				MUSIC_CACHE->playSound("sounds/level_select.wav");
 				input->resetMouseButtons();
 			}
 			else if (mousePos.y < OFFSET_Y + spacing.y)
 			{
 				--selection.y;
+				MUSIC_CACHE->playSound("sounds/level_select.wav");
 				input->resetMouseButtons();
 			}
 		}
