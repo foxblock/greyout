@@ -31,14 +31,14 @@ public:
     bool playMusic(CRstring filename, CRbool suppressOutput = false);
     bool playMusic(CRstring filename, CRstring pathOverwrite);
     void stopMusic();
-    void setMusicVolume(CRint newVol);
+    void setMusicVolume(int newVol);
     int getMusicVolume() const {return musicVolume;}
     string getPlaying() const {return musicPlaying;}
 
     bool playSound(CRstring filename, CRint numLoops = 0, CRbool suppressOutput = false);
     bool playSound(CRstring filename, CRstring pathOverwrite, CRint numLoops = 0);
     void stopSounds();
-    void setSoundVolume(CRint newVol);
+    void setSoundVolume(int newVol);
     int getSoundVolume() const {return soundVolume;}
 
     int getMaxVolume() const;

@@ -114,8 +114,12 @@ void MusicCache::stopMusic()
 	musicPlaying = "";
 }
 
-void MusicCache::setMusicVolume(CRint newVol)
+void MusicCache::setMusicVolume(int newVol)
 {
+	if (newVol > getMaxVolume())
+		newVol = getMaxVolume();
+	else if (newVol < 0)
+		newVol = 0;
     Mix_VolumeMusic(newVol);
     musicVolume = newVol;
 }
@@ -176,8 +180,12 @@ void MusicCache::stopSounds()
     }
 }
 
-void MusicCache::setSoundVolume(CRint newVol)
+void MusicCache::setSoundVolume(int newVol)
 {
+	if (newVol > getMaxVolume())
+		newVol = getMaxVolume();
+	else if (newVol < 0)
+		newVol = 0;
     for(map<string,Sound*>::iterator iter = sounds.begin(); iter != sounds.end(); ++iter)
     {
         iter->second->setVolume(newVol);
