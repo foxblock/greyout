@@ -197,25 +197,22 @@ void StateLevelSelect::userInput()
 	mousePos = input->getMouse();
     if (state != lsIntermediate) // grid navigation
     {
+    	Vector2di oldSel = selection;
         if (input->isLeft())
         {
             --selection.x;
-            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
         else if (input->isRight())
         {
             ++selection.x;
-            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
         if (input->isUp())
         {
             --selection.y;
-            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
         if (input->isDown())
         {
             ++selection.y;
-            MUSIC_CACHE->playSound("sounds/level_select.wav");
         }
 
         if (mousePos != lastPos)
@@ -244,7 +241,6 @@ void StateLevelSelect::userInput()
 			if (newPos.x >= 0 && newPos.y >= 0 && newPos != selection)
 			{
 				selection = newPos;
-				MUSIC_CACHE->playSound("sounds/level_select.wav");
 			}
 
 			lastPos = mousePos;
@@ -254,16 +250,20 @@ void StateLevelSelect::userInput()
 			if (mousePos.y > OFFSET_Y + spacing.y * PREVIEW_COUNT_Y + size.y * PREVIEW_COUNT_Y)
 			{
 				++selection.y;
-				MUSIC_CACHE->playSound("sounds/level_select.wav");
 				input->resetMouseButtons();
 			}
 			else if (mousePos.y < OFFSET_Y + spacing.y)
 			{
 				--selection.y;
-				MUSIC_CACHE->playSound("sounds/level_select.wav");
 				input->resetMouseButtons();
 			}
 		}
+		if (state == lsLevel)
+			checkSelection(levelPreviews,selection);
+		else if (state == lsChapter)
+			checkSelection(chapterPreviews,selection);
+		if (selection != oldSel)
+			MUSIC_CACHE->playSound("sounds/level_select.wav");
     }
     else // intermediate menu navigation
     {
@@ -342,7 +342,6 @@ void StateLevelSelect::userInput()
 			}
 			MUSIC_CACHE->playSound("sounds/drip.wav");
         }
-        checkSelection(levelPreviews,selection);
     }
     else if (state == lsChapter)
     {
@@ -372,7 +371,6 @@ void StateLevelSelect::userInput()
                 }
             }
         }
-        checkSelection(chapterPreviews,selection);
     }
 
     input->resetKeys();

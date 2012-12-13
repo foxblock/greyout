@@ -1,6 +1,6 @@
 #include "MyGame.h"
 
-// TODO: Story
+// DONE: Story
 // TODO: "Connected" level type
 // TODO: More levels, organic levels, more assets (trees, gears)
 // TODO: Unit types ((DONE)temporary platforms, (DONE)timed platforms, (DONE)keys, lasers)
