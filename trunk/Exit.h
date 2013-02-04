@@ -10,9 +10,25 @@ public:
     virtual ~Exit();
 
     virtual bool load(list<PARAMETER_TYPE >& params);
+    virtual bool processParameter(const PARAMETER_TYPE& param);
+
+    virtual void update();
 
     virtual void hitUnit(const UnitCollisionEntry& entry);
+
+    bool isExiting;
+    bool allExited;
+
 protected:
+	enum ExitProp {
+		epLink=BaseUnit::ufEOL,
+		epEOL
+	};
+
+	bool checkAllExited() const;
+
+    vector<BaseUnit*> targets;
+    vector<string> targetIDs;
 
 private:
 

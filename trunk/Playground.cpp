@@ -97,7 +97,10 @@ void Playground::userInput()
         {
     #endif
         Rectangle* temp = new Rectangle;
-        temp->setColour(BLACK);
+        if (input->isRightClick())
+			temp->setColour(Colour(9999763));
+		else
+			temp->setColour(BLACK);
         temp->setDimensions(24,24);
         temp->setPosition(drawOffset + input->getMouse() - Vector2df(12,12));
         mouseRects.push_back(temp);

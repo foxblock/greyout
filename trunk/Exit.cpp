@@ -4,6 +4,8 @@
 
 Exit::Exit(Level* newParent) : BaseUnit(newParent)
 {
+    stringToProp["link"] = epLink;
+
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
     unitCollisionMode = 0;
@@ -11,11 +13,15 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
     col = Colour(50,217,54);
     collisionColours.insert(Colour(BLACK).getIntColour());
     collisionColours.insert(Colour(WHITE).getIntColour());
+
+    isExiting = false;
+    allExited = false;
 }
 
 Exit::~Exit()
 {
-    //
+    targets.clear();
+    targetIDs.clear();
 }
 
 ///---public---
@@ -61,14 +67,72 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
             abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
             entry.overlap.x > 10 && entry.overlap.y > 20)
         {
-            entry.unit->toBeRemoved = true;
-            parent->swapControl();
-            if (entry.unit->flags.hasFlag(ufMissionObjective))
-                parent->winCounter--;
+        	isExiting = true;
+        	if (allExited || targets.empty())
+			{
+				entry.unit->toBeRemoved = true;
+				parent->swapControl();
+				if (entry.unit->flags.hasFlag(ufMissionObjective))
+					parent->winCounter--;
+			}
+			if (!targets.empty() && checkAllExited())
+			{
+				for	(vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+					if ((*I)->tag == "EXIT")
+						((Exit*)(*I))->allExited = true;
+				allExited = true;
+			}
         }
     }
 }
 
+bool Exit::processParameter(const PARAMETER_TYPE& value)
+{
+    if (BaseUnit::processParameter(value))
+        return true;
+
+    bool parsed = true;
+
+    switch (stringToProp[value.first])
+    {
+    case epLink:
+    {
+        targetIDs.clear();
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        targetIDs.insert(targetIDs.begin(),token.begin(),token.end());
+        break;
+    }
+    default:
+        parsed = false;
+    }
+
+    return parsed;
+}
+
+void Exit::update()
+{
+    if (!targetIDs.empty())
+    {
+        targets.clear();
+        parent->getUnitsByID(targetIDs,targets);
+        targetIDs.clear();
+    }
+    isExiting = false;
+    BaseUnit::update();
+}
+
 ///---protected---
+
+bool Exit::checkAllExited() const
+{
+	for	(vector<BaseUnit*>::const_iterator I = targets.begin(); I != targets.end(); ++I)
+	{
+		if ((*I)->tag == "EXIT")
+			if (!((Exit*)(*I))->isExiting)
+				return false;
+	}
+	return true;
+}
 
 ///---private---
