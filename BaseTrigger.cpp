@@ -110,43 +110,13 @@ void BaseTrigger::update()
     if (!targetIDs.empty())
     {
         targets.clear();
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
-        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
-        {
-            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
+        parent->getUnitsByID(targetIDs,targets);
         targetIDs.clear();
     }
     if (!activatorIDs.empty())
     {
         activators.clear();
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = activatorIDs.begin(); str != activatorIDs.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    activators.push_back(*I);
-            }
-        }
-        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
-        {
-            for (vector<string>::iterator str = activatorIDs.begin(); str != activatorIDs.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    activators.push_back(*I);
-            }
-        }
+        parent->getUnitsByID(activatorIDs,activators);
         activatorIDs.clear();
     }
     BaseUnit::update();

@@ -179,22 +179,7 @@ void Switch::update()
     if (!targetIDs.empty())
     {
         targets.clear();
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
-        for (vector<ControlUnit*>::iterator I = parent->players.begin(); I != parent->players.end(); ++I)
-        {
-            for (vector<string>::iterator str = targetIDs.begin(); str != targetIDs.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                    targets.push_back(*I);
-            }
-        }
+        parent->getUnitsByID(targetIDs,targets);
 
         if (startingState == "off")
             for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)

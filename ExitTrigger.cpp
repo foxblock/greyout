@@ -34,7 +34,8 @@ void ExitTrigger::doTrigger(const UnitCollisionEntry& entry)
     if (currentState == "open")
     {
         entry.unit->toBeRemoved = true;
-        parent->swapControl();
+        if (entry.unit->isPlayer)
+			parent->swapControl();
         if (entry.unit->flags.hasFlag(ufMissionObjective))
             parent->winCounter--;
 		enabled = false;

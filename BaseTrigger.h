@@ -35,9 +35,9 @@ protected:
     int height;
     Colour triggerCol;
     vector<BaseUnit*> targets;
-    vector<std::string> targetIDs;
+    vector<string> targetIDs;
     vector<BaseUnit*> activators;
-    vector<std::string> activatorIDs;
+    vector<string> activatorIDs;
     PARAMETER_TYPE targetParam;
 
     enum BaseTriggerProps

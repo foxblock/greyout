@@ -220,7 +220,7 @@ bool Level::load(const list<PARAMETER_TYPE >& params)
 
     if (not levelImage)
     {
-        errorString = "ERROR: No image has been specified! (critical)";
+        errorString = "ERROR: No image has been specified or image file could not be loaded! (critical)";
         return false;
     }
     else
@@ -1517,6 +1517,26 @@ void Level::win()
             EFFECTS->fadeOut(1000);
         }
     }
+}
+
+void Level::getUnitsByID(const vector<string>& IDs, vector<BaseUnit*>& unitVector) const
+{
+	for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
+	{
+		for (vector<string>::const_iterator str = IDs.begin(); str != IDs.end(); ++str)
+		{
+			if ((*I)->id == (*str))
+				unitVector.push_back(*I);
+		}
+	}
+	for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
+	{
+		for (vector<string>::const_iterator str = IDs.begin(); str != IDs.end(); ++str)
+		{
+			if ((*I)->id == (*str))
+				unitVector.push_back(*I);
+		}
+	}
 }
 
 void Level::addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime)

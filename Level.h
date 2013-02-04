@@ -84,6 +84,11 @@ public:
     void lose();
     void win();
 
+	// Input is a vector of unit IDs, function will go through unit and player
+	// vectors and put all matching units into referenced unitVector
+	// used by trigger or switch to get target units for example
+    void getUnitsByID(const vector<string>& IDs, vector<BaseUnit*>& unitVector) const;
+
     // adds a formatted particle to the list
     void addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime);
 

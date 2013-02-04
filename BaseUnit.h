@@ -4,6 +4,8 @@
 #include <map>
 #include <list>
 #include <set>
+#include <vector>
+#include <string>
 
 #include "Vector2di.h"
 #include "Vector2df.h"
