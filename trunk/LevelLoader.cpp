@@ -34,6 +34,7 @@
 #include "TextObject.h"
 #include "FadingBox.h"
 #include "LevelTrigger.h"
+#include "ParticleEmitter.h"
 
 using namespace std;
 
@@ -78,7 +79,8 @@ enum UnitIdent
     ucCameraTrigger,
     ucTextObject,
     ucFadingBox,
-    ucLevelTrigger
+    ucLevelTrigger,
+    ucEmitter
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -117,6 +119,7 @@ void createIdentMaps()
     unitClasses["text"] = ucTextObject;
     unitClasses["fadingbox"] = ucFadingBox;
     unitClasses["leveltrigger"] = ucLevelTrigger;
+    unitClasses["emitter"] = ucEmitter;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -514,6 +517,11 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
     case ucLevelTrigger:
     {
         result = new LevelTrigger(parent);
+        break;
+    }
+    case ucEmitter:
+    {
+        result = new ParticleEmitter(parent);
         break;
     }
     default:
