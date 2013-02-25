@@ -11,6 +11,7 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	emitPower(0,0),
 	particleLifetime(0,0),
 	nextParticleTime(0,0),
+	multiplier(0),
 	active(true)
 {
     flags.addFlag(ufNoMapCollision);
@@ -21,12 +22,13 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
     stringToProp["direction"] = epDirection;
     stringToProp["power"] = epPower;
     stringToProp["lifetime"] = epLifetime;
-    stringToProp["frequency"] = epFrequency;
+    stringToProp["delay"] = epDelay;
     stringToProp["directionscatter"] = epDirectionScatter;
     stringToProp["powerscatter"] = epPowerScatter;
     stringToProp["lifetimescatter"] = epLifetimeScatter;
-    stringToProp["frequencyscatter"] = epFrequencyScatter;
+    stringToProp["delayscatter"] = epDelayScatter;
     stringToProp["active"] = epActive;
+    stringToProp["multiplier"] = epMultiplier;
 
     Random::randSeed();
 }
@@ -53,15 +55,18 @@ void ParticleEmitter::update()
 		particleTimer.update();
 		if (particleTimer.hasFinished() || !particleTimer.isStarted())
 		{
-			Vector2df tempDir = emitDir;
-			if (angleScatter != 0)
+			for (int I = 0; I < multiplier; ++I)
 			{
-				float tempAngle = Random::nextFloat(-angleScatter,angleScatter);
-				tempDir.x = emitDir.x * cos(tempAngle) - emitDir.y * sin(tempAngle);
-				tempDir.y = emitDir.x * sin(tempAngle) + emitDir.y * cos(tempAngle);
+				Vector2df tempDir = emitDir;
+				if (angleScatter != 0)
+				{
+					float tempAngle = Random::nextFloat(-angleScatter,angleScatter);
+					tempDir.x = emitDir.x * cos(tempAngle) - emitDir.y * sin(tempAngle);
+					tempDir.y = emitDir.x * sin(tempAngle) + emitDir.y * cos(tempAngle);
+				}
+				tempDir *= Random::nextFloat(emitPower.x,emitPower.y);
+				parent->addParticle(this,col,position,tempDir,Random::nextInt(particleLifetime.x,particleLifetime.y));
 			}
-			tempDir *= Random::nextFloat(emitPower.x,emitPower.y);
-			parent->addParticle(this,col,position,tempDir,Random::nextInt(particleLifetime.x,particleLifetime.y));
 			particleTimer.start(Random::nextInt(nextParticleTime.x,nextParticleTime.y));
 		}
 	}
@@ -92,7 +97,6 @@ void ParticleEmitter::render(SDL_Surface* surf)
 bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 {
 	bool parsed = true;
-	static float frequency = 1;
 
     switch (stringToProp[value.first])
     {
@@ -134,15 +138,9 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		particleLifetime.y = temp;
 		break;
 	}
-    case epFrequency:
+    case epDelay:
 	{
-		frequency = StringUtility::stringToFloat(value.second);
-		if (frequency == 0)
-		{
-			parsed = false;
-			break;
-		}
-		float temp = 1000.f * 60.f / frequency;
+		int temp = StringUtility::stringToInt(value.second);
 		nextParticleTime.x = temp;
 		nextParticleTime.y = temp;
 		break;
@@ -159,11 +157,16 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		emitPower.y += temp;
 		break;
 	}
-    case epFrequencyScatter:
+    case epDelayScatter:
 	{
-		float temp = StringUtility::stringToFloat(value.second);
-		nextParticleTime.x = 1000.f * 60.f / (frequency + temp);
-		nextParticleTime.y = 1000.f * 60.f / (frequency - temp);
+		int temp = StringUtility::stringToInt(value.second);
+		nextParticleTime.x -= temp;
+		nextParticleTime.y += temp;
+		break;
+	}
+	case epMultiplier:
+	{
+		multiplier = StringUtility::stringToInt(value.second);
 		break;
 	}
     default:
