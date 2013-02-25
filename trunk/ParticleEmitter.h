@@ -28,6 +28,7 @@ protected:
 	Vector2df emitPower;
 	Vector2di particleLifetime;
 	Vector2di nextParticleTime;
+	int multiplier;
 
 	bool active;
 
@@ -35,12 +36,14 @@ protected:
 		epDirection=BaseUnit::upEOL,
 		epPower,
 		epLifetime,
-		epFrequency,
+		epDelay,
 		epDirectionScatter,
 		epPowerScatter,
 		epLifetimeScatter,
-		epFrequencyScatter,
-		epActive
+		epDelayScatter,
+		epActive,
+		epMultiplier,
+		epEOL
 	};
 private:
 
