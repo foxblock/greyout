@@ -48,24 +48,6 @@ StateTitle::StateTitle()
     #else
     lines.push_back("www.openPandora.org");
     #endif
-    /*#ifdef _MEOW
-    lines.push_back("Oldschool yo!");
-    lines.push_back("Alles andere ist Spielzeug");
-    #elif !defined(PLATFORM_PANDORA)
-    lines.push_back("Hail to the evil dragon");
-    lines.push_back("It's open and girls love it");
-    lines.push_back("Not an iPhone!");
-    lines.push_back("What's your order number?");
-    lines.push_back("The wait is over aparently");
-    lines.push_back("Like god, but it exists - some day");
-    #else
-    lines.push_back("www.openPandora.org");
-    lines.push_back("It's open and girls love it");
-    lines.push_back("Not an iPhone!");
-    #endif
-    lines.push_back("Free is always better");
-    lines.push_back("Free as in beer");
-    lines.push_back("Free as in speech");*/
     tagline = lines[rand() % lines.size()];
     counter.setMode(CUSTOM);
     counter.setScaler(1000/255);

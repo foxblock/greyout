@@ -78,7 +78,7 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
 			if (!targets.empty() && checkAllExited())
 			{
 				for	(vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-					if ((*I)->tag == "EXIT")
+					if ((*I)->tag == "exit")
 						((Exit*)(*I))->allExited = true;
 				allExited = true;
 			}
@@ -128,7 +128,7 @@ bool Exit::checkAllExited() const
 {
 	for	(vector<BaseUnit*>::const_iterator I = targets.begin(); I != targets.end(); ++I)
 	{
-		if ((*I)->tag == "EXIT")
+		if ((*I)->tag == "exit")
 			if (!((Exit*)(*I))->isExiting)
 				return false;
 	}
