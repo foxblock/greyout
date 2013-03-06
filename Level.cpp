@@ -1561,6 +1561,8 @@ string Level::debugInfo()
         StringUtility::vecToString(cam.getDest()) + " | " +
         StringUtility::vecToString(cam.getSpeed()) + "\n";
     result += "Flags: " + StringUtility::intToString(flags.flags) + "\n";
+    if (input)
+		result += "Mouse: " + StringUtility::vecToString(input->getMouse()) + "\n";
     result += "---\n";
     return result;
 }
