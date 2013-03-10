@@ -44,10 +44,18 @@ public:
     virtual bool writeTempData(CRstring key, CRstring value, CRbool overwrite=true);
     virtual bool hasTempData(CRstring key) const;
 
+    struct ChapterStats
+    {
+    	int progress;
+    	int time;
+    };
+
     // wrappers for getData and writeData
     // will check whether passed progress is greater than loaded if overwrite is false
-    virtual int getChapterProgress(CRstring chapterFile) const;
+    virtual int getChapterProgress(CRstring chapterFile);
     virtual bool setChapterProgress(CRstring chapterFile, CRint progress, CRbool overwrite=false);
+    virtual ChapterStats getChapterStats(CRstring chapterFile);
+    virtual bool setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbool overwrite=false);
 
     struct LevelStats
     {
@@ -55,13 +63,15 @@ public:
     };
 
     virtual bool setLevelStats(CRstring levelFile, const LevelStats& newStats, CRbool overwrite=false);
-    virtual LevelStats getLevelStats(CRstring levelFile) const;
+    virtual LevelStats getLevelStats(CRstring levelFile);
 
     // set this to false to disable saving after data operation
     bool autoSave;
 protected:
     map<string,string> data;
     map<string,string> tempData;
+    map<string,LevelStats> levelDataCache;
+    map<string,ChapterStats> chapterDataCache;
     string filename;
 
     Encryption crypt;
