@@ -451,6 +451,40 @@ void Level::userInput()
         return;
     }
 #endif
+#ifdef _DEBUG
+	controlsString = "";
+	controlsString += "Keys: ";
+	if (input->isLeft())
+		controlsString += "<";
+	else
+		controlsString += "-";
+	if (input->isRight())
+		controlsString += ">";
+	else
+		controlsString += "-";
+	if (input->isUp())
+		controlsString += "^";
+	else
+		controlsString += "-";
+	if (input->isDown())
+		controlsString += "v";
+	else
+		controlsString += "-";
+	controlsString += "   ";
+	if (input->isA())
+		controlsString += "A";
+	if (input->isB())
+		controlsString += "B";
+	if (input->isX())
+		controlsString += "X";
+	if (input->isY())
+		controlsString += "Y";
+	if (input->isR())
+		controlsString += "R";
+	if (input->isL())
+		controlsString += "L";
+	controlsString += "\n";
+#endif
 
     if (input->isStart())
     {
@@ -1562,7 +1596,10 @@ string Level::debugInfo()
         StringUtility::vecToString(cam.getSpeed()) + "\n";
     result += "Flags: " + StringUtility::intToString(flags.flags) + "\n";
     if (input)
+	{
 		result += "Mouse: " + StringUtility::vecToString(input->getMouse()) + "\n";
+		result += controlsString;
+	}
     result += "---\n";
     return result;
 }

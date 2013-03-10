@@ -105,6 +105,7 @@ public:
     #ifdef _DEBUG
     virtual string debugInfo();
     string debugString;
+    string controlsString;
     vector<BaseUnit*> debugUnits;
     #endif
     // errors (on loading) will be placed here

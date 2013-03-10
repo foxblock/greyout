@@ -43,14 +43,20 @@ bool Exit::load(list<PARAMETER_TYPE >& params)
         states.clear();
     }
     AnimatedSprite* temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),2,1,0,1);
+    temp->loadFrames(getSurface(imageOverwrite),3,1,0,1);
     temp->setTransparentColour(MAGENTA);
     states["open"] = temp;
     temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),2,1,1,1);
+    temp->loadFrames(getSurface(imageOverwrite),3,1,1,1);
     temp->setTransparentColour(MAGENTA);
     states["closed"] = temp;
+    temp = new AnimatedSprite;
+    temp->loadFrames(getSurface(imageOverwrite),3,1,2,1);
+    temp->setTransparentColour(MAGENTA);
+    states["linked"] = temp;
 
+	if (startingState[0] == 0 && !targetIDs.empty())
+		startingState = "linked";
     if (startingState[0] == 0 || startingState == "default")
         startingState = "open";
     setSpriteState(startingState,true);
@@ -60,7 +66,7 @@ bool Exit::load(list<PARAMETER_TYPE >& params)
 
 void Exit::hitUnit(const UnitCollisionEntry& entry)
 {
-    if (currentState == "open")
+    if (currentState != "closed")
     {
         // standing still on the ground
         if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
