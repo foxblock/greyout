@@ -1,10 +1,10 @@
 #include "Savegame.h"
 
 #include <fstream>
-
 #include "StringUtility.h"
-
 #include "fileTypeDefines.h"
+
+#define SAVE_VERSION 2
 
 Savegame* Savegame::self = NULL;
 
@@ -42,7 +42,7 @@ bool Savegame::setFile(CRstring filename)
         ofstream file2(filename.c_str());
         if (file2.fail())
         {
-            printf("Failed to reserve savegame file!\n");
+            printf("Failed to reserve save file!\n");
             return false;
         }
         this->filename = filename;
@@ -52,11 +52,26 @@ bool Savegame::setFile(CRstring filename)
         return true;
     }
 
+    // check save file version and check for encryption
+    getline(file,line);
+	line = StringUtility::stripLineEndings(line);
+    if (line[0] == 0 || line.size() > 2 || StringUtility::stringToInt(line) != SAVE_VERSION)
+	{
+		printf("Old save file detected! Contents will be overwritten on next save operation!\n");
+		file.close();
+		this->filename = filename;
+		return true;
+	}
+	getline(file,line);
+	line = StringUtility::stripLineEndings(line);
+	bool encrypted = StringUtility::stringToBool(line);
+
     // parse file line by line
     while (getline(file,line))
     {
         line = StringUtility::stripLineEndings(line);
-        line = crypt.decryptBuffer(line);
+        if (encrypted)
+			line = crypt.decryptBuffer(line);
 
         if (line.substr(0,COMMENT_STRING.length()) == COMMENT_STRING) // comment line - disregard
             continue;
@@ -72,7 +87,7 @@ bool Savegame::setFile(CRstring filename)
     if (file.is_open())
         file.close();
 
-    printf("Savegame successfully loaded!\n");
+    printf("Save file successfully loaded!\n");
 
     this->filename = filename;
     return true;
@@ -88,11 +103,21 @@ bool Savegame::save()
         printf("Failed to open file for write: \"%s\"\n",filename.c_str());
         return false;
     }
+    // write file version and encryption status
+    file << SAVE_VERSION << "\n" <<
+    #ifdef _DEBUG
+    "false"
+    #else
+    "true"
+    #endif // _DEBUG
+    << "\n";
 
     for (map<string,string>::const_iterator iter = data.begin(); iter != data.end(); ++iter)
     {
         line = iter->first + VALUE_STRING + iter->second;
-        line = crypt.encryptBuffer(line);
+        #ifndef _DEBUG
+		line = crypt.encryptBuffer(line);
+        #endif // _DEBUG
 
         file << line << "\n";
     }
@@ -100,7 +125,7 @@ bool Savegame::save()
     if (file.is_open())
     {
         file.close();
-        printf("Progress saved!\n");
+        printf("Game (and the world) saved!\n");
         return true;
     }
 
@@ -111,6 +136,8 @@ bool Savegame::clear()
 {
     data.clear();
     tempData.clear();
+    levelDataCache.clear();
+    chapterDataCache.clear();
 
     if (autoSave)
         return save();
@@ -179,22 +206,53 @@ bool Savegame::hasTempData(CRstring key) const
     return (iter != tempData.end());
 }
 
-int Savegame::getChapterProgress(CRstring chapterFile) const
+int Savegame::getChapterProgress(CRstring chapterFile)
 {
-    string value = getData(chapterFile);
-    // will return 0 on an empty string (e.g. when chapterFile not found in savegame)
-    return StringUtility::stringToInt(value);
+	return getChapterStats(chapterFile).progress;
 }
 
 bool Savegame::setChapterProgress(CRstring chapterFile, CRint progress, CRbool overwrite)
 {
+	ChapterStats temp = {progress,-1};
+    return setChapterStats(chapterFile,temp,overwrite);
+}
+
+Savegame::ChapterStats Savegame::getChapterStats(CRstring chapterFile)
+{
+	map<string,ChapterStats>::iterator iter = chapterDataCache.find(chapterFile);
+	if (iter != chapterDataCache.end())
+		return iter->second;
+
+    string value = getData(chapterFile);
+    vector<string> tokens;
+    StringUtility::tokenize(value,tokens,DELIMIT_STRING);
+    ChapterStats result = {0,-1};
+
+    if (tokens.size() >= 2)
+    {
+        result.progress = StringUtility::stringToInt(tokens.front());
+        result.time = StringUtility::stringToInt(tokens[1]);
+    }
+    chapterDataCache[chapterFile] = result;
+
+    return result;
+}
+
+bool Savegame::setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbool overwrite)
+{
+    ChapterStats stats = getChapterStats(chapterFile);
+
     if (not overwrite)
     {
-        int value = getChapterProgress(chapterFile);
-        if (progress <= value)
-            return false;
+        if (newStats.time > stats.time && stats.time > 0)
+            newStats.time = stats.time;
+		if (newStats.progress < stats.progress)
+			newStats.progress = stats.progress;
     }
-    return writeData(chapterFile,StringUtility::intToString(progress),true);
+    chapterDataCache[chapterFile] = newStats;
+	string temp = StringUtility::intToString(newStats.progress) + DELIMIT_STRING +
+		StringUtility::intToString(newStats.time);
+    return writeData(chapterFile,temp,true);
 }
 
 bool Savegame::setLevelStats(CRstring levelFile, const LevelStats& newStats, CRbool overwrite)
@@ -206,20 +264,26 @@ bool Savegame::setLevelStats(CRstring levelFile, const LevelStats& newStats, CRb
         if (newStats.time > stats.time)
             return false;
     }
-    return writeData(levelFile,StringUtility::intToString(newStats.time));
+    levelDataCache[levelFile] = newStats;
+    return writeData(levelFile,StringUtility::intToString(newStats.time),true);
 }
 
-Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile) const
+Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile)
 {
+	map<string,LevelStats>::iterator iter = levelDataCache.find(levelFile);
+	if (iter != levelDataCache.end())
+		return iter->second;
+
     string value = getData(levelFile);
     vector<string> tokens;
-    StringUtility::tokenize(value,tokens,",");
+    StringUtility::tokenize(value,tokens,DELIMIT_STRING);
     LevelStats result = {-1};
 
     if (tokens.size() >= 1)
     {
         result.time = StringUtility::stringToInt(tokens.front());
     }
+    levelDataCache[levelFile] = result;
 
     return result;
 }
