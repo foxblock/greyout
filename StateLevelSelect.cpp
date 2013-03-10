@@ -57,6 +57,7 @@ StateLevelSelect::StateLevelSelect()
     selection = Vector2di(0,0);
     intermediateSelection = 0;
     lastPos = Vector2di(0,0);
+    mousePos = Vector2di(0,0);
 
     // graphic stuff
     // TODO: Use 320x240 bg here (and make that)

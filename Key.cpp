@@ -17,6 +17,7 @@ Key::Key(Level* newParent) : BaseUnit(newParent)
 Key::~Key()
 {
     targets.clear();
+    targetIDs.clear();
 }
 
 ///---public---
@@ -46,7 +47,7 @@ bool Key::load(list<PARAMETER_TYPE >& params)
         startingState = "key";
     setSpriteState(startingState,true);
 
-    if (targets.empty())
+    if (targetIDs.empty())
     {
         printf("ERROR: Key \"%s\" without a target exit!\n",id.c_str());
         result = false;
@@ -66,20 +67,10 @@ bool Key::processParameter(const PARAMETER_TYPE& value)
     {
     case BaseUnit::upTarget:
     {
-        targets.clear();
-        vector<string> tokens;
-        StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
-        for (vector<BaseUnit*>::iterator I = parent->units.begin(); I != parent->units.end(); ++I)
-        {
-            for (vector<string>::iterator str = tokens.begin(); str != tokens.end(); ++str)
-            {
-                if ((*I)->id == (*str))
-                {
-                    targets.push_back(*I);
-                    (*I)->setSpriteState("closed");
-                }
-            }
-        }
+        targetIDs.clear();
+        vector<string> token;
+        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
+        targetIDs.insert(targetIDs.begin(),token.begin(),token.end());
         break;
     }
     default:
@@ -87,6 +78,19 @@ bool Key::processParameter(const PARAMETER_TYPE& value)
     }
 
     return parsed;
+}
+
+void Key::update()
+{
+    if (!targetIDs.empty())
+    {
+        targets.clear();
+        parent->getUnitsByID(targetIDs,targets);
+        targetIDs.clear();
+		for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+			(*I)->setSpriteState("closed");
+    }
+    BaseUnit::update();
 }
 
 void Key::reset()
@@ -98,7 +102,6 @@ void Key::reset()
 
 void Key::hitUnit(const UnitCollisionEntry& entry)
 {
-    // standing still on the ground
     if (entry.unit->isPlayer)
     {
         for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)

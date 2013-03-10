@@ -11,12 +11,15 @@ public:
 
     virtual bool load(list<PARAMETER_TYPE >& params);
     virtual bool processParameter(const PARAMETER_TYPE& value);
+    virtual void update();
     virtual void reset();
 
-    virtual void hitUnit(const UnitCollisionEntry& entry);
-protected:
 
+    virtual void hitUnit(const UnitCollisionEntry& entry);
+
+protected:
     vector<BaseUnit*> targets;
+    vector<string> targetIDs;
 
 private:
 
