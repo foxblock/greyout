@@ -42,13 +42,11 @@ StateTitle::StateTitle()
     text.setAlignment(CENTRED);
     text.setRelativity(true);
 
-    vector<string> lines;
     #ifdef _MEOW
-    lines.push_back("GP2x - oldschool gaming");
+    tagline = "GP2x - oldschool gaming";
     #else
-    lines.push_back("www.openPandora.org");
+    tagline = "www.openPandora.org";
     #endif
-    tagline = lines[rand() % lines.size()];
     counter.setMode(CUSTOM);
     counter.setScaler(1000/255);
     counter.start();
