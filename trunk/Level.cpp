@@ -129,7 +129,7 @@ Level::Level()
     nameRect.setColour(BLACK);
     nameTimer.init(2000,MILLI_SECONDS);
 
-    if (ENGINE->timeTrial)
+    if (ENGINE->timeTrial || ENGINE->chapterTrial)
     {
         timeTrialText.loadFont(GAME_FONT,int(NAME_TEXT_SIZE * 1.5));
         timeTrialText.setColour(WHITE);
@@ -1070,6 +1070,8 @@ void Level::onPause()
         #endif
         pauseItems.push_back("EXIT");
     }
+    if (ENGINE->chapterTrial)
+		ENGINE->chapterTrialPaused = true;
     nameText.setAlignment(LEFT_JUSTIFIED);
     input->resetKeys();
     GFX::showCursor(true);
@@ -1092,6 +1094,8 @@ void Level::onResume()
     showMusicList = false;
     #endif
     GFX::showCursor(false);
+    if (ENGINE->chapterTrial)
+		ENGINE->chapterTrialPaused = false;
 }
 
 void Level::pauseInput()
@@ -1394,23 +1398,28 @@ void Level::pauseScreen()
     }
 
     // in time trial mode also render text
-    if (ENGINE->timeTrial)
+    if (ENGINE->timeTrial || ENGINE->chapterTrial)
     {
         timeTrialText.setAlignment(LEFT_JUSTIFIED);
         timeTrialText.setPosition(PAUSE_MENU_OFFSET_X,TIME_TRIAL_OFFSET_Y);
         timeTrialText.print("TIME: ");
         timeTrialText.setAlignment(RIGHT_JUSTIFIED);
         if (trialEnd)
-            timeTrialText.print(ticksToTimeString(timeDisplay));
-        else
-            timeTrialText.print(ticksToTimeString(timeCounter));
-        if (not trialEnd || timeDisplay == timeCounter)
+            timeTrialText.print(MyGame::ticksToTimeString(timeDisplay));
+        else if (ENGINE->timeTrial)
+            timeTrialText.print(MyGame::ticksToTimeString(timeCounter));
+		else
+			timeTrialText.print(MyGame::ticksToTimeString(ENGINE->chapterTrialTimer));
+        if (not trialEnd || timeDisplay == timeCounter || ENGINE->chapterTrial)
         {
             timeTrialText.setAlignment(LEFT_JUSTIFIED);
             timeTrialText.setPosition(PAUSE_MENU_OFFSET_X,TIME_TRIAL_OFFSET_Y + TIME_TRIAL_SPACING_Y + NAME_TEXT_SIZE * 1.5);
             timeTrialText.print("BEST: ");
             timeTrialText.setAlignment(RIGHT_JUSTIFIED);
-            timeTrialText.print(ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).time));
+			if (ENGINE->chapterTrial)
+				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).time));
+			else
+				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).time));
         }
     }
 
@@ -1681,22 +1690,6 @@ bool Level::adjustPosition( BaseUnit* const unit, const bool adjustCamera )
         changed = true;
     }
     return changed;
-}
-
-string Level::ticksToTimeString(CRint ticks)
-{
-    if (ticks < 0)
-        return "NONE";
-
-    int time = (float)ticks / (float)FRAME_RATE * 100.0f; // convert to centi-seconds
-    string cs = "00" + StringUtility::intToString(time % 100);
-    string s = "00" + StringUtility::intToString((time / 100) % 60);
-    string m = "";
-    if (time / 6000 > 0)
-    {
-        m = StringUtility::intToString(time / 6000) + "'";
-    }
-    return (m + s.substr(s.length()-2,2) + "''" + cs.substr(cs.length()-2,2));
 }
 
 void Level::loseCallback(void* data)

@@ -11,5 +11,6 @@
 #include "Level.h"
 #include "Benchmark.h"
 #include "StateLevelSelect.h"
+#include "StateChapterTrial.h"
 
 #endif // USERSTATELIST_H

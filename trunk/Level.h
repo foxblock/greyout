@@ -133,6 +133,7 @@ public:
 
     // counts how many players have left through exits
     int winCounter;
+	// level time
     int timeCounter;
 
     int idCounter;
@@ -154,8 +155,6 @@ protected:
 
     // checks whether the unit has left the bounds and adjust position accordingly
     bool adjustPosition(BaseUnit* const unit, const bool adjustCamera = false);
-
-    static string ticksToTimeString(CRint ticks);
 
     static void loseCallback(void* data); // fades out
     static void lose2Callback(void* data); // fades in and resets the level

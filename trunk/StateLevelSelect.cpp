@@ -10,6 +10,7 @@
 #include "LevelLoader.h"
 #include "MusicCache.h"
 #include "gameDefines.h"
+#include "Savegame.h"
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
@@ -18,19 +19,18 @@
 #define OFFSET_Y 18
 #define TITLE_FONT_SIZE 24
 #define IMAGE_FONT_SIZE 12
-
 #define CURSOR_BORDER 2
 #else
 #define SPACING_X 20
 #define OFFSET_Y 35
 #define TITLE_FONT_SIZE 48
 #define IMAGE_FONT_SIZE 24
-
 #define CURSOR_BORDER 5
 #endif
 
 
 #define INTERMEDIATE_MENU_ITEM_COUNT 2
+#define INTERMEDIATE_LEVEL_MENU_ITEM_COUNT 2
 #define INTERMEDIATE_MENU_SPACING 20
 
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
@@ -133,6 +133,7 @@ StateLevelSelect::~StateLevelSelect()
 
 void StateLevelSelect::init()
 {
+    ENGINE->timeTrial = false; // reset time trial mode
     MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
 
@@ -196,7 +197,7 @@ void StateLevelSelect::userInput()
     }
 #endif
 	mousePos = input->getMouse();
-    if (state != lsIntermediate) // grid navigation
+    if (state != lsIntermediate && state != lsIntermediateLevel) // grid navigation
     {
     	Vector2di oldSel = selection;
         if (input->isLeft())
@@ -268,6 +269,15 @@ void StateLevelSelect::userInput()
     }
     else // intermediate menu navigation
     {
+    	int menuItemCount = 0;
+    	if (state == lsIntermediate)
+		{
+			menuItemCount = INTERMEDIATE_MENU_ITEM_COUNT;
+			if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
+				++menuItemCount;
+		}
+		else
+			menuItemCount = INTERMEDIATE_LEVEL_MENU_ITEM_COUNT;
         if (input->isUp())
         {
             if (intermediateSelection > 0)
@@ -277,15 +287,15 @@ void StateLevelSelect::userInput()
         }
         else if (input->isDown())
         {
-            if (intermediateSelection < INTERMEDIATE_MENU_ITEM_COUNT-1)
+            if (intermediateSelection < menuItemCount-1)
             {
                 ++intermediateSelection;
             }
         }
         if (mousePos != lastPos)
 		{
-			int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (INTERMEDIATE_MENU_ITEM_COUNT-1)) / 2 - OFFSET_Y;
-			for (int I = 0; I < INTERMEDIATE_MENU_ITEM_COUNT; ++I)
+			int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (menuItemCount-1) - OFFSET_Y * menuItemCount) / 2;
+			for (int I = 0; I < menuItemCount; ++I)
 			{
 				if (mousePos.y >= pos && mousePos.y <= pos + OFFSET_Y)
 				{
@@ -299,24 +309,50 @@ void StateLevelSelect::userInput()
 
         if (ACCEPT_KEY || input->isLeftClick())
         {
-            int value = selection.y * PREVIEW_COUNT_X + selection.x;
-            switch (intermediateSelection)
-            {
-            case 0: // play
-                ENGINE->playChapter(chapterPreviews[value].filename);
-                MUSIC_CACHE->playSound("sounds/drip.wav");
-                break;
-            case 1: // explore
-                exploreChapter(chapterPreviews[value].filename);
-                switchState(lsLevel);
-                break;
-            default: // nothing
-                break;
+			int value = selection.y * PREVIEW_COUNT_X + selection.x;
+        	if (state == lsIntermediate)
+			{
+				switch (intermediateSelection)
+				{
+				case 0: // play
+					ENGINE->playChapter(chapterPreviews[value].filename);
+					MUSIC_CACHE->playSound("sounds/drip.wav");
+					break;
+				case 1: // explore
+					exploreChapter(chapterPreviews[value].filename);
+					switchState(lsLevel);
+					break;
+				case 2: // time attack (speedrun!)
+					ENGINE->startChapterTrial();
+					ENGINE->playChapter(chapterPreviews[value].filename);
+					MUSIC_CACHE->playSound("sounds/drip.wav");
+					break;
+				default: // nothing
+					break;
+				}
             }
+            else
+			{
+				if (intermediateSelection == 1)
+					ENGINE->timeTrial = true;
+
+				abortLevelLoading = true;
+				if (not exChapter) // level from level folder
+					ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
+				else // exploring chapter -> start chapter at selected level
+				{
+					if (value <= exChapter->getProgress())
+						ENGINE->playChapter(exChapter->filename,value);
+				}
+				MUSIC_CACHE->playSound("sounds/drip.wav");
+			}
         }
         else if (CANCEL_KEY || input->isRightClick())
         {
-            switchState(lsChapter);
+        	if (state == lsIntermediate)
+				switchState(lsChapter);
+			else
+				switchState(lsLevel);
         }
         input->resetKeys();
     }
@@ -332,16 +368,25 @@ void StateLevelSelect::userInput()
         }
         if (ACCEPT_KEY || input->isLeftClick())
         {
-            int value = selection.y * PREVIEW_COUNT_X + selection.x;
-			abortLevelLoading = true;
-			if (not exChapter) // level from level folder
-				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
-			else // exploring chapter -> start chapter at selected level
+			if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
 			{
-				if (value <= exChapter->getProgress())
-					ENGINE->playChapter(exChapter->filename,value);
+				switchState(lsIntermediateLevel);
+				input->resetKeys();
+				return;
 			}
-			MUSIC_CACHE->playSound("sounds/drip.wav");
+			else
+			{
+				int value = selection.y * PREVIEW_COUNT_X + selection.x;
+				abortLevelLoading = true;
+				if (not exChapter) // level from level folder
+					ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
+				else // exploring chapter -> start chapter at selected level
+				{
+					if (value <= exChapter->getProgress())
+						ENGINE->playChapter(exChapter->filename,value);
+				}
+				MUSIC_CACHE->playSound("sounds/drip.wav");
+			}
         }
     }
     else if (state == lsChapter)
@@ -379,7 +424,7 @@ void StateLevelSelect::userInput()
 
 void StateLevelSelect::update()
 {
-    if (state != lsIntermediate)
+    if (state != lsIntermediate && state != lsIntermediateLevel)
     {
         // check selection and adjust grid offset
         bool changed = false;
@@ -409,7 +454,7 @@ void StateLevelSelect::update()
 
 void StateLevelSelect::render()
 {
-    if (state != lsIntermediate)
+    if (state != lsIntermediate && state != lsIntermediateLevel)
     {
         GFX::clearScreen();
 
@@ -457,10 +502,24 @@ void StateLevelSelect::render()
         // previewDraw now holds the background image
         SDL_BlitSurface(previewDraw,NULL,GFX::getVideoSurface(),NULL);
 
+		vector<string> items;
+        if (state == lsIntermediate)
+		{
+			items.push_back("PLAY");
+			items.push_back("EXPLORE");
+			if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
+				items.push_back("TIME ATTACK");
+		}
+		else
+		{
+			items.push_back("PLAY");
+			items.push_back("TIME ATTACK");
+		}
+
         // OFFSET_Y is also the height of the rectangle used
-        int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (INTERMEDIATE_MENU_ITEM_COUNT-1)) / 2 - OFFSET_Y;
-        string items[INTERMEDIATE_MENU_ITEM_COUNT] = {"PLAY","EXPLORE"};
-        for (int I = 0; I < INTERMEDIATE_MENU_ITEM_COUNT; ++I)
+        int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (items.size()-1) - OFFSET_Y * items.size()) / 2;
+
+        for (int I = 0; I < items.size(); ++I)
         {
             menu.setPosition(0,pos);
             title.setPosition(0,pos + OFFSET_Y - TITLE_FONT_SIZE);
@@ -651,39 +710,42 @@ void StateLevelSelect::exploreChapter(CRstring filename)
 
 void StateLevelSelect::switchState(const LevelSelectState& toState)
 {
-    if (toState == lsChapter)
+    if (toState != lsIntermediate && toState != lsIntermediateLevel)
     {
-        title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
-        title.setAlignment(LEFT_JUSTIFIED);
-    }
-    else if (toState == lsLevel)
-    {
-        state = lsLevel;
-        title.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
-        title.setAlignment(RIGHT_JUSTIFIED);
-    }
-    else if (toState == lsIntermediate)
-    {
-        overlay.render();
-        SDL_BlitSurface(GFX::getVideoSurface(),NULL,previewDraw,NULL);
-        intermediateSelection = 0;
-        title.setAlignment(CENTRED);
-    }
-
-    if (toState != lsIntermediate)
-    {
-        // preserve selection when coming from intermediate state
-        if (state != lsIntermediate)
-        {
-            selection = Vector2di(0,0);
-            gridOffset = 0;
-        }
         title.setColour(WHITE);
         menu.setColour(BLACK);
         menu.setPosition(0,0);
         lastDraw = 0;
         firstDraw = true;
         SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
+    }
+
+    if (toState == lsChapter)
+    {
+    	if (state == lsLevel)
+		{
+            selection = Vector2di(0,0);
+            gridOffset = 0;
+        }
+        title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
+        title.setAlignment(LEFT_JUSTIFIED);
+    }
+    else if (toState == lsLevel)
+    {
+    	if (state == lsIntermediate || state == lsChapter)
+		{
+            selection = Vector2di(0,0);
+            gridOffset = 0;
+        }
+        title.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
+        title.setAlignment(RIGHT_JUSTIFIED);
+    }
+    else if (toState == lsIntermediate || toState == lsIntermediateLevel)
+    {
+        overlay.render();
+        SDL_BlitSurface(GFX::getVideoSurface(),NULL,previewDraw,NULL);
+        intermediateSelection = 0;
+        title.setAlignment(CENTRED);
     }
 
     state = toState;

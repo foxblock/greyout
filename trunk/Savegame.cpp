@@ -162,6 +162,9 @@ bool Savegame::writeData(CRstring key, CRstring value, CRbool overwrite)
         if (iter != data.end())
             return false;
     }
+    #ifdef _DEBUG
+	printf("Savegame: Writing data \"%s\" to key \"%s\", old data: \"%s\"\n",value.c_str(),key.c_str(),data[key].c_str());
+    #endif // _DEBUG
     data[key] = value;
 
     if (autoSave)
@@ -244,7 +247,7 @@ bool Savegame::setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbo
 
     if (not overwrite)
     {
-        if (newStats.time > stats.time && stats.time > 0)
+        if ((newStats.time > stats.time && stats.time > 0) || newStats.time < 0)
             newStats.time = stats.time;
 		if (newStats.progress < stats.progress)
 			newStats.progress = stats.progress;

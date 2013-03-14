@@ -59,6 +59,7 @@ class StateLevelSelect : public BaseState
         {
             lsChapter,
             lsIntermediate, // when selecting a chapter and chosing between play and explore
+            lsIntermediateLevel, // selecting play or speedrun on a level
             lsLevel
         };
         LevelSelectState state;

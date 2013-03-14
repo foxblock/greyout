@@ -21,6 +21,9 @@ MyGame::MyGame()
     currentChapter = NULL;
     returnState = STATE_MAIN;
     timeTrial = false;
+    chapterTrial = false;
+    chapterTrialPaused = false;
+    chapterTrialTimer = 0;
     restartCounter = 0;
     icon = NULL;
 }
@@ -97,9 +100,17 @@ void MyGame::stateManagement()
             {
                 if (currentChapter->errorString[0] == 0) // no error -> we reached the end
                 {
-                    next = STATE_TITLE;
-                    delete currentChapter;
-                    currentChapter = NULL;
+                	if (chapterTrial)
+					{
+						next = STATE_CHAPTERTRIAL;
+						chapterTrial = false;
+					}
+					else
+					{
+						next = STATE_TITLE;
+						delete currentChapter;
+						currentChapter = NULL;
+					}
                 }
                 else // error -> show it to the world
                 {
@@ -121,6 +132,8 @@ void MyGame::stateManagement()
             returnState = STATE_MAIN; // reset return state
         }
     }
+    else
+		chapterTrial = false; // reset trial mode when going to anything but a level state
 
     currentState = next;
     state = createState(next,stateParameter);
@@ -173,6 +186,13 @@ PENJIN_ERRORS MyGame::argHandler(int argc, char **argv)
     return	PENJIN_OK;
 }
 
+bool MyGame::stateLoop()
+{
+	if (chapterTrial && not chapterTrialPaused)
+		++chapterTrialTimer;
+	return Engine::stateLoop();
+}
+
 Level* MyGame::getCurrentLevel() const
 {
     return (Level*)state;
@@ -216,6 +236,29 @@ void MyGame::playChapter(CRstring filename, CRint startLevel)
 
         state->setNextState(STATE_NEXT);
     }
+}
+
+string MyGame::ticksToTimeString(CRint ticks)
+{
+    if (ticks < 0)
+        return "NONE";
+
+    int time = (float)ticks / (float)FRAME_RATE * 100.0f; // convert to centi-seconds
+    string cs = "00" + StringUtility::intToString(time % 100);
+    string s = "00" + StringUtility::intToString((time / 100) % 60);
+    string m = "";
+    if (time / 6000 > 0)
+    {
+        m = StringUtility::intToString(time / 6000) + "'";
+    }
+    return (m + s.substr(s.length()-2,2) + "''" + cs.substr(cs.length()-2,2));
+}
+
+void MyGame::startChapterTrial()
+{
+	chapterTrial = true;
+	chapterTrialPaused = false;
+	chapterTrialTimer = 0;
 }
 
 /// ---private---
@@ -278,9 +321,15 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
 #endif
         nextState = new StateLevelSelect;
         break;
+	case STATE_CHAPTERTRIAL:
+#ifdef _DEBUG
+        printf("Chapter time trial result screen\n");
+#endif
+		nextState = new StateChapterTrial;
+		break;
     default:
         printf("%s\n",ErrorHandler().getErrorString(PENJIN_UNDEFINED_STATE).c_str());
-        exit(PENJIN_UNDEFINED_STATE);
+        return createState(STATE_ERROR,"Undefined state in MyGame::createState()!");
     }
     return nextState;
 }
