@@ -88,7 +88,7 @@ void StateChapterTrial::userInput()
 		++menuSelection;
 		input->resetDown();
 	}
-	if (ACCEPT_KEY)
+	if (ACCEPT_KEY || input->isLeftClick())
 	{
 		switch (menuSelection)
 		{
@@ -125,8 +125,15 @@ void StateChapterTrial::render()
 {
     bg.render();
 
-	timeTrialText.setAlignment(LEFT_JUSTIFIED);
+	timeTrialText.setAlignment(CENTRED);
 	timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y);
+	if (newRecord && (timeDisplay == ENGINE->chapterTrialTimer))
+		timeTrialText.print("NEW RECORD!");
+	else
+		timeTrialText.print("FINISHED!");
+
+	timeTrialText.setAlignment(LEFT_JUSTIFIED);
+	timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y + TIME_TRIAL_SPACING_Y + NAME_TEXT_SIZE * 1.5);
 	timeTrialText.print("TIME: ");
 	timeTrialText.setAlignment(RIGHT_JUSTIFIED);
 	timeTrialText.print(MyGame::ticksToTimeString(timeDisplay));
@@ -134,7 +141,7 @@ void StateChapterTrial::render()
 	if (timeDisplay == ENGINE->chapterTrialTimer)
 	{
 		timeTrialText.setAlignment(LEFT_JUSTIFIED);
-		timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y + TIME_TRIAL_SPACING_Y + NAME_TEXT_SIZE * 1.5);
+		timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y + TIME_TRIAL_SPACING_Y * 2 + NAME_TEXT_SIZE * 3);
 		timeTrialText.print("BEST: ");
 		timeTrialText.setAlignment(RIGHT_JUSTIFIED);
 		timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).time));

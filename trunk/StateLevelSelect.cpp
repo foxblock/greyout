@@ -324,7 +324,7 @@ void StateLevelSelect::userInput()
 					break;
 				case 2: // time attack (speedrun!)
 					ENGINE->startChapterTrial();
-					ENGINE->playChapter(chapterPreviews[value].filename);
+					ENGINE->playChapter(chapterPreviews[value].filename,0);
 					MUSIC_CACHE->playSound("sounds/drip.wav");
 					break;
 				default: // nothing
