@@ -1058,6 +1058,7 @@ void Level::onPause()
     {
         pauseSelection = 2;
 	#ifdef _MUSIC
+        pauseSelection = 3;
 		pauseItems.push_back("MUSIC FILE:");
 	#endif
         pauseItems.push_back("MUSIC VOL:");
