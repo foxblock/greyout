@@ -118,7 +118,7 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
     if (velocity.y < 4 && entry.unit->isPlayer) // if not falling
     {
         if (entry.overlap.y > entry.unit->velocity.y && entry.overlap.y > entry.overlap.x
-			 && entry.unit->velocity.x != 0 )
+			 && entry.unit->velocity.x != 0.0f )
         {
         	velocity.x = PUSHING_SPEED * NumberUtility::sign( entry.unit->velocity.x );
         	//entry.unit->velocity.x = entry.overlap.x + velocity.x;
@@ -133,7 +133,7 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
     {
         if (collisionInfo.positionCorrection.x != 0)
             entry.unit->collisionInfo.positionCorrection.x += collisionInfo.positionCorrection.x;
-        if (velocity.y != 0 || collisionInfo.positionCorrection.y != 0)
+        if (velocity.y != 0.0f || collisionInfo.positionCorrection.y != 0.0f)
             entry.unit->collisionInfo.positionCorrection.y -= entry.overlap.y - NumberUtility::sign(entry.overlap.y);
     }
 }

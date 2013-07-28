@@ -167,20 +167,20 @@ void BasePlayer::control(SimpleJoy* input)
 
     if (input->isLeft())
     {
-        if ((direction > 0 || (int)velocity.x == 0) && ((int)velocity.y == 0))
+        if ((direction > 0 || velocity.x == 0.0f) && ((int)velocity.y == 0))
         {
             setSpriteState("turnleft",true);
         }
-        acceleration[0].x = -0.25;
+		acceleration[0].x = -1;
         acceleration[1].x = -4;
     }
     else if (input->isRight())
     {
-        if ((direction < 0 || (int)velocity.x == 0) && ((int)velocity.y == 0))
+        if ((direction < 0 || velocity.x == 0.0f) && ((int)velocity.y == 0))
         {
             setSpriteState("turnright",true);
         }
-        acceleration[0].x = 0.25;
+		acceleration[0].x = 1;
         acceleration[1].x = 4;
     }
     else
