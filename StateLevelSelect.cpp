@@ -216,6 +216,10 @@ void StateLevelSelect::userInput()
         {
             ++selection.y;
         }
+        if (input->getMouseWheelDelta() != 0)
+		{
+			selection.y -= input->getMouseWheelDelta();
+		}
 
         if (mousePos != lastPos)
 		{

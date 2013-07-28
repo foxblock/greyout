@@ -585,10 +585,13 @@ string BaseUnit::debugInfo()
     result += "P: " + StringUtility::vecToString(position) + " | " + StringUtility::intToString(getWidth()) + "," + StringUtility::intToString(getHeight()) + "\n" +
               "V: " + StringUtility::vecToString(velocity) + " | " +
               "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
-              "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + " ";
+              "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + " | ";
+    for (set<int>::const_iterator I = collisionColours.begin(); I != collisionColours.end(); ++I)
+		result += StringUtility::intToString(*I) + ",";
+    result += " | ";
     for (vector<UnitCollisionEntry>::const_iterator I = collisionInfo.units.begin(); I != collisionInfo.units.end(); ++I)
         result += (*I).unit->id + ",";
-    result += "\n";
+	result += "\n";
     result += "F: " + StringUtility::intToString(flags.flags) + "\n" +
               "S: " + currentState;
     if (currentSprite)
