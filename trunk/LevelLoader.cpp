@@ -35,6 +35,7 @@
 #include "FadingBox.h"
 #include "LevelTrigger.h"
 #include "ParticleEmitter.h"
+#include "ControlSprite.h"
 
 using namespace std;
 
@@ -80,7 +81,8 @@ enum UnitIdent
     ucTextObject,
     ucFadingBox,
     ucLevelTrigger,
-    ucEmitter
+    ucEmitter,
+    ucControlSprite
 };
 
 // mapping the ident string used in the map file to a ident integer for use in
@@ -120,6 +122,7 @@ void createIdentMaps()
     unitClasses["fadingbox"] = ucFadingBox;
     unitClasses["leveltrigger"] = ucLevelTrigger;
     unitClasses["emitter"] = ucEmitter;
+    unitClasses["controlsprite"] = ucControlSprite;
 }
 
 LevelLoader* LevelLoader::self = NULL;
@@ -522,6 +525,11 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
     case ucEmitter:
     {
         result = new ParticleEmitter(parent);
+        break;
+    }
+    case ucControlSprite:
+    {
+        result = new ControlSprite(parent);
         break;
     }
     default:
