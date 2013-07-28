@@ -171,7 +171,7 @@ void BasePlayer::control(SimpleJoy* input)
         {
             setSpriteState("turnleft",true);
         }
-        acceleration[0].x = -1;
+        acceleration[0].x = -0.25;
         acceleration[1].x = -4;
     }
     else if (input->isRight())
@@ -180,7 +180,7 @@ void BasePlayer::control(SimpleJoy* input)
         {
             setSpriteState("turnright",true);
         }
-        acceleration[0].x = 1;
+        acceleration[0].x = 0.25;
         acceleration[1].x = 4;
     }
     else
