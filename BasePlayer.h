@@ -26,6 +26,13 @@ class BasePlayer : public ControlUnit
 
         virtual void control(SimpleJoy* input);
 
+        #ifdef _DEBUG
+        virtual string debugInfo();
+        #endif // _DEBUG
+
+        // used in PushableBox::hitUnit for some hacky movement stuff (don't look!)
+        bool activelyMoving;
+
     protected:
         AnimatedSprite* loadFrames(SDL_Surface* const surf, CRint skip, CRint num, CRbool loop, CRstring state);
 

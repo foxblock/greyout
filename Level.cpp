@@ -47,6 +47,13 @@
 #define TIME_TRIAL_MENU_OFFSET_Y 80
 #endif
 
+#ifdef _MUSIC
+#define MUSIC_ITEMS_ON_SCREEN 15
+#endif // _MUSIC
+
+#define DEBUG_FONT_SIZE 24
+#define DEBUG_LOG_FONT_SIZE 8
+
 #define END_TIMER_ANIMATION_STEP 30
 
 #define XOR(a,b) ((a) && !(b)) || (!(a) && (b))
@@ -97,7 +104,7 @@ Level::Level()
     trialEnd = false;
 
 #ifdef _MUSIC
-	musicLister.loadFont(GAME_FONT,32);
+	musicLister.loadFont(GAME_FONT,DEBUG_FONT_SIZE);
     musicLister.setTextColour(WHITE);
     musicLister.setTextSelectionColour(RED);
     musicLister.addFilter("ogg");
@@ -108,13 +115,13 @@ Level::Level()
 #endif
 
 #ifdef _DEBUG
-    debugText.loadFont(DEBUG_FONT,8);
+    debugText.loadFont(DEBUG_FONT,DEBUG_LOG_FONT_SIZE);
     debugText.setColour(50,217,54);
     debugString = "";
     frameLimiter = true;
 #endif
 #ifdef PENJIN_CALC_FPS
-    fpsDisplay.loadFont(DEBUG_FONT,24);
+    fpsDisplay.loadFont(DEBUG_FONT,DEBUG_FONT_SIZE);
     fpsDisplay.setColour(GREEN);
     fpsDisplay.setPosition(GFX::getXResolution(),0);
     fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
@@ -709,6 +716,11 @@ void Level::update()
     {
         debugString += (*I)->debugInfo();
     }
+    if (!debugUnits.empty())
+	{
+		printf("---------------------------------------------------------\n");
+		printf(debugString.c_str());
+	}
 #endif
 }
 
@@ -1312,6 +1324,10 @@ void Level::pauseScreen()
 	if (showMusicList)
 	{
 		musicLister.render();
+		if (musicLister.getSelection() > MUSIC_ITEMS_ON_SCREEN)
+			musicLister.setMenuStart(0,(musicLister.getSelection() - MUSIC_ITEMS_ON_SCREEN) * -30);
+		else
+			musicLister.setMenuStart(0,0);
 		return;
 	}
 #endif
@@ -1494,6 +1510,40 @@ Vector2df Level::boundsCheck(const BaseUnit* const unit) const
     return result;
 }
 
+void Level::boundsCheck(const BaseUnit* const unit, vector<Vector2df>& posVec) const
+{
+	Vector2df pos = unit->position;
+	posVec.push_back( pos );
+
+    // cache some values
+    int width = getWidth();
+    int height = getHeight();
+
+    if (flags.hasFlag(lfRepeatX))
+    {
+        if (pos.x < 0)
+			posVec.push_back(pos + Vector2df(width,0));
+        else if (pos.x + unit->getWidth() > width)
+			posVec.push_back(pos - Vector2df(width,0));
+    }
+    if (flags.hasFlag(lfRepeatY))
+    {
+        if (pos.y < 0)
+		{
+			posVec.push_back(pos + Vector2df(0,height));
+			if ( posVec.size() == 3 ) // x and y overlap
+				posVec.push_back(posVec[1] + Vector2df(0,height));
+		}
+        else if (pos.y + unit->getHeight() > height)
+		{
+			posVec.push_back(pos - Vector2df(0,height));
+			if ( posVec.size() == 3 ) // x and y overlap
+				posVec.push_back(posVec[1] - Vector2df(0,height));
+		}
+    }
+}
+
+
 ControlUnit* Level::getFirstActivePlayer() const
 {
     for (vector<ControlUnit*>::const_iterator unit = players.begin(); unit != players.end(); ++unit)
@@ -1651,6 +1701,16 @@ void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const V
 	if ( unit->flags.hasFlag(BaseUnit::ufNoRender) )
 		return;
 
+//	vector<Vector2df> posVec;
+//	boundsCheck( unit, posVec );
+//	for (vector<Vector2df>::const_iterator I = posVec.begin(); I != posVec.end(); ++I)
+//	{
+//		unit->position = (*I);
+//		unit->updateScreenPosition(offset);
+//		unit->render(surface);
+//	}
+//	unit->position = posVec[0]; // reset to original position (always on index 0)
+
     unit->updateScreenPosition(offset);
     unit->render(surface);
     Vector2df pos2 = boundsCheck(unit);
@@ -1667,8 +1727,8 @@ void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const V
 bool Level::adjustPosition( BaseUnit* const unit, const bool adjustCamera )
 {
     // 1 = out of right/bottom bounds, -1 = out of left/top bounds
-    int boundsX = (unit->position.x > getWidth()) - (unit->position.x + unit->getWidth() < 0);
-    int boundsY = (unit->position.y > getHeight()) - (unit->position.y + unit->getHeight() < 0);
+    int boundsX = (unit->position.x >= getWidth()) - (unit->position.x + unit->getWidth() < 0);
+    int boundsY = (unit->position.y >= getHeight()) - (unit->position.y + unit->getHeight() < 0);
     bool changed = false;
 
     if (boundsX != 0 && flags.hasFlag(lfRepeatX))

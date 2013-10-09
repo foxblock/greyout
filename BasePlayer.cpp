@@ -14,6 +14,7 @@ BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
     flags.addFlag(ufMissionObjective);
     fallCounter.init(500,MILLI_SECONDS);
     standDelay = 0;
+    activelyMoving = false;
 }
 
 BasePlayer::~BasePlayer()
@@ -165,39 +166,56 @@ void BasePlayer::control(SimpleJoy* input)
 	if (!input)
 		return;
 
-    if (input->isLeft())
+    if (input->isLeft() && !input->isRight())
     {
         if ((direction > 0 || velocity.x == 0.0f) && ((int)velocity.y == 0))
         {
             setSpriteState("turnleft",true);
         }
-		acceleration[0].x = -1;
+        if (velocity.x > 0.0f)
+		{
+			acceleration[0].x = -0.75;
+		}
+		else
+		{
+			acceleration[0].x = -0.25;
+		}
         acceleration[1].x = -4;
+		activelyMoving = true;
     }
-    else if (input->isRight())
+    else if (input->isRight() && !input->isLeft())
     {
         if ((direction < 0 || velocity.x == 0.0f) && ((int)velocity.y == 0))
         {
             setSpriteState("turnright",true);
         }
-		acceleration[0].x = 1;
+        if (velocity.x < 0.0f)
+		{
+			acceleration[0].x = 0.75;
+		}
+		else
+		{
+			acceleration[0].x = 0.25;
+		}
         acceleration[1].x = 4;
+        activelyMoving = true;
     }
     else
     {
+    	activelyMoving = false;
         if (canJump && currentState != "wave")
         {
             setSpriteState("stand");
         }
         if ((int)collisionInfo.correction.y != 0)
         {
-            acceleration[0].x = 0;
+            acceleration[0].x = NumberUtility::sign(velocity.x) * -0.5f;
             acceleration[1].x = 0;
-            velocity.x = 0;
+            //velocity.x = 0;
         }
         else
         {
-            acceleration[0].x = (float)NumberUtility::sign(velocity.x) / -4.0f;
+            acceleration[0].x = (float)NumberUtility::sign(velocity.x) * -0.25f;
             acceleration[1].x = 0;
         }
     }
@@ -217,6 +235,14 @@ void BasePlayer::control(SimpleJoy* input)
     if (!(input->isB() || input->isY()))
 		canJump = true;
 }
+
+string BasePlayer::debugInfo()
+{
+	string result = BaseUnit::debugInfo();
+	result += StringUtility::boolToString(activelyMoving) + "\n";
+	return result;
+}
+
 
 ///---private---
 

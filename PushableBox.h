@@ -30,6 +30,8 @@ class PushableBox : public BaseUnit
         virtual void updateScreenPosition(const Vector2di& offset);
         virtual void render(SDL_Surface* surf);
 
+		// Also sets the unit's/player's velocity in this case (to slow it down and
+		// create the illusion of weight)
         virtual void hitUnit(const UnitCollisionEntry& entry);
 
         virtual void explode();
