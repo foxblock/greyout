@@ -334,7 +334,6 @@ Level* LevelLoader::loadLevelFromFile(CRstring filename, CRstring chapterPath)
         break;
     }
 
-    printf("---------------------------------------------------------\n");
     return level;
 }
 

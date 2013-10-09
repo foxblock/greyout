@@ -3,6 +3,7 @@
 #include "fileTypeDefines.h"
 #include "Level.h"
 #include "MusicCache.h"
+#include "BasePlayer.h"
 
 #define PUSHING_SPEED 1.0f
 
@@ -120,8 +121,21 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
         if (entry.overlap.y > entry.unit->velocity.y && entry.overlap.y > entry.overlap.x
 			 && entry.unit->velocity.x != 0.0f )
         {
-        	velocity.x = PUSHING_SPEED * NumberUtility::sign( entry.unit->velocity.x );
-        	//entry.unit->velocity.x = entry.overlap.x + velocity.x;
+        	// set fixed speed to avoid jittery animations (yup, this is very ugly and I am very lazy, but it works, so fuck it all)
+        	if (((BasePlayer*)entry.unit)->activelyMoving)
+				entry.unit->velocity.x = PUSHING_SPEED * NumberUtility::sign( entry.unit->velocity.x );
+			// only move by full pixels (else the collision detection fucks up, due
+			// to differences in hitUnit and hitMap... maybe I should fix that...)
+			// TODO: Fix that in Physics (see above)
+			if (entry.unit->velocity.x >= 0)
+				velocity.x = ceil(entry.unit->velocity.x);
+			else
+				velocity.x = floor(entry.unit->velocity.x);
+        	// snap unit to box
+        	if ( velocity.x > 0.0f )
+				entry.unit->collisionInfo.positionCorrection.x += position.x - entry.unit->position.x - entry.unit->getWidth();
+			else
+				entry.unit->collisionInfo.positionCorrection.x -= entry.unit->position.x - position.x - getWidth();
 			if (entry.unit->direction > 0)
 				entry.unit->setSpriteState("pushright");
 			else
@@ -129,6 +143,9 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
         }
     }
 
+	// I have no real clue what this code does (years after writing and not documenting it)
+	// might have to do with slopes (which aren't in the main game really and not
+	// tested very much), too lazy to find out
     if (entry.overlap.x > entry.overlap.y && entry.unit->position.y < position.y)
     {
         if (collisionInfo.positionCorrection.x != 0)

@@ -582,8 +582,9 @@ string BaseUnit::debugInfo()
 {
     string result = "";
     result += tag + ";" + id + "\n";
-    result += "P: " + StringUtility::vecToString(position) + " | " + StringUtility::intToString(getWidth()) + "," + StringUtility::intToString(getHeight()) + "\n" +
-              "V: " + StringUtility::vecToString(velocity) + " | " +
+    result += "S: " + StringUtility::intToString(getWidth()) + "," + StringUtility::intToString(getHeight()) + "\n" +
+			  "P: " + StringUtility::vecToString(position) + "\n" +
+              "V: " + StringUtility::vecToString(velocity) + "\n" +
               "A: " + StringUtility::vecToString(acceleration[0]) + " to " + StringUtility::vecToString(acceleration[1]) + "\n" +
               "C: " + StringUtility::vecToString(collisionInfo.correction) + " " + StringUtility::vecToString(collisionInfo.positionCorrection) + " | ";
     for (set<int>::const_iterator I = collisionColours.begin(); I != collisionColours.end(); ++I)

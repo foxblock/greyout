@@ -74,7 +74,18 @@ public:
 
     // checks whether the unit is leaving the bounds (aka standing on the edge of
     // the screen) and returns an adjusted position
-    Vector2df boundsCheck(const BaseUnit* const unit) const;
+    Vector2df boundsCheck(const BaseUnit* const unit) const; // only 2 directions
+
+    // checks whether the unit is leaving the bounds (aka standing on the edge of
+    // the screen)
+    // Returns a vector of possible/wrapped positions
+    // the vector will at least contain the original position on index 0 and no
+    // further elements if no wrapping is required
+    // Order of the following elements is (if required): x, y, x+y (direction)
+    // NOTE: This is more correct than the version above, but it's not actually
+    // used since it greatly increases complexity and is only visible is few
+    // certain corner situations (literally)
+    void boundsCheck( const BaseUnit* const unit, vector<Vector2df> &posVec ) const;
 
     // returns the first player unit with takesControl == true
     // returns NULL if none is found
