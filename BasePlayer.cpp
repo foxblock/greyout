@@ -236,12 +236,14 @@ void BasePlayer::control(SimpleJoy* input)
 		canJump = true;
 }
 
+#ifdef _DEBUG
 string BasePlayer::debugInfo()
 {
 	string result = BaseUnit::debugInfo();
 	result += StringUtility::boolToString(activelyMoving) + "\n";
 	return result;
 }
+#endif
 
 
 ///---private---

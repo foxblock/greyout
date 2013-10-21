@@ -32,6 +32,8 @@ protected:
     vector<BaseUnit*> targets;
     vector<std::string> targetIDs;
 
+    bool showingLinks;
+
     enum SwitchProp
     {
         spFunction=BaseUnit::upEOL,

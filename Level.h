@@ -28,6 +28,7 @@ Does input processing, collision testing and bounds checking
 class BaseUnit;
 class ControlUnit;
 class PixelParticle;
+class Link;
 
 class Level : public BaseState
 {
@@ -103,9 +104,14 @@ public:
     // adds a formatted particle to the list
     void addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime);
 
+    // add/remove Links
+    void addLink(BaseUnit *source, BaseUnit *target);
+    void removeLink(BaseUnit *source);
+
     vector<ControlUnit*> players;
     vector<BaseUnit*> units;
     vector<PixelParticle*> effects;
+    vector<Link*> links;
     SDL_Surface* levelImage;
     SimpleFlags flags;
 
