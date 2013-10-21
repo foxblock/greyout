@@ -20,6 +20,8 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
     switchOn = NULL;
     switchOff = NULL;
 
+    showingLinks = false;
+
     stringToProp["function"] = spFunction;
 
     stringToFunc["movement"] = sfMovement;
@@ -65,10 +67,11 @@ bool Switch::load(list<PARAMETER_TYPE >& params)
         startingState = "off";
     setSpriteState(startingState,true);
 
-    if (!switchOn)
+    if (!switchOn || !switchOff)
     {
-        result = false;
-        printf("ERROR: No Function specified for switch with ID \"%s\"\n",id.c_str());
+    	if (!switchOn && !switchOff)
+			result = true;
+        printf("WARNING: No Function specified for switch with ID \"%s\"\n",id.c_str());
     }
     if (targetIDs.empty())
     {
@@ -165,10 +168,10 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
 
 void Switch::reset()
 {
-    if (startingState == "off")
+    if (startingState == "off" && switchOff)
         for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
             (this->*switchOff)(*I);
-    else
+    else if (switchOn)
         for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
             (this->*switchOn)(*I);
     BaseUnit::reset();
@@ -181,10 +184,10 @@ void Switch::update()
         targets.clear();
         parent->getUnitsByID(targetIDs,targets);
 
-        if (startingState == "off")
+        if (startingState == "off" && switchOff)
             for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
                 (this->*switchOff)(*I);
-        else
+        else if (switchOn)
             for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
                 (this->*switchOn)(*I);
 
@@ -219,7 +222,21 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
             }
             switchTimer = SWITCH_TIMEOUT;
         }
+        if (!showingLinks)
+		{
+			for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+				parent->addLink(this,*I);
+			showingLinks = true;
+		}
     }
+    else
+	{
+		if (showingLinks)
+		{
+			parent->removeLink(this);
+			showingLinks = false;
+		}
+	}
 }
 
 ///---protected---

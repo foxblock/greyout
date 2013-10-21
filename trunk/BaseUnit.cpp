@@ -450,7 +450,7 @@ void BaseUnit::update()
 void BaseUnit::updateScreenPosition(const Vector2di& offset)
 {
     if (currentSprite)
-        currentSprite->setPosition(position - offset);
+        currentSprite->setPosition(floor(position.x) - offset.x, floor(position.y) - offset.y);
 }
 
 void BaseUnit::render(SDL_Surface* surf)

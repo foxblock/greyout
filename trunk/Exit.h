@@ -30,6 +30,7 @@ protected:
     vector<BaseUnit*> targets;
     vector<string> targetIDs;
 
+	bool showingLinks;
 private:
 
 };

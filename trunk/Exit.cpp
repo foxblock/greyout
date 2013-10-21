@@ -88,7 +88,21 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
 						((Exit*)(*I))->allExited = true;
 				allExited = true;
 			}
-        }
+			if (!targets.empty() && !allExited && !showingLinks)
+			{
+				for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+					parent->addLink(this,*I);
+				showingLinks = true;
+			}
+		}
+		else
+		{
+			if (showingLinks)
+			{
+				parent->removeLink(this);
+				showingLinks = false;
+			}
+		}
     }
 }
 

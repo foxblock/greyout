@@ -52,11 +52,12 @@ StateLevelSelect::StateLevelSelect()
     size.y = (float)size.x * ((float)GFX::getYResolution() / (float)GFX::getXResolution());
     spacing.y = (GFX::getYResolution() - OFFSET_Y - size.y * PREVIEW_COUNT_Y) / (PREVIEW_COUNT_Y + 1);
     gridOffset = 0;
+    gridOffsetLast = 0;
     lastDraw = 0;
     firstDraw = true;
     selection = Vector2di(0,0);
     intermediateSelection = 0;
-    lastPos = Vector2di(0,0);
+    lastPos = Vector2di(-1,-1);
     mousePos = Vector2di(0,0);
 
     // graphic stuff
@@ -218,7 +219,16 @@ void StateLevelSelect::userInput()
         }
         if (input->getMouseWheelDelta() != 0)
 		{
-			selection.y -= input->getMouseWheelDelta();
+			gridOffset -= input->getMouseWheelDelta();
+			lastPos = Vector2di(-1,-1);
+			if (state == lsLevel)
+			{
+				checkGridOffset( levelPreviews,gridOffset );
+			}
+			else if (state == lsChapter)
+			{
+				checkGridOffset( chapterPreviews,gridOffset );
+			}
 		}
 
         if (mousePos != lastPos)
@@ -265,9 +275,13 @@ void StateLevelSelect::userInput()
 			}
 		}
 		if (state == lsLevel)
-			checkSelection(levelPreviews,selection);
+		{
+			checkSelection( levelPreviews,selection );
+		}
 		else if (state == lsChapter)
-			checkSelection(chapterPreviews,selection);
+		{
+			checkSelection( chapterPreviews,selection );
+		}
 		if (selection != oldSel)
 			MUSIC_CACHE->playSound("sounds/level_select.wav");
     }
@@ -431,20 +445,15 @@ void StateLevelSelect::update()
     if (state != lsIntermediate && state != lsIntermediateLevel)
     {
         // check selection and adjust grid offset
-        bool changed = false;
         if (selection.y < gridOffset)
-        {
             --gridOffset;
-            changed = true;
-        }
         else if (selection.y >= gridOffset + PREVIEW_COUNT_Y)
-        {
             ++gridOffset;
-            changed = true;
-        }
-        if (changed)
+
+        if (gridOffset != gridOffsetLast)
         {
             // redraw previews on scroll
+        	gridOffsetLast = gridOffset;
             firstDraw = true;
             lastDraw = 0;
             SDL_FillRect(previewDraw, NULL, SDL_MapRGB(previewDraw->format,255,0,255));
@@ -761,20 +770,33 @@ void StateLevelSelect::checkSelection(const vector<PreviewData>& data, Vector2di
         sel.y = 0;
     else
     {
-        int max = ceil((float)data.size() / (float)PREVIEW_COUNT_X);
-        if (sel.y >= max)
-            sel.y = max - 1;
+        int rows = ceil((float)data.size() / (float)PREVIEW_COUNT_X);
+        if (sel.y >= rows)
+            sel.y = rows - 1;
     }
 
     if (sel.x < 0)
         sel.x = 0;
     else
     {
-        int max = min(PREVIEW_COUNT_X,(int)data.size() - sel.y * PREVIEW_COUNT_X);
-        if (sel.x >= max)
-            sel.x = max - 1;
+        int cols = min(PREVIEW_COUNT_X,(int)data.size() - sel.y * PREVIEW_COUNT_X);
+        if (sel.x >= cols)
+            sel.x = cols - 1;
     }
 }
+
+void StateLevelSelect::checkGridOffset(const vector<PreviewData>& data, int& offset)
+{
+	if ( offset < 0 )
+		offset = 0;
+	else
+	{
+		int temp = max( 0.0f, ceil((float)data.size() / (float)PREVIEW_COUNT_X) - PREVIEW_COUNT_Y );
+		if ( offset > temp )
+			offset = temp;
+	}
+}
+
 
 int StateLevelSelect::loadLevelPreviews(void* data)
 {

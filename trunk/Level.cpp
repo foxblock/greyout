@@ -5,6 +5,7 @@
 #include "BaseUnit.h"
 #include "ControlUnit.h"
 #include "PixelParticle.h"
+#include "Link.h"
 #include "Physics.h"
 #include "MyGame.h"
 #include "userStates.h"
@@ -199,6 +200,11 @@ Level::~Level()
         delete (*curr);
     }
     effects.clear();
+    for (vector<Link*>::iterator curr = links.begin(); curr != links.end(); ++curr)
+    {
+        delete (*curr);
+    }
+    links.clear();
     #ifdef _DEBUG
     debugUnits.clear();
     ENGINE->setFrameRate(FRAME_RATE);
@@ -413,6 +419,11 @@ void Level::reset()
         delete (*curr);
     }
     effects.clear();
+    for (vector<Link*>::iterator curr = links.begin(); curr != links.end(); ++curr)
+    {
+        delete (*curr);
+    }
+    links.clear();
 
     firstLoad = false;
     ENGINE->restartCounter++;
@@ -609,6 +620,19 @@ void Level::update()
             ++part;
         }
     }
+    for (vector<Link*>::iterator I = links.begin();  I != links.end();)
+    {
+        (*I)->update();
+        if ((*I)->toBeRemoved)
+        {
+            delete (*I);
+            I = links.erase(I);
+        }
+        else
+        {
+            ++I;
+        }
+    }
 
     // particle-map collision
     // and update (velocity, gravity, etc.)
@@ -726,7 +750,7 @@ void Level::update()
 
 void Level::render()
 {
-    //GFX::clearScreen();
+    GFX::clearScreen();
 
     render(GFX::getVideoSurface());
 
@@ -746,7 +770,9 @@ void Level::render()
 			src.y = max( drawOffset.y, 0.0f );
 			src.w = -drawOffset.x;
 			src.h = min( getHeight(), (int)GFX::getYResolution() );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -766,7 +792,9 @@ void Level::render()
 			src.y = max( drawOffset.y, 0.0f );
 			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
 			src.h = min( getHeight(), (int)GFX::getYResolution() );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -786,7 +814,9 @@ void Level::render()
 			src.y = max( getHeight() + drawOffset.y, 0.0f );
 			src.w = min( getWidth(), (int)GFX::getXResolution() );
 			src.h = -drawOffset.y;
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -806,7 +836,9 @@ void Level::render()
 			src.y = 0.0f;
 			src.w = min( getWidth(), (int)GFX::getXResolution() );
 			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -825,7 +857,9 @@ void Level::render()
 			src.y = max( getHeight() + drawOffset.y, 0.0f );
 			src.w = -drawOffset.x;
 			src.h = -drawOffset.y;
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -844,7 +878,9 @@ void Level::render()
 			src.y = max( getHeight() + drawOffset.y, 0.0f );
 			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
 			src.h = -drawOffset.y;
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -863,7 +899,9 @@ void Level::render()
 			src.y = 0.0f;
 			src.w = -drawOffset.x;
 			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -882,7 +920,9 @@ void Level::render()
 			src.y = 0.0f;
 			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
 			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
 			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
+			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
 		}
 		else
 		{
@@ -1052,6 +1092,10 @@ void Level::render(SDL_Surface* screen)
         (*curr)->render(screen);
         GFX::renderPixelBuffer();
     }
+
+    // links
+    for (vector<Link*>::iterator I = links.begin(); I != links.end(); ++I)
+		(*I)->render(screen);
 }
 
 void Level::onPause()
@@ -1644,6 +1688,22 @@ void Level::addParticle(const BaseUnit* const caller, const Colour& col, const V
     effects.push_back(temp);
 }
 
+void Level::addLink(BaseUnit* source, BaseUnit* target)
+{
+	Link *temp = new Link(this, source, target);
+	links.push_back(temp);
+}
+
+void Level::removeLink(BaseUnit *source)
+{
+	for (vector<Link*>::iterator I = links.begin(); I != links.end(); ++I)
+	{
+		if ((*I)->source == source)
+			(*I)->remove();
+	}
+}
+
+
 #ifdef _DEBUG
 string Level::debugInfo()
 {
@@ -1651,6 +1711,7 @@ string Level::debugInfo()
     result += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
     result += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
     result += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
+    result += "Links: " + StringUtility::intToString(links.size()) + "\n";
     result += "Camera: " + StringUtility::vecToString(drawOffset) + " | " +
         StringUtility::vecToString(cam.getDest()) + " | " +
         StringUtility::vecToString(cam.getSpeed()) + "\n";
