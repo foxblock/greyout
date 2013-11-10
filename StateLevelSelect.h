@@ -89,9 +89,7 @@ protected:
 	Rectangle overlay;
 	// preview images will be drawn onto this surface for less redraws needed
 	SDL_Surface *previewDraw;
-#ifdef _DEBUG
-	Text fpsDisplay;
-#endif
+
 	Text imageText; // fallback text when encountering chapter without image
 	Text title;
 

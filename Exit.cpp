@@ -16,12 +16,16 @@ Exit::Exit(Level* newParent) : BaseUnit(newParent)
 
     isExiting = false;
     allExited = false;
+
+    linkTimer = 0;
+    lastKeys = 0;
 }
 
 Exit::~Exit()
 {
     targets.clear();
     targetIDs.clear();
+    keys.clear();
 }
 
 ///---public---
@@ -88,22 +92,30 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
 						((Exit*)(*I))->allExited = true;
 				allExited = true;
 			}
-			if (!targets.empty() && !allExited && !showingLinks)
+			if (!targets.empty() && !allExited && linkTimer == 0)
 			{
 				for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
 					parent->addLink(this,*I);
-				showingLinks = true;
-			}
-		}
-		else
-		{
-			if (showingLinks)
-			{
-				parent->removeLink(this);
-				showingLinks = false;
+				linkTimer = 3;
 			}
 		}
     }
+    else
+	{
+        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
+            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
+            entry.overlap.x > 10 && entry.overlap.y > 20)
+        {
+			if (linkTimer == 0)
+			{
+				for (set<BaseUnit*>::iterator I = keys.begin(); I != keys.end(); ++I)
+					parent->addLink(this,*I);
+				linkTimer = 3;
+			}
+        }
+	}
+    if (linkTimer > 0 && entry.unit->isPlayer)
+		linkTimer = 3;
 }
 
 bool Exit::processParameter(const PARAMETER_TYPE& value)
@@ -139,6 +151,22 @@ void Exit::update()
         targetIDs.clear();
     }
     isExiting = false;
+	if (linkTimer > 0)
+	{
+		--linkTimer;
+		if (linkTimer == 0)
+			parent->removeLink(this);
+	}
+
+	if (lastKeys != keys.size())
+	{
+		if (!keys.empty())
+			setSpriteState("closed");
+		else if (targetIDs.empty())
+			setSpriteState("open");
+		lastKeys = keys.size();
+	}
+
     BaseUnit::update();
 }
 

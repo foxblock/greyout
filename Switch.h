@@ -32,7 +32,7 @@ protected:
     vector<BaseUnit*> targets;
     vector<std::string> targetIDs;
 
-    bool showingLinks;
+    int linkTimer;
 
     enum SwitchProp
     {

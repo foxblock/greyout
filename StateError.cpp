@@ -28,8 +28,6 @@ StateError::~StateError()
 
 void StateError::userInput()
 {
-    input->update();
-
     if (input->isAny())
         setNextState(returnState);
 }

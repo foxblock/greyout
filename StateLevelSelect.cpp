@@ -100,12 +100,6 @@ StateLevelSelect::StateLevelSelect()
     overlay.setColour(BLACK);
     overlay.setPosition(0,0);
     overlay.setAlpha(100);
-#ifdef _DEBUG
-    fpsDisplay.loadFont(DEBUG_FONT,24);
-    fpsDisplay.setColour(GREEN);
-    fpsDisplay.setPosition(GFX::getXResolution(),0);
-    fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
-#endif
 
     // thread stuff
     levelLock = SDL_CreateMutex();
@@ -188,15 +182,6 @@ void StateLevelSelect::clearChapterListing()
 
 void StateLevelSelect::userInput()
 {
-    input->update();
-
-#ifdef PLATFORM_PC
-    if (input->isQuit())
-    {
-        nullifyState();
-        return;
-    }
-#endif
 	mousePos = input->getMouse();
     if (state != lsIntermediate && state != lsIntermediateLevel) // grid navigation
     {
@@ -553,12 +538,6 @@ void StateLevelSelect::render()
 
     }
 
-#ifdef _DEBUG
-    fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
-	fpsDisplay.setPosition(GFX::getXResolution(),40);
-	fpsDisplay.print(StringUtility::vecToString(lastPos));
-	fpsDisplay.setPosition(GFX::getXResolution(),0);
-#endif
 }
 
 void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surface* const target, CRint addOffset)

@@ -38,10 +38,6 @@ class TitleMenu : public BaseState
         int selection;
         SDL_Rect invertRegion;
         Vector2di lastPos;
-
-        #ifdef PENJIN_CALC_FPS
-        Text fpsDisplay;
-        #endif
 };
 
 

@@ -15,6 +15,8 @@
 #include "CountDown.h"
 #include "BaseState.h"
 #include "FileLister.h"
+#include "SimpleDirection.h"
+#include "AnimatedSprite.h"
 
 #include "SimpleFlags.h"
 #include "Camera.h"
@@ -170,6 +172,8 @@ protected:
     // specify offset to pass to updateScreenPosition
     void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
 
+    void renderTiling( SDL_Surface *src, SDL_Rect *srcRect, SDL_Surface *target, SDL_Rect *targetRect, SimpleDirection dir );
+
     // checks whether the unit has left the bounds and adjust position accordingly
     bool adjustPosition(BaseUnit* const unit, const bool adjustCamera = false);
 
@@ -208,9 +212,6 @@ protected:
     Text debugText;
     bool frameLimiter;
     #endif
-    #ifdef PENJIN_CALC_FPS
-    Text fpsDisplay;
-    #endif
     SDL_Surface* collisionLayer;
     CountDown eventTimer; // used for fading in and out
 
@@ -231,6 +232,8 @@ protected:
     bool hideVert;
 
     Vector2di lastPos;
+
+    AnimatedSprite arrows;
 
 #ifdef _MUSIC
 	void saveMusicToFile(CRstring musicFile);

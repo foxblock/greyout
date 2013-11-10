@@ -6,6 +6,7 @@
 #include "Level.h"
 #include "GreySurfaceCache.h"
 #include "MusicCache.h"
+#include "MyGame.h"
 
 map<string,int> BaseUnit::stringToFlag;
 map<string,int> BaseUnit::stringToProp;
@@ -557,10 +558,29 @@ void BaseUnit::explode()
         Vector2df vel(0,0);
         int time = 0;
         // limit number of particles so bigger images will create less
-        int inc = round(max((float)(currentSprite->getWidth() + currentSprite->getHeight()) / 64.0f,2.0f));
-        for (int X = 0; X < currentSprite->getWidth(); X+=inc)
+		int inc;
+        switch (ENGINE->settings->getParticleDensity())
         {
-            for (int Y = 0; Y < currentSprite->getHeight(); Y+=inc)
+		case Settings::pdOff:
+			MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);
+			toBeRemoved = true;
+			return;
+		case Settings::pdFew:
+			inc = round(max((float)(currentSprite->getWidth() + currentSprite->getHeight()) / 32.0f,4.0f));
+			break;
+		case Settings::pdMany:
+			inc = round(max((float)(currentSprite->getWidth() + currentSprite->getHeight()) / 64.0f,2.0f));
+			break;
+		case Settings::pdTooMany:
+			inc = 1;
+			break;
+		default:
+			inc = round(max((float)(currentSprite->getWidth() + currentSprite->getHeight()) / 64.0f,2.0f));
+			break;
+        }
+        for (int X = currentSprite->getWidth()-1; X >= 0; X-=inc)
+        {
+            for (int Y = currentSprite->getHeight()-1; Y >= 0; Y-=inc)
             {
                 pix = currentSprite->getPixel(X,Y);
                 if (pix != none)

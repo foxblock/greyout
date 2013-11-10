@@ -5,6 +5,7 @@
 #include "BaseUnit.h"
 #include "ControlUnit.h"
 #include "PixelParticle.h"
+#include "Link.h"
 
 Playground::Playground()
 {
@@ -26,15 +27,6 @@ Playground::~Playground()
 
 void Playground::userInput()
 {
-    input->update();
-
-#ifdef PLATFORM_PC
-    if (input->isQuit())
-    {
-        nullifyState();
-        return;
-    }
-#endif
     if (input->isStart())
     {
         pauseToggle();
@@ -204,6 +196,10 @@ void Playground::render(SDL_Surface* screen)
         (*curr)->render(screen);
         GFX::renderPixelBuffer();
     }
+
+	// links
+    for (vector<Link*>::iterator I = links.begin(); I != links.end(); ++I)
+		(*I)->render(screen);
 }
 
 #ifdef _DEBUG

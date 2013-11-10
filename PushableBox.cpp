@@ -4,6 +4,7 @@
 #include "Level.h"
 #include "MusicCache.h"
 #include "BasePlayer.h"
+#include "MyGame.h"
 
 #define PUSHING_SPEED 1.0f
 
@@ -161,10 +162,29 @@ void PushableBox::explode()
     {
         Vector2df vel(0,0);
         int time = 0;
-        int inc = round(max((float)(getWidth() + getHeight()) / 64.0f,2.0f));
-        for (int X = 0; X < getWidth(); X+=inc)
+		int inc;
+        switch (ENGINE->settings->getParticleDensity())
         {
-            for (int Y = 0; Y < getHeight(); Y+=inc)
+		case Settings::pdOff:
+			MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);
+			toBeRemoved = true;
+			return;
+		case Settings::pdFew:
+			inc = round(max((float)(getWidth() + getHeight()) / 32.0f,4.0f));
+			break;
+		case Settings::pdMany:
+			inc = round(max((float)(getWidth() + getHeight()) / 64.0f,2.0f));
+			break;
+		case Settings::pdTooMany:
+			inc = 1;
+			break;
+		default:
+			inc = round(max((float)(getWidth() + getHeight()) / 64.0f,2.0f));
+			break;
+        }
+        for (int X = getWidth()-1; X >= 0; X-=inc)
+        {
+            for (int Y = getHeight()-1; Y >= 0; Y-=inc)
             {
                 vel.x = Random::nextFloat(-5,5);
                 vel.y = Random::nextFloat(-8,-3);

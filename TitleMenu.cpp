@@ -61,13 +61,6 @@ TitleMenu::TitleMenu()
         inverse(temp,rect);
         inverseBG.push_back(temp);
     }
-
-    #ifdef PENJIN_CALC_FPS
-    fpsDisplay.loadFont(GAME_FONT,24);
-    fpsDisplay.setColour(GREEN);
-    fpsDisplay.setPosition(GFX::getXResolution(),0);
-    fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
-    #endif
 }
 
 TitleMenu::~TitleMenu()
@@ -86,15 +79,6 @@ void TitleMenu::init()
 
 void TitleMenu::userInput()
 {
-    input->update();
-
-#ifdef PLATFORM_PC
-    if (input->isQuit())
-    {
-        nullifyState();
-        return;
-    }
-#endif
 	if (lastPos != input->getMouse() && input->getMouseY() > MENU_OFFSET_Y &&
 		input->getMouseY() < MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * MENU_ITEM_COUNT)
 	{
@@ -136,9 +120,6 @@ void TitleMenu::render()
 
     EFFECTS->render();
 
-    #ifdef PENJIN_CALC_FPS
-    fpsDisplay.print(StringUtility::intToString(MyGame::getMyGame()->getFPS()));
-    #endif
 }
 
 void TitleMenu::setSelection(CRbool immediate)
@@ -186,10 +167,10 @@ void TitleMenu::doSelection()
             ENGINE->playChapter(DEFAULT_CHAPTER);
         break;
     case 1:
-    	//
+        setNextState(STATE_LEVELSELECT);
         break;
     case 2:
-        setNextState(STATE_LEVELSELECT);
+    	ENGINE->settings->show();
         break;
     case 3:
         nullifyState();

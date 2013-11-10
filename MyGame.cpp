@@ -7,7 +7,10 @@
 #include "Savegame.h"
 #include "Dialogue.h"
 
+#include "StringUtility.h"
+
 #define SAVE_FILE "save.me"
+#define FPS_FONT_SIZE 24
 
 MyGame* MyGame::m_MyGame = NULL;
 
@@ -26,14 +29,14 @@ MyGame::MyGame()
     chapterTrialTimer = 0;
     restartCounter = 0;
     icon = NULL;
+    settings = NULL;
 }
 
 MyGame::~MyGame()
 {
     SAVEGAME->autoSave = false;
+    delete settings; // this saves
     SAVEGAME->writeData("restarts",StringUtility::intToString(restartCounter));
-    SAVEGAME->writeData("musicvolume",StringUtility::intToString(MUSIC_CACHE->getMusicVolume()),true);
-    SAVEGAME->writeData("soundvolume",StringUtility::intToString(MUSIC_CACHE->getSoundVolume()),true);
     SAVEGAME->writeData("activechapter",activeChapter,true);
     SAVEGAME->save();
     SURFACE_CACHE->clear();
@@ -63,12 +66,18 @@ PENJIN_ERRORS MyGame::init()
     GFX::resetScreen();
     setFrameRate(FRAME_RATE);
     SAVEGAME->setFile(SAVE_FILE);
-    if (SAVEGAME->hasData("musicvolume"))
-        MUSIC_CACHE->setMusicVolume(StringUtility::stringToInt(SAVEGAME->getData("musicvolume")));
-    if (SAVEGAME->hasData("soundvolume"))
-        MUSIC_CACHE->setSoundVolume(StringUtility::stringToInt(SAVEGAME->getData("soundvolume")));
+    settings = new Settings();
     restartCounter = StringUtility::stringToInt(SAVEGAME->getData("restarts"));
     activeChapter = SAVEGAME->getData("activechapter");
+
+#ifdef PENJIN_CALC_FPS
+	fpsDisplay = new Text();
+    fpsDisplay->loadFont(DEBUG_FONT,FPS_FONT_SIZE);
+    fpsDisplay->setColour(GREEN);
+    fpsDisplay->setPosition(GFX::getXResolution(),0);
+    fpsDisplay->setAlignment(RIGHT_JUSTIFIED);
+#endif
+
     return PENJIN_OK;
 }
 
@@ -190,12 +199,139 @@ bool MyGame::stateLoop()
 {
 	if (chapterTrial && not chapterTrialPaused)
 		++chapterTrialTimer;
-	return Engine::stateLoop();
-}
 
-Level* MyGame::getCurrentLevel() const
-{
-    return (Level*)state;
+	//  Check state for exit condition
+	if(state->getNullifyState())
+	{
+		state->nullifyState();
+		return false;  // End program execution
+	}
+	else if (state->getNeedInit() == false)
+	{
+        //  Update physics
+        state->unlimitedUpdate();
+        if(state->getNeedInit())
+            return true;
+
+		// the following will always last at least the time of one frame
+		gameTimer->start();
+		input->update();
+
+		#ifdef PLATFORM_PC
+			if (input->isQuit())
+			{
+				state->nullifyState();
+				return false;
+			}
+		#endif
+		//  Update timer and check if ticks have passed
+		if(state->getIsPaused())
+		{
+		    // check if it is only just paused and run tasks on pausing
+		    if(!state->getFirstPaused())
+		    {
+		        state->onPause();
+		        state->setFirstPaused(true);
+            }
+            if (settings->isActive())
+			{
+				settings->userInput(input);
+				settings->update();
+				state->pauseScreen();
+				settings->render(GFX::getVideoSurface());
+			}
+			else
+			{
+				state->pauseInput();
+				state->pauseUpdate();
+				state->pauseScreen();
+			}
+        }
+        else if(!state->getIsPaused() && state->getFirstPaused())
+        {
+            state->onResume();
+            state->setFirstPaused(false);
+        }
+		else
+		{
+			if (settings->isActive())
+			{
+				settings->userInput(input);
+				settings->update();
+			}
+			else
+			{
+				state->userInput();
+				state->update();
+			}
+			#ifdef USE_ACHIEVEMENTS
+				ACHIEVEMENTS->update();
+			#endif
+
+			if(state->getNeedInit())
+                return true;
+			//  Render objects
+            state->render();
+			if (settings->isActive())
+			{
+				settings->render(GFX::getVideoSurface());
+			}
+            #ifdef USE_ACHIEVEMENTS
+                #ifdef PENJIN_SDL
+                    ACHIEVEMENTS->render(GFX::getVideoSurface());
+                #else
+                    ACHIEVEMENTS->render();
+                #endif
+            #endif
+            #ifdef _DEBUG
+                #ifdef PENJIN_SDL
+                    if(frameCount>=20)//only update if there are a reasonable number of redundant updates
+                    {
+                        //  This code seems to slow down Linux builds majorly.
+                        SDL_WM_SetCaption((Penjin::getApplicationName() + " V" + AutoVersion::FULLVERSION_STRING
+                        + AutoVersion::STATUS_SHORT
+                        + " "
+                        + StringUtility::intToString(frameCount)
+                        + " DEBUG "
+                        + AutoVersion::DATE + "-"
+                        + AutoVersion::MONTH + "-"
+                        + AutoVersion::YEAR).c_str(), NULL );
+                        //frameCount = 0;
+                    }
+                #endif
+			#endif
+		}
+		#ifndef PENJIN_ASCII
+			#ifdef PENJIN_CALC_FPS
+			if (settings->getDrawFps())
+				fpsDisplay->print(StringUtility::intToString(frameCount));
+			if (settings->getWriteFps())
+				printf("%i\n",frameCount);
+			#endif
+			GFX::forceBlit();
+		#endif
+
+		#ifdef PENJIN_CALC_FPS
+			frameCount = calcFPS();
+		#endif
+		// if done in time, wait for the rest of the frame
+		limitFPS(gameTimer->getScaler() - gameTimer->getTicks());
+		return true;   // Continue program execution
+	}
+	else
+	{
+		// check and change states
+		getVariables();
+		stateManagement();
+		setVariables();
+
+		// Initialise the changed state
+		state->init();
+		state->setNeedInit(false);    // Set that we have performed the init
+		return true;                  // Continue program execution
+	}
+	//  Should never reach here
+	return false;
 }
 
 void MyGame::playSingleLevel(CRstring filename, CRuint returnState)

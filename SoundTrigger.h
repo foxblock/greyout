@@ -17,7 +17,7 @@ protected:
 
     enum SoundProp
     {
-        spFile=BaseTrigger::upEOL,
+        spFile=BaseTrigger::bpEOL,
         spPlayCount,
         spLoops,
         spEOL

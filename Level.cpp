@@ -31,11 +31,6 @@
 #define PAUSE_MENU_OFFSET_Y 0
 #endif
 #define PAUSE_MENU_OFFSET_X 20
-#ifdef _MEOW
-#define PAUSE_VOLUME_SLIDER_SIZE 125
-#else
-#define PAUSE_VOLUME_SLIDER_SIZE 400
-#endif
 #define PAUSE_MENU_SPACING_EXTRA 20
 
 #ifdef _MEOW
@@ -121,12 +116,6 @@ Level::Level()
     debugString = "";
     frameLimiter = true;
 #endif
-#ifdef PENJIN_CALC_FPS
-    fpsDisplay.loadFont(DEBUG_FONT,DEBUG_FONT_SIZE);
-    fpsDisplay.setColour(GREEN);
-    fpsDisplay.setPosition(GFX::getXResolution(),0);
-    fpsDisplay.setAlignment(RIGHT_JUSTIFIED);
-#endif
     nameText.loadFont(GAME_FONT,NAME_TEXT_SIZE);
     nameText.setColour(WHITE);
     nameText.setAlignment(CENTRED);
@@ -154,6 +143,9 @@ Level::Level()
     overlay.setPosition(0,0);
     overlay.setColour(BLACK);
     overlay.setAlpha(100);
+
+    arrows.loadFrames(SURFACE_CACHE->loadSurface("images/general/arrows2.png"),4,1,0,0);
+    arrows.setTransparentColour(MAGENTA);
 
     hideHor = false;
     hideVert = false;
@@ -460,15 +452,6 @@ void Level::init()
 
 void Level::userInput()
 {
-    input->update();
-
-#ifdef PLATFORM_PC
-    if (input->isQuit())
-    {
-        nullifyState();
-        return;
-    }
-#endif
 #ifdef _DEBUG
 	controlsString = "";
 	controlsString += "Keys: ";
@@ -770,16 +753,14 @@ void Level::render()
 			src.y = max( drawOffset.y, 0.0f );
 			src.w = -drawOffset.x;
 			src.h = min( getHeight(), (int)GFX::getYResolution() );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diLEFT) );
 		}
-		else
-		{
-			dst.w = -drawOffset.x;
-			dst.h = min( getHeight(), (int)GFX::getYResolution() );
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = -drawOffset.x;
+//			dst.h = min( getHeight(), (int)GFX::getYResolution() );
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( getWidth() - drawOffset.x < GFX::getXResolution() ) // void on right side
 	{
@@ -792,16 +773,14 @@ void Level::render()
 			src.y = max( drawOffset.y, 0.0f );
 			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
 			src.h = min( getHeight(), (int)GFX::getYResolution() );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diRIGHT) );
 		}
-		else
-		{
-			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
-			dst.h = min( getHeight(), (int)GFX::getYResolution() );
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+//			dst.h = min( getHeight(), (int)GFX::getYResolution() );
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( drawOffset.y < 0.0f ) // void on top
 	{
@@ -814,16 +793,14 @@ void Level::render()
 			src.y = max( getHeight() + drawOffset.y, 0.0f );
 			src.w = min( getWidth(), (int)GFX::getXResolution() );
 			src.h = -drawOffset.y;
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diTOP) );
 		}
-		else
-		{
-			dst.w = min( getWidth(), (int)GFX::getXResolution() );
-			dst.h = -drawOffset.y;
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = min( getWidth(), (int)GFX::getXResolution() );
+//			dst.h = -drawOffset.y;
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( getHeight() - drawOffset.y < GFX::getYResolution() ) // void on bottom
 	{
@@ -836,16 +813,14 @@ void Level::render()
 			src.y = 0.0f;
 			src.w = min( getWidth(), (int)GFX::getXResolution() );
 			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 128 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diBOTTOM) );
 		}
-		else
-		{
-			dst.w = min( getWidth(), (int)GFX::getXResolution() );
-			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = min( getWidth(), (int)GFX::getXResolution() );
+//			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( sides.hasFlag( 1 ) && sides.hasFlag( 4 ) ) // top-left corner
 	{
@@ -857,16 +832,14 @@ void Level::render()
 			src.y = max( getHeight() + drawOffset.y, 0.0f );
 			src.w = -drawOffset.x;
 			src.h = -drawOffset.y;
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diTOPLEFT) );
 		}
-		else
-		{
-			dst.w = -drawOffset.x;
-			dst.h = -drawOffset.y;
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = -drawOffset.x;
+//			dst.h = -drawOffset.y;
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( sides.hasFlag( 2 ) && sides.hasFlag( 4 ) ) // top-right corner
 	{
@@ -878,16 +851,14 @@ void Level::render()
 			src.y = max( getHeight() + drawOffset.y, 0.0f );
 			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
 			src.h = -drawOffset.y;
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diTOPRIGHT) );
 		}
-		else
-		{
-			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
-			dst.h = -drawOffset.y;
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+//			dst.h = -drawOffset.y;
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( sides.hasFlag( 1 ) && sides.hasFlag( 8 ) ) // bottom-left corner
 	{
@@ -899,16 +870,14 @@ void Level::render()
 			src.y = 0.0f;
 			src.w = -drawOffset.x;
 			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diBOTTOMLEFT) );
 		}
-		else
-		{
-			dst.w = -drawOffset.x;
-			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = -drawOffset.x;
+//			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 	if ( sides.hasFlag( 2 ) && sides.hasFlag( 8 ) ) // bottom-right corner
 	{
@@ -920,16 +889,14 @@ void Level::render()
 			src.y = 0.0f;
 			src.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
 			src.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, 64 );
-			SDL_BlitSurface( collisionLayer,&src,GFX::getVideoSurface(),&dst );
-			SDL_SetAlpha( collisionLayer, SDL_SRCALPHA, -1 );
+			renderTiling( collisionLayer, &src, GFX::getVideoSurface(), &dst, SimpleDirection(diBOTTOMRIGHT) );
 		}
-		else
-		{
-			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
-			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
-            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
-		}
+//		else
+//		{
+//			dst.w = (int)GFX::getXResolution() - getWidth() - drawOffset.x;
+//			dst.h = (int)GFX::getYResolution() - getHeight() - drawOffset.y;
+//            SDL_FillRect( GFX::getVideoSurface(),&dst,GFX::getClearColour().getSDL_Uint32Colour(GFX::getVideoSurface()) );
+//		}
 	}
 
     // scaling (very unoptimized and slow!)
@@ -991,9 +958,6 @@ void Level::render()
 #ifdef _DEBUG
     debugText.setPosition(10,10);
     debugText.print(debugString);
-#endif
-#ifdef PENJIN_CALC_FPS
-    fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
 #endif
 }
 
@@ -1117,8 +1081,7 @@ void Level::onPause()
         pauseSelection = 3;
 		pauseItems.push_back("MUSIC FILE:");
 	#endif
-        pauseItems.push_back("MUSIC VOL:");
-        pauseItems.push_back("SOUND VOL:");
+        pauseItems.push_back("SETTINGS");
         pauseItems.push_back("RETURN");
         #ifdef _DEBUG
         pauseItems.push_back("RELOAD");
@@ -1157,16 +1120,6 @@ void Level::onResume()
 
 void Level::pauseInput()
 {
-    input->update();
-
-#ifdef PLATFORM_PC
-    if (input->isQuit())
-    {
-        nullifyState();
-        return;
-    }
-#endif
-
 #ifdef _MUSIC
 	if (showMusicList)
 	{
@@ -1240,43 +1193,6 @@ void Level::pauseInput()
             input->resetDown();
         }
 
-        if (input->isLeft())
-        {
-            if (pauseItems[pauseSelection] == "MUSIC VOL:")
-            {
-                int vol = MUSIC_CACHE->getMusicVolume();
-                if (vol > 0)
-                    MUSIC_CACHE->setMusicVolume(vol-8);
-            }
-            else if (pauseItems[pauseSelection] == "SOUND VOL:")
-            {
-                int vol = MUSIC_CACHE->getSoundVolume();
-                if (vol > 0)
-                {
-                    MUSIC_CACHE->setSoundVolume(vol-8);
-                    MUSIC_CACHE->playSound("sounds/level_select.wav");
-                }
-            }
-        }
-        else if (input->isRight())
-        {
-            if (pauseItems[pauseSelection] == "MUSIC VOL:")
-            {
-                int vol = MUSIC_CACHE->getMusicVolume();
-                if (vol < MUSIC_CACHE->getMaxVolume())
-                    MUSIC_CACHE->setMusicVolume(vol+8);
-            }
-            else if (pauseItems[pauseSelection] == "SOUND VOL:")
-            {
-                int vol = MUSIC_CACHE->getSoundVolume();
-                if (vol < MUSIC_CACHE->getMaxVolume())
-                {
-                    MUSIC_CACHE->setSoundVolume(vol+8);
-                    MUSIC_CACHE->playSound("sounds/level_select.wav");
-                }
-            }
-        }
-
         if (ACCEPT_KEY || input->isLeftClick())
         {
             if (pauseItems[pauseSelection] == "RETURN")
@@ -1297,23 +1213,9 @@ void Level::pauseInput()
                 setNextState(STATE_MAIN);
                 MUSIC_CACHE->playSound("sounds/menu_back.wav");
 			}
-			else if (pauseItems[pauseSelection] == "MUSIC VOL:")
+			else if (pauseItems[pauseSelection] == "SETTINGS")
 			{
-				if (input->isLeftClick())
-				{
-					float factor = (float)(lastPos.x - (GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X)) / (float)PAUSE_VOLUME_SLIDER_SIZE;
-					if (factor >= 0.0f && factor <= 1.0f)
-						MUSIC_CACHE->setMusicVolume((float)MUSIC_CACHE->getMaxVolume() * factor);
-				}
-			}
-			else if (pauseItems[pauseSelection] == "SOUND VOL:")
-			{
-				if (input->isLeftClick())
-				{
-					float factor = (float)(lastPos.x - (GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X)) / (float)PAUSE_VOLUME_SLIDER_SIZE;
-					if (factor >= 0.0f && factor <= 1.0f)
-						MUSIC_CACHE->setSoundVolume((float)MUSIC_CACHE->getMaxVolume() * factor);
-				}
+				ENGINE->settings->show();
 			}
 			#ifdef _MUSIC
 			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
@@ -1323,17 +1225,6 @@ void Level::pauseInput()
 			}
 			#endif
         }
-        if (CANCEL_KEY)
-		{
-            if (pauseItems[pauseSelection] == "MUSIC VOL:")
-				MUSIC_CACHE->setMusicVolume(0);
-            else if (pauseItems[pauseSelection] == "SOUND VOL:")
-				MUSIC_CACHE->setSoundVolume(0);
-		#ifdef _MUSIC
-			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
-				MUSIC_CACHE->stopMusic();
-		#endif
-		}
 
         if (input->isStart() || input->isRightClick())
             pauseToggle();
@@ -1363,6 +1254,9 @@ void Level::pauseUpdate()
 void Level::pauseScreen()
 {
     SDL_BlitSurface(pauseSurf,NULL,GFX::getVideoSurface(),NULL);
+
+    if (ENGINE->settings->isActive())
+		return; // don't render pause menu
 
 #ifdef _MUSIC
 	if (showMusicList)
@@ -1420,30 +1314,8 @@ void Level::pauseScreen()
         nameRect.render();
         nameText.print(pauseItems[I]);
 
-		if (pauseItems[I] == "MUSIC VOL:")
+		if (pauseItems[I] == "SETTINGS")
 		{
-			// render volume sliders
-			float factor = (float)MUSIC_CACHE->getMusicVolume() / (float)MUSIC_CACHE->getMaxVolume();
-			nameRect.setDimensions((float)PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
-			nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
-			if (pauseSelection == I)
-				nameRect.setColour(BLACK);
-			else
-				nameRect.setColour(WHITE);
-			nameRect.render();
-			nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
-		}
-		else if (pauseItems[I] == "SOUND VOL:")
-		{
-			float factor = (float)MUSIC_CACHE->getSoundVolume() / (float)MUSIC_CACHE->getMaxVolume();
-			nameRect.setDimensions(PAUSE_VOLUME_SLIDER_SIZE * factor,NAME_RECT_HEIGHT);
-			nameRect.setPosition((int)GFX::getXResolution() - PAUSE_VOLUME_SLIDER_SIZE - PAUSE_MENU_OFFSET_X,pos);
-			if (pauseSelection == I)
-				nameRect.setColour(BLACK);
-			else
-				nameRect.setColour(WHITE);
-			nameRect.render();
-			nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
 			pos += PAUSE_MENU_SPACING_EXTRA; // extra offset
 		}
 	#ifdef _MUSIC
@@ -1483,10 +1355,6 @@ void Level::pauseScreen()
 				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).time));
         }
     }
-
-#ifdef PENJIN_CALC_FPS
-    fpsDisplay.print(StringUtility::intToString((int)MyGame::getMyGame()->getFPS()));
-#endif
 }
 
 int Level::getWidth() const
@@ -1690,8 +1558,11 @@ void Level::addParticle(const BaseUnit* const caller, const Colour& col, const V
 
 void Level::addLink(BaseUnit* source, BaseUnit* target)
 {
-	Link *temp = new Link(this, source, target);
-	links.push_back(temp);
+	if (ENGINE->settings->getDrawLinks())
+	{
+		Link *temp = new Link(this, source, target);
+		links.push_back(temp);
+	}
 }
 
 void Level::removeLink(BaseUnit *source)
@@ -1784,6 +1655,76 @@ void Level::renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const V
         unit->position = temp;
     }
 }
+
+void Level::renderTiling(SDL_Surface* src, SDL_Rect* srcRect, SDL_Surface* target,
+						SDL_Rect* targetRect, SimpleDirection dir )
+{
+	int dp = ENGINE->settings->getDrawPattern();
+	if ( dp == Settings::dpShaded )
+	{
+		if ( dir.xDirection() != 0 && dir.yDirection() != 0 )
+			SDL_SetAlpha( src, SDL_SRCALPHA, 64 );
+		else
+			SDL_SetAlpha( src, SDL_SRCALPHA, 128 );
+	}
+	switch ( dp )
+	{
+	case Settings::dpOff:
+		return;
+	case Settings::dpArrows:
+	{
+		static int arrowHeight = arrows.getHeight();
+		static int arrowWidth = arrows.getWidth();
+		switch ( dir.value )
+		{
+		case diTOP:
+			arrows.setCurrentFrame(0);
+			arrows.setPosition( targetRect->x, srcRect->h - arrowHeight );
+			arrows.render(target);
+			arrows.setPosition( targetRect->x + srcRect->w / 2 - arrowWidth / 2, srcRect->h - arrowHeight );
+			arrows.render(target);
+			arrows.setPosition( targetRect->x + srcRect->w - arrowWidth, srcRect->h - arrowHeight );
+			arrows.render(target);
+			break;
+		case diRIGHT:
+			arrows.setCurrentFrame(1);
+			arrows.setPosition( targetRect->x, targetRect->y );
+			arrows.render(target);
+			arrows.setPosition( targetRect->x, targetRect->y + srcRect->h / 2 - arrowHeight / 2 );
+			arrows.render(target);
+			arrows.setPosition( targetRect->x, targetRect->y + srcRect->h - arrowHeight );
+			arrows.render(target);
+			break;
+		case diBOTTOM:
+			arrows.setCurrentFrame(2);
+			arrows.setPosition( targetRect->x, targetRect->y );
+			arrows.render(target);
+			arrows.setPosition( targetRect->x + srcRect->w / 2 - arrowWidth / 2, targetRect->y );
+			arrows.render(target);
+			arrows.setPosition( targetRect->x + srcRect->w - arrowWidth, targetRect->y );
+			arrows.render(target);
+			break;
+		case diLEFT:
+			arrows.setCurrentFrame(3);
+			arrows.setPosition( srcRect->w - arrowWidth, targetRect->y );
+			arrows.render(target);
+			arrows.setPosition( srcRect->w - arrowWidth, targetRect->y + srcRect->h / 2 - arrowHeight / 2 );
+			arrows.render(target);
+			arrows.setPosition( srcRect->w - arrowWidth, targetRect->y + srcRect->h - arrowHeight );
+			arrows.render(target);
+			break;
+		}
+		break;
+	}
+	case Settings::dpShaded:
+	case Settings::dpFull:
+		SDL_BlitSurface( src, srcRect, target, targetRect );
+		break;
+	}
+	if ( dp == Settings::dpShaded )
+		SDL_SetAlpha( src, SDL_SRCALPHA, -1 );
+}
+
 
 bool Level::adjustPosition( BaseUnit* const unit, const bool adjustCamera )
 {

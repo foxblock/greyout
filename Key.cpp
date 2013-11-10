@@ -1,6 +1,7 @@
 #include "Key.h"
 
 #include "Level.h"
+#include "Exit.h"
 
 Key::Key(Level* newParent) : BaseUnit(newParent)
 {
@@ -88,7 +89,10 @@ void Key::update()
         parent->getUnitsByID(targetIDs,targets);
         targetIDs.clear();
 		for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-			(*I)->setSpriteState("closed");
+		{
+			if ((*I)->tag == "exit")
+				((Exit*)(*I))->keys.insert(this);
+		}
     }
     BaseUnit::update();
 }
@@ -97,7 +101,10 @@ void Key::reset()
 {
     BaseUnit::reset();
     for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-        (*I)->setSpriteState("closed");
+	{
+		if ((*I)->tag == "exit")
+			((Exit*)(*I))->keys.insert(this);
+	}
 }
 
 void Key::hitUnit(const UnitCollisionEntry& entry)
@@ -105,7 +112,10 @@ void Key::hitUnit(const UnitCollisionEntry& entry)
     if (entry.unit->isPlayer)
     {
         for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-            (*I)->setSpriteState("open");
+		{
+			if ((*I)->tag == "exit")
+				((Exit*)(*I))->keys.erase(this);
+		}
         toBeRemoved = true;
     }
 }
