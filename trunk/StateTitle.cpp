@@ -65,14 +65,6 @@ StateTitle::~StateTitle()
 
 void StateTitle::userInput()
 {
-    input->update();
-
-    #ifdef PLATFORM_PC
-        if(input->isQuit()) {
-            nullifyState();
-            return;
-        }
-    #endif
     if(input->isAny() || input->isLeftClick())
     {
 		setNextState(STATE_MAIN);

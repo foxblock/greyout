@@ -5,6 +5,7 @@
 #include "PenjinTypes.h"
 #include "Text.h"
 #include "Chapter.h"
+#include "Settings.h"
 
 #include "gameDefines.h"
 
@@ -35,7 +36,8 @@ class MyGame : public Engine
         virtual float getFPS() const {return frameCount;}
         #endif
 
-        Level* getCurrentLevel() const;
+        Level* getCurrentLevel() const {return (Level*)state;}
+        BaseState* getCurrentState() const {return state;}
         void playSingleLevel(CRstring filename, CRuint returnState);
         void playChapter(CRstring filename, CRint startLevel=-1);
 
@@ -53,6 +55,12 @@ class MyGame : public Engine
         bool chapterTrialPaused;
         uint restartCounter;
         string activeChapter; // the chapter started when selecting "Start Game" in the main menu
+
+        Settings *settings;
+
+		#ifdef PENJIN_CALC_FPS
+		Text *fpsDisplay;
+		#endif
     private:
         // creates a state from a defined set, gets called by MyGame::stateManangement()
         BaseState* createState(CRuint stateID, CRstring parameter="");

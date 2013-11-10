@@ -18,10 +18,11 @@ public:
 
     bool isExiting;
     bool allExited;
+    set<BaseUnit*> keys;
 
 protected:
 	enum ExitProp {
-		epLink=BaseUnit::ufEOL,
+		epLink=BaseUnit::upEOL,
 		epEOL
 	};
 
@@ -30,7 +31,8 @@ protected:
     vector<BaseUnit*> targets;
     vector<string> targetIDs;
 
-	bool showingLinks;
+	int linkTimer;
+	int lastKeys;
 private:
 
 };

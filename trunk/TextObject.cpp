@@ -3,6 +3,7 @@
 #include "StringUtility.h"
 #include "Level.h"
 #include "MusicCache.h"
+#include "MyGame.h"
 
 TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
 {
@@ -143,9 +144,30 @@ void TextObject::explode()
     Colour pix = MAGENTA;
     Vector2df vel(0,0);
     int time = 0;
-    for (int X = 0; X < getWidth(); X+=2)
+	int inc;
+	switch (ENGINE->settings->getParticleDensity())
+	{
+	case Settings::pdOff:
+		MUSIC_CACHE->playSound("sounds/die.wav",parent->chapterPath);
+		toBeRemoved = true;
+		SDL_FreeSurface(temp);
+		return;
+	case Settings::pdFew:
+		inc = round(max((float)(getWidth() + getHeight()) / 32.0f,4.0f));
+		break;
+	case Settings::pdMany:
+		inc = round(max((float)(getWidth() + getHeight()) / 64.0f,2.0f));
+		break;
+	case Settings::pdTooMany:
+		inc = 1;
+		break;
+	default:
+		inc = round(max((float)(getWidth() + getHeight()) / 64.0f,2.0f));
+		break;
+	}
+    for (int X = getWidth()-1; X >= 0; X-=inc)
     {
-        for (int Y = 0; Y < getHeight(); Y+=2)
+        for (int Y = getHeight()-1; Y >= 0; Y-=inc)
         {
             Uint8 *p = (Uint8 *)temp->pixels + Y * temp->pitch + X * bpp;
 

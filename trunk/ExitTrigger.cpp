@@ -38,7 +38,7 @@ void ExitTrigger::doTrigger(const UnitCollisionEntry& entry)
 			parent->swapControl();
         if (entry.unit->flags.hasFlag(ufMissionObjective))
             parent->winCounter--;
-		enabled = false;
+		BaseTrigger::doTrigger(entry);
     }
 }
 

@@ -42,7 +42,7 @@ void LevelTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
     targetLvl->processParameter(targetParam);
     targetLvl->tilingSetup(); // re-set variables set once after load-call, which might be invalid now
-    enabled = false;
+    BaseTrigger::doTrigger(entry);
 }
 
 ///---private---

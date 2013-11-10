@@ -64,7 +64,7 @@ void SoundTrigger::reset()
 void SoundTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
     if (playcount > 0 && ++count >= playcount)
-        enabled = false;
+		BaseTrigger::doTrigger(entry);
 
     MUSIC_CACHE->playSound(filename,parent->chapterPath,loops);
 }

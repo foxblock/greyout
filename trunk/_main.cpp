@@ -17,18 +17,20 @@
 // TODO: Test with notaz' improved SDL
 // DONE: Add reset functions to PushableBox,BaseTrigger,etc. to always get back to default values
 // TODO: Experiment with vector::capacity on unit and especially particle vectors (also check vectors used in physics, whose size can be assumed)
-// TODO: Add settings menu to pause menu (and maybe main menu?) and implement settings (settings class? also draw and control settings here)
-//		- move sound and music volume
-//		- draw pattern (off, lines, shaded, full)
-//		- particle density (off, few, many) -> could affect particle creation factor or simply limit in Level::addParticle (or both)
-//		- draw fps (on, off)
-//		- debug controls (on, off) ? (unit selection)
-//		- write fps (on, off) -> write to file every second
-//		- draw links (on, off) -> simply limit Level::addLink
-//		boolean settings as checkboxes white outline with black fill (off) or white fill (on)
-// TODO: Improve creation and destruction of links (better checks in hitUnit and removal in update - since hitUnit is not called when no hit occurs)
-// TODO: Move handling of key units to exit class (to allow multiple keys per exit and draw links, checks performed simply by destruction of key - possible, race conditions?)
+// DONE: implement rest of settings class (controls, mouse, arrows on lists and sliders)
+// DONE: Improve creation and destruction of links (better checks in hitUnit and removal in update - since hitUnit is not called when no hit occurs)
+// DONE: Move handling of key units to exit class (to allow multiple keys per exit and draw links, checks performed simply by destruction of key - possible, race conditions?)
 // TODO: Option for swapControl to cycle through the player vector instead of toggling two groups (level flag?)
+// DONE: Consitent button usage (right click -> start- / cancel- button)
+// DONE: Handling of settings in MyGame (via Settings::show function)
+// DONE: Drawing of FPS in MyGame
+// TODO: More warnings on unit::load functions
+// DONE: Triggers take hitting unit as target when target vector is empty
+// TODO: BaseTrigger, vector with hitting units and timeout for each unit separately
+// DONE: Fix arrow draw mode on scrolling levels
+// DONE: Better arrows (contrast on white bg)
+// TODO: Reposition arrows on settings menu (centred with clickable area)
+// TODO: Fades between menus (fade out on exit, fade in on enter)
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)

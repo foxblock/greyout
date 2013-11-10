@@ -40,11 +40,15 @@ protected:
     vector<string> activatorIDs;
     PARAMETER_TYPE targetParam;
 
+    bool autoReEnable;
+    int enableTimer;
+
     enum BaseTriggerProps
     {
         bpEnabled=BaseUnit::upEOL,
         bpAction,
         bpActivator,
+        bpAutoReEnable,
         bpEOL
     };
 private:

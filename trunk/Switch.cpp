@@ -3,7 +3,7 @@
 #include "Level.h"
 #include "ControlUnit.h"
 
-#define SWITCH_TIMEOUT 15
+#define SWITCH_TIMEOUT 30
 
 map<string,int> Switch::stringToFunc;
 
@@ -20,7 +20,7 @@ Switch::Switch(Level* newParent) : BaseUnit(newParent)
     switchOn = NULL;
     switchOff = NULL;
 
-    showingLinks = false;
+    linkTimer = 0;
 
     stringToProp["function"] = spFunction;
 
@@ -174,6 +174,8 @@ void Switch::reset()
     else if (switchOn)
         for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
             (this->*switchOn)(*I);
+	switchTimer = 0;
+	linkTimer = 0;
     BaseUnit::reset();
 }
 
@@ -196,6 +198,12 @@ void Switch::update()
 
     if (switchTimer > 0)
         --switchTimer;
+	if (linkTimer > 0)
+	{
+		--linkTimer;
+		if (linkTimer == 0)
+			parent->removeLink(this);
+	}
     BaseUnit::update();
 }
 
@@ -222,21 +230,15 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
             }
             switchTimer = SWITCH_TIMEOUT;
         }
-        if (!showingLinks)
+        if (linkTimer == 0) // no links shown, player needs to stand still once to activate them
 		{
 			for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
 				parent->addLink(this,*I);
-			showingLinks = true;
+			linkTimer = 3;
 		}
     }
-    else
-	{
-		if (showingLinks)
-		{
-			parent->removeLink(this);
-			showingLinks = false;
-		}
-	}
+    if (linkTimer > 0 && entry.unit->isPlayer) // once activated, show until player leaves switch area
+		linkTimer = 3;
 }
 
 ///---protected---

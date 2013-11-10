@@ -73,8 +73,6 @@ StateChapterTrial::~StateChapterTrial()
 
 void StateChapterTrial::userInput()
 {
-    input->update();
-
     if (timeDisplay < ENGINE->chapterTrialTimer)
 		return;
 

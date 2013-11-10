@@ -49,7 +49,7 @@ bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 void DialogueTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
     DIALOGUE->queueLine(textKey,this,time);
-    enabled = false;
+    BaseTrigger::doTrigger(entry);
 }
 
 ///---private---

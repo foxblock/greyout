@@ -66,7 +66,7 @@ string CameraTrigger::debugInfo()
 void CameraTrigger::doTrigger(const UnitCollisionEntry& entry)
 {
     parent->cam.centerOnPos(dest,time);
-    enabled = false;
+    BaseTrigger::doTrigger(entry);
 }
 
 ///---private---

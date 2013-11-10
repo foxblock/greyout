@@ -93,7 +93,7 @@ public:
     Vector2df startingPosition;
     Vector2df velocity; // velocity caused by the unit's movement
     Vector2df acceleration[2]; // 0 - increment, 1 - maximum
-    int direction; // the direction the unit is facing (use for sprite orientation)
+    int direction; // the direction the unit is facing (used for sprite orientation)
     set<int> collisionColours;
     CollisionObject collisionInfo; // contains colliding pixels, correction, etc.
     unsigned int unitCollisionMode; // 0 - never collide (be affected by other units),
