@@ -210,9 +210,10 @@ void Switch::update()
 void Switch::hitUnit(const UnitCollisionEntry& entry)
 {
     // standing still on the ground
-    if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 && entry.overlap.x > 10)
+    if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 && abs(entry.unit->velocity.y) < 4 &&
+		entry.overlap.x > 10 && ((ControlUnit*)entry.unit)->takesControl)
     {
-        if (((ControlUnit*)entry.unit)->takesControl && parent->getInput()->isUp() && switchTimer == 0)
+        if (parent->getInput()->isUp() && switchTimer == 0)
         {
             if (currentState == "off")
             {
@@ -237,7 +238,7 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
 			linkTimer = 3;
 		}
     }
-    if (linkTimer > 0 && entry.unit->isPlayer) // once activated, show until player leaves switch area
+    if (linkTimer > 0 && entry.unit->isPlayer && ((ControlUnit*)entry.unit)->takesControl) // once activated, show until player leaves switch area
 		linkTimer = 3;
 }
 

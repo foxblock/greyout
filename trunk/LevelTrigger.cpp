@@ -6,6 +6,7 @@ LevelTrigger::LevelTrigger(Level* newParent) : BaseTrigger(newParent)
 {
     triggerCol = ORANGE;
     targetLvl = newParent;
+	actionHitTarget = false;
 }
 
 LevelTrigger::~LevelTrigger()

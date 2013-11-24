@@ -34,7 +34,9 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["imageoverwrite"] = upImageOverwrite;
     stringToProp["tiles"] = upTilesheet;
     stringToProp["framerate"] = upFramerate;
-    stringToProp["loops"] = upFramerate;
+    stringToProp["loops"] = upLoops;
+    stringToProp["transparentcolor"] = upTransCol;
+    stringToProp["transparentcolour"] = upTransCol;
     stringToProp["colour"] = upColour;
     stringToProp["color"] = upColour;
     stringToProp["health"] = upHealth;
@@ -56,6 +58,7 @@ BaseUnit::BaseUnit(Level* newParent)
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
     startingPosition = Vector2df(0.0f,0.0f);
+    teleportPosition = Vector2df(0.0f,0.0f);
     velocity = Vector2df(0.0f,0.0f);
     acceleration[0] = Vector2df(0.0f,0.0f);
     acceleration[1] = Vector2df(0.0f,0.0f);
@@ -78,6 +81,7 @@ BaseUnit::BaseUnit(Level* newParent)
     currentOrder = 0;
     unitCollisionMode = 2;
     initOrders = true;
+    isTeleporting = false;
 }
 
 BaseUnit::BaseUnit(const BaseUnit& source)
@@ -171,9 +175,18 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
             break;
         }
-        position.x = StringUtility::stringToFloat(token[0]);
-        position.y = StringUtility::stringToFloat(token[1]);
-        startingPosition = position;
+        if (parent->timeCounter == 0) // during Level::load
+		{
+			position.x = StringUtility::stringToFloat(token[0]);
+			position.y = StringUtility::stringToFloat(token[1]);
+			startingPosition = position;
+		}
+		else
+		{
+			teleportPosition.x = StringUtility::stringToFloat(token[0]);
+			teleportPosition.y = StringUtility::stringToFloat(token[1]);
+			isTeleporting = true;
+		}
         break;
     }
     case upVelocity:
@@ -634,7 +647,13 @@ string BaseUnit::debugInfo()
 
 void BaseUnit::move()
 {
-    position += velocity;
+	if ( isTeleporting )
+	{
+		position = teleportPosition;
+		isTeleporting = false;
+	}
+	else
+		position += velocity;
 }
 
 bool BaseUnit::processOrder(Order& next)
@@ -645,10 +664,13 @@ bool BaseUnit::processOrder(Order& next)
     vector<string> tokens;
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
     int ticks = 1;
-    // This is kinda fucked up, because of the frame based movement
     if (!tokens.empty())
     {
-        ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
+    	string time = tokens.front();
+    	if (time[time.length()-1] == 'f')
+			ticks = StringUtility::stringToInt(time.substr(0,time.length()-1));
+		else // This is kinda fucked up, because of the frame based movement
+			ticks = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
     }
 
     switch (next.key)

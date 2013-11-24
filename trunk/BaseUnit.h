@@ -213,7 +213,9 @@ protected:
     int loops;
     Colour transCol;
 
-
+	// Used for big position changes after Level::load
+	Vector2df teleportPosition;
+	bool isTeleporting;
 private:
 };
 

@@ -206,10 +206,13 @@ bool PushableBox::processOrder(Order& next)
     vector<string> tokens;
     StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
     int ticks = 1;
-    // This is kinda fucked up, because of the frame based movement
     if (!tokens.empty())
     {
-        ticks = round(StringUtility::stringToFloat(tokens.front()) / 1000.0f * (float)FRAME_RATE);
+    	string time = tokens.front();
+    	if (time[time.length()-1] == 'f')
+			ticks = StringUtility::stringToInt(time.substr(0,time.length()-1));
+		else // This is kinda fucked up, because of the frame based movement
+			ticks = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
     }
 
     switch (next.key)

@@ -77,6 +77,7 @@ void Camera::centerOnPos(const Vector2df& pos, CRint time)
     }
     else
     {
+    	// todo: use frames instead of ticks
         speed = (result - parent->drawOffset) / (float)time / (float)FRAME_RATE * 1000.0f;
         dest = result;
     }
