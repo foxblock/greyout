@@ -42,6 +42,7 @@ protected:
 
     bool autoReEnable;
     int enableTimer;
+    bool actionHitTarget; // if true action can be performed on the hitUnit entry if targets is empty
 
     enum BaseTriggerProps
     {

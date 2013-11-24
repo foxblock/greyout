@@ -1,6 +1,7 @@
 #include "Exit.h"
 
 #include "Level.h"
+#include "ControlUnit.h"
 
 Exit::Exit(Level* newParent) : BaseUnit(newParent)
 {
@@ -68,56 +69,6 @@ bool Exit::load(list<PARAMETER_TYPE >& params)
     return result;
 }
 
-void Exit::hitUnit(const UnitCollisionEntry& entry)
-{
-    if (currentState != "closed")
-    {
-        // standing still on the ground
-        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
-            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
-            entry.overlap.x > 10 && entry.overlap.y > 20)
-        {
-        	isExiting = true;
-        	if (allExited || targets.empty())
-			{
-				entry.unit->toBeRemoved = true;
-				parent->swapControl();
-				if (entry.unit->flags.hasFlag(ufMissionObjective))
-					parent->winCounter--;
-			}
-			if (!targets.empty() && checkAllExited())
-			{
-				for	(vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-					if ((*I)->tag == "exit")
-						((Exit*)(*I))->allExited = true;
-				allExited = true;
-			}
-			if (!targets.empty() && !allExited && linkTimer == 0)
-			{
-				for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
-					parent->addLink(this,*I);
-				linkTimer = 3;
-			}
-		}
-    }
-    else
-	{
-        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
-            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
-            entry.overlap.x > 10 && entry.overlap.y > 20)
-        {
-			if (linkTimer == 0)
-			{
-				for (set<BaseUnit*>::iterator I = keys.begin(); I != keys.end(); ++I)
-					parent->addLink(this,*I);
-				linkTimer = 3;
-			}
-        }
-	}
-    if (linkTimer > 0 && entry.unit->isPlayer)
-		linkTimer = 3;
-}
-
 bool Exit::processParameter(const PARAMETER_TYPE& value)
 {
     if (BaseUnit::processParameter(value))
@@ -140,6 +91,62 @@ bool Exit::processParameter(const PARAMETER_TYPE& value)
     }
 
     return parsed;
+}
+
+void Exit::reset()
+{
+	BaseUnit::reset();
+	keys.clear();
+	lastKeys = 0;
+	linkTimer = 0;
+}
+
+void Exit::hitUnit(const UnitCollisionEntry& entry)
+{
+    if (currentState != "closed") // open or linked
+    {
+        // standing still on the ground
+        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
+            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
+            entry.overlap.x > 10 && entry.overlap.y > 20)
+        {
+        	isExiting = true;
+        	if (allExited || targets.empty())
+			{
+				entry.unit->toBeRemoved = true;
+				parent->swapControl();
+				if (entry.unit->flags.hasFlag(ufMissionObjective))
+					parent->winCounter--;
+			}
+			if (!targets.empty() && checkAllExited())
+			{
+				for	(vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+					if ((*I)->tag == "exit")
+						((Exit*)(*I))->allExited = true;
+				allExited = true;
+			}
+			if (!targets.empty() && !allExited && linkTimer == 0 && ((ControlUnit*)entry.unit)->takesControl)
+			{
+				for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
+					parent->addLink(this,*I);
+				linkTimer = 3;
+			}
+		}
+    }
+    else
+	{
+        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
+            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
+            entry.overlap.x > 10 && entry.overlap.y > 20 && ((ControlUnit*)entry.unit)->takesControl &&
+			linkTimer == 0)
+        {
+			for (set<BaseUnit*>::iterator I = keys.begin(); I != keys.end(); ++I)
+				parent->addLink(this,*I);
+			linkTimer = 3;
+        }
+	}
+    if (linkTimer > 0 && entry.unit->isPlayer && ((ControlUnit*)entry.unit)->takesControl)
+		linkTimer = 3;
 }
 
 void Exit::update()

@@ -42,6 +42,7 @@ protected:
 
     enum SwitchFunction
     {
+    	sfUnknown=0,
         sfMovement,
         sfParameter,
         sfParameterOn,

@@ -63,8 +63,11 @@ void Link::update()
 
 void Link::remove()
 {
-	state = lsFadeOut;
-	counter = LINK_FADE_OUT_TICKS;
+	if ( state != lsFadeOut )
+	{
+		state = lsFadeOut;
+		counter = LINK_FADE_OUT_TICKS;
+	}
 }
 
 void Link::render(SDL_Surface* screen)

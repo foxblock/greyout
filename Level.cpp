@@ -98,6 +98,7 @@ Level::Level()
     winCounter = 0;
     firstLoad = true;
     trialEnd = false;
+    timeCounter = 0;
 
 #ifdef _MUSIC
 	musicLister.loadFont(GAME_FONT,DEBUG_FONT_SIZE);
@@ -1226,7 +1227,7 @@ void Level::pauseInput()
 			#endif
         }
 
-        if (input->isStart() || input->isRightClick())
+        if ( input->isStart() )
             pauseToggle();
     }
 }

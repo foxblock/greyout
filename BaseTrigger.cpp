@@ -25,6 +25,7 @@ BaseTrigger::BaseTrigger( Level *newParent ) : BaseUnit( newParent )
 	targetParam.first = "";
 	targetParam.second = "";
 	enableTimer = 0;
+	actionHitTarget = true;
 }
 
 BaseTrigger::~BaseTrigger()
@@ -187,7 +188,7 @@ void BaseTrigger::hitUnit( const UnitCollisionEntry &entry )
 			// perform generic action parameter
 			if ( targetParam.first[0] != 0 )
 			{
-				if ( targets.empty() )
+				if ( targets.empty() && actionHitTarget )
 				{
 					if ( targetParam.first == "order" )
 						entry.unit->resetOrder( true ); // clear order list

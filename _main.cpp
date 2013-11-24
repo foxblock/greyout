@@ -29,20 +29,25 @@
 // TODO: BaseTrigger, vector with hitting units and timeout for each unit separately
 // DONE: Fix arrow draw mode on scrolling levels
 // DONE: Better arrows (contrast on white bg)
-// TODO: Reposition arrows on settings menu (centred with clickable area)
+// DONE: Reposition arrows on settings menu (centred with clickable area)
 // TODO: Fades between menus (fade out on exit, fade in on enter)
+// DONE: Alternate number format for times in level file: XXf (XX number of frames instead of ms - default)
+// TODO: Change all time values to frames (?)
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)
 
-// Greyout colours (RGB):
-// Green:   50 217  54
-// Grey:   147 149 152
-// Red:    255   0   0
-// White:  255 255 255
-// Black:    0   0   0
-// Orange: 255 153   0
-// Blue:     0  51 255
+// Greyout colours:
+//            R   G   B      int
+// Green:    50 217  54  3594546
+// Grey:    147 149 152  9999763
+// Red:     255   0   0      255
+// White:   255 255 255 16777215
+// Black:     0   0   0        0
+// Orange:  255 153   0    39423
+// LOrange: 255 220 168 11723007
+// Blue:      0  51 255 16724736
+// LBlue:   178 193 255 16761266
 
 int main(int argc, char** argv)
 {
