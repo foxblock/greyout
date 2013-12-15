@@ -797,7 +797,6 @@ int StateLevelSelect::loadLevelPreviews(void* data)
     int maxUnlocked = 0;
     if (self->exChapter)
         maxUnlocked = self->exChapter->getProgress();
-	cout << "SIZE OF PREVIEW CACHE: " << previewCache.size() << endl;
 
     while (not self->abortLevelLoading && iter != self->levelPreviews.end())
     {

@@ -224,6 +224,7 @@ protected:
     vector<string> pauseItems;
     int pauseSelection;
     bool mouseInBounds;
+    Vector2di lastPos;
     Rectangle overlay;
     Text timeTrialText;
     int timeDisplay;

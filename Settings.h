@@ -70,6 +70,7 @@ public:
 
 protected:
 	int sel;
+	Vector2di lastPos;
 	bool mouseInBounds;
 
 	Text menuText;
