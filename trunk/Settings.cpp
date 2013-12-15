@@ -33,7 +33,7 @@
 Settings::Settings() :
 	active( false ),
 	sel( 0 ),
-	lastPos( 0, 0 )
+	mouseInBounds( false )
 {
 	menuText.loadFont( GAME_FONT, SETTINGS_TEXT_SIZE );
 	menuText.setColour( WHITE );
@@ -217,15 +217,13 @@ void Settings::userInput( SimpleJoy *input )
 	Vector2di mousePos = input->getMouse();
 	int oldSel = sel;
 	int pos = ( GFX::getYResolution() - ( SETTINGS_MENU_SPACING + SETTINGS_RECT_HEIGHT ) * menuItems.size() ) / 2 + SETTINGS_MENU_OFFSET_Y;
-	if ( mousePos != lastPos )
-		lastPos = mousePos;
-	else
-		mousePos = Vector2di( -1, -1 );
+	mouseInBounds = false;
 	for ( int I = 0; I < menuItems.size(); ++I )
 	{
 		if ( mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT )
 		{
 			sel = I;
+			mouseInBounds = true;
 		}
 		pos += SETTINGS_RECT_HEIGHT + SETTINGS_MENU_SPACING;
 		if ( I == 7 )
@@ -248,12 +246,12 @@ void Settings::userInput( SimpleJoy *input )
 		if ( sel == 0 )
 		{
 			int vol = getMusicVolume();
-			setMusicVolume( max( vol - 4, 0 ) );
+			setMusicVolume( max( vol - 2, 0 ) );
 		}
 		else if ( sel == 1 )
 		{
 			int vol = getSoundVolume();
-			setSoundVolume( max( vol - 4, 0 ) );
+			setSoundVolume( max( vol - 2, 0 ) );
 		}
 		else if ( sel == 2 )
 			setDrawPattern( drawPattern - 1 );
@@ -275,12 +273,12 @@ void Settings::userInput( SimpleJoy *input )
 		if ( sel == 0 )
 		{
 			int vol = getMusicVolume();
-			setMusicVolume( min( vol + 4, MUSIC_CACHE->getMaxVolume() ) );
+			setMusicVolume( min( vol + 2, MUSIC_CACHE->getMaxVolume() ) );
 		}
 		else if ( sel == 1 )
 		{
 			int vol = getSoundVolume();
-			setSoundVolume( min( vol + 4, MUSIC_CACHE->getMaxVolume() ) );
+			setSoundVolume( min( vol + 2, MUSIC_CACHE->getMaxVolume() ) );
 		}
 		else if ( sel == 2 )
 			setDrawPattern( drawPattern + 1 );
@@ -298,13 +296,13 @@ void Settings::userInput( SimpleJoy *input )
 			input->resetRight();
 	}
 
-	if ( ACCEPT_KEY || input->isLeftClick() )
+	if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
 	{
 		if ( sel == 0 )
 		{
 			if ( input->isLeftClick() )
 			{
-				float factor = ( float )( lastPos.x - ( GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X ) ) / ( float )SETTINGS_VOLUME_SLIDER_SIZE;
+				float factor = ( float )( mousePos.x - ( GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X ) ) / ( float )SETTINGS_VOLUME_SLIDER_SIZE;
 				if ( factor >= 0.0f && factor <= 1.0f )
 					setMusicVolume( ( float )MUSIC_CACHE->getMaxVolume() * factor );
 			}
@@ -313,51 +311,51 @@ void Settings::userInput( SimpleJoy *input )
 		{
 			if ( input->isLeftClick() )
 			{
-				float factor = ( float )( lastPos.x - ( GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X ) ) / ( float )SETTINGS_VOLUME_SLIDER_SIZE;
+				float factor = ( float )( mousePos.x - ( GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X ) ) / ( float )SETTINGS_VOLUME_SLIDER_SIZE;
 				if ( factor >= 0.0f && factor <= 1.0f )
 					setSoundVolume( ( float )MUSIC_CACHE->getMaxVolume() * factor );
 			}
 		}
 		else if ( sel == 2 )
 		{
-			if ( lastPos.x > ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
-					lastPos.x < ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X )
+			if ( mousePos.x > ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
+					mousePos.x < ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X )
 				setDrawPattern( drawPattern - 1 );
-			else if ( lastPos.x > ( int ) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
-					  lastPos.x < ( int )GFX::getXResolution() - SETTINGS_MENU_OFFSET_X )
+			else if ( mousePos.x > ( int ) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
+					  mousePos.x < ( int )GFX::getXResolution() - SETTINGS_MENU_OFFSET_X )
 				setDrawPattern( drawPattern + 1 );
 		}
 		else if ( sel == 3 )
 		{
-			if ( lastPos.x > ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
-					lastPos.x < ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X )
+			if ( mousePos.x > ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
+					mousePos.x < ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X )
 				setParticleDensity( particleDensity - 1 );
-			else if ( lastPos.x > ( int ) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
-					  lastPos.x < ( int )GFX::getXResolution() - SETTINGS_MENU_OFFSET_X )
+			else if ( mousePos.x > ( int ) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
+					  mousePos.x < ( int )GFX::getXResolution() - SETTINGS_MENU_OFFSET_X )
 				setParticleDensity( particleDensity + 1 );
 		}
 		else if ( sel == 4 )
 		{
 			int temp =  ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if ( ACCEPT_KEY || ( lastPos.x >= temp && lastPos.x < temp + SETTINGS_RECT_HEIGHT ) )
+			if ( ACCEPT_KEY || ( mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT ) )
 				drawLinks = !drawLinks;
 		}
 		else if ( sel == 5 )
 		{
 			int temp =  ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if ( ACCEPT_KEY || ( lastPos.x >= temp && lastPos.x < temp + SETTINGS_RECT_HEIGHT ) )
+			if ( ACCEPT_KEY || ( mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT ) )
 				drawFps = !drawFps;
 		}
 		else if ( sel == 6 )
 		{
 			int temp =  ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if ( ACCEPT_KEY || ( lastPos.x >= temp && lastPos.x < temp + SETTINGS_RECT_HEIGHT ) )
+			if ( ACCEPT_KEY || ( mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT ) )
 				writeFps = !writeFps;
 		}
 		else if ( sel == 7 )
 		{
 			int temp =  ( int )GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if ( ACCEPT_KEY || ( lastPos.x >= temp && lastPos.x < temp + SETTINGS_RECT_HEIGHT ) )
+			if ( ACCEPT_KEY || ( mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT ) )
 				debugControls = !debugControls;
 		}
 		else if ( sel == 8 )

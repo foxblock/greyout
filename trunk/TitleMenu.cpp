@@ -50,6 +50,7 @@ TitleMenu::TitleMenu()
     marker.setX(0);
     setSelection(true);
     lastPos = Vector2di(0,0);
+    mouseInBounds = false;
 
     // cache the inverted surfaces for faster drawing
     for (int I = 0; I < bg.frameCount(); ++I)
@@ -79,15 +80,21 @@ void TitleMenu::init()
 
 void TitleMenu::userInput()
 {
-	if (lastPos != input->getMouse() && input->getMouseY() > MENU_OFFSET_Y &&
-		input->getMouseY() < MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * MENU_ITEM_COUNT)
+	if (lastPos != input->getMouse())
 	{
-		int prevSel = selection;
-		selection = (input->getMouseY() - MENU_OFFSET_Y) / (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING);
-		setSelection(false);
-		lastPos = input->getMouse();
-		if (selection != prevSel)
-			MUSIC_CACHE->playSound("sounds/menu.wav");
+		if ( input->getMouseY() > MENU_OFFSET_Y &&
+				input->getMouseY() < MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * MENU_ITEM_COUNT)
+		{
+			int prevSel = selection;
+			selection = (input->getMouseY() - MENU_OFFSET_Y) / (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING);
+			mouseInBounds = true;
+			setSelection(false);
+			lastPos = input->getMouse();
+			if (selection != prevSel)
+				MUSIC_CACHE->playSound("sounds/menu.wav");
+		}
+		else
+			mouseInBounds = false;
 	}
 
     if (input->isUp())
@@ -95,7 +102,7 @@ void TitleMenu::userInput()
     else if (input->isDown())
         incSelection();
 
-    if (ACCEPT_KEY || input->isLeftClick())
+    if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         doSelection();
 
     input->resetKeys();

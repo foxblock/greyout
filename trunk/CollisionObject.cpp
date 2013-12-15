@@ -10,6 +10,8 @@ CollisionObject::CollisionObject()
     positionCorrection = Vector2df(0.0f,0.0f);
     squashCounter = 0;
     squashThreshold = DEFAULT_THRESHOLD;
+    pixels.reserve(4);
+    units.reserve(4);
 }
 
 CollisionObject::~CollisionObject()
