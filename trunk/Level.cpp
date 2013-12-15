@@ -507,6 +507,7 @@ void Level::userInput()
 	if (input->isL())
 		controlsString += "L";
 	controlsString += "\n";
+	controlsString += input->isKeyLetter() + "\n";
 #endif
 
     if (input->isStart())
@@ -1117,6 +1118,7 @@ void Level::onPause()
     nameText.setAlignment(LEFT_JUSTIFIED);
     input->resetKeys();
     mouseInBounds = false;
+    lastPos = Vector2di(0,0);
     GFX::showCursor(true);
 }
 
@@ -1315,7 +1317,7 @@ void Level::pauseScreen()
     for (int I = 0; I < pauseItems.size(); ++I)
     {
     	// NOTE: do mouse selection handling here, so I don't have to copy code
-		if (mousePos.y >= pos && mousePos.y <= pos + NAME_RECT_HEIGHT)
+		if ( (mousePos.y >= pos && mousePos.y <= pos + NAME_RECT_HEIGHT) && ( mousePos != lastPos || input->isLeftClick() ) )
 		{
 			pauseSelection = I;
 			mouseInBounds = true;
@@ -1351,6 +1353,7 @@ void Level::pauseScreen()
 
         pos += NAME_RECT_HEIGHT + PAUSE_MENU_SPACING;
     }
+    lastPos = mousePos;
 
     // in time trial mode also render text
     if (ENGINE->timeTrial || ENGINE->chapterTrial)

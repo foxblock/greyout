@@ -33,7 +33,8 @@
 Settings::Settings() :
 	active( false ),
 	sel( 0 ),
-	mouseInBounds( false )
+	mouseInBounds( false ),
+	lastPos( 0, 0 )
 {
 	menuText.loadFont( GAME_FONT, SETTINGS_TEXT_SIZE );
 	menuText.setColour( WHITE );
@@ -218,16 +219,20 @@ void Settings::userInput( SimpleJoy *input )
 	int oldSel = sel;
 	int pos = ( GFX::getYResolution() - ( SETTINGS_MENU_SPACING + SETTINGS_RECT_HEIGHT ) * menuItems.size() ) / 2 + SETTINGS_MENU_OFFSET_Y;
 	mouseInBounds = false;
-	for ( int I = 0; I < menuItems.size(); ++I )
+	if ( mousePos != lastPos || input->isLeftClick() || input->isRightClick() )
 	{
-		if ( mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT )
+		for ( int I = 0; I < menuItems.size(); ++I )
 		{
-			sel = I;
-			mouseInBounds = true;
+			if ( mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT )
+			{
+				sel = I;
+				mouseInBounds = true;
+			}
+			pos += SETTINGS_RECT_HEIGHT + SETTINGS_MENU_SPACING;
+			if ( I == 7 )
+				pos += SETTINGS_MENU_SPACING_EXTRA;
 		}
-		pos += SETTINGS_RECT_HEIGHT + SETTINGS_MENU_SPACING;
-		if ( I == 7 )
-			pos += SETTINGS_MENU_SPACING_EXTRA;
+		lastPos = mousePos;
 	}
 
 	if ( input->isUp() && sel > 0 )
