@@ -151,8 +151,6 @@ Level::Level()
     hideHor = false;
     hideVert = false;
 
-    lastPos = Vector2di(0,0);
-
 	if (ENGINE->currentState != STATE_LEVELSELECT)
 		GFX::showCursor(false);
 }
@@ -373,6 +371,8 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 
 void Level::reset()
 {
+    timeCounter = 0; // resetting BaseUnit::upPosition needs this to work as intended
+
     for (vector<ControlUnit*>::iterator player = removedPlayers.begin(); player != removedPlayers.end();)
     {
         players.push_back(*player);
@@ -447,6 +447,27 @@ void Level::init()
     }
     timeCounter = 0;
     newRecord = false;
+
+	// reserve space for vectors to prevent costly reallocations later
+	switch (ENGINE->settings->getParticleDensity())
+	{
+	case Settings::pdFew:
+		effects.reserve(256);
+		break;
+	case Settings::pdMany:
+		effects.reserve(1024);
+		break;
+	case Settings::pdTooMany:
+		effects.reserve(4096);
+		break;
+	default:
+		break;
+	}
+	units.reserve(64);
+	players.reserve(4);
+	links.reserve(8);
+	removedUnits.reserve(32);
+	removedPlayers.reserve(4);
 
     SDL_BlitSurface(levelImage,NULL,collisionLayer,NULL);
 }
@@ -1095,6 +1116,7 @@ void Level::onPause()
 		ENGINE->chapterTrialPaused = true;
     nameText.setAlignment(LEFT_JUSTIFIED);
     input->resetKeys();
+    mouseInBounds = false;
     GFX::showCursor(true);
 }
 
@@ -1157,7 +1179,7 @@ void Level::pauseInput()
             ++pauseSelection;
             input->resetDown();
         }
-        if (ACCEPT_KEY || input->isLeftClick())
+        if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
             switch (pauseSelection)
             {
@@ -1194,7 +1216,7 @@ void Level::pauseInput()
             input->resetDown();
         }
 
-        if (ACCEPT_KEY || input->isLeftClick())
+        if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
             if (pauseItems[pauseSelection] == "RETURN")
                 pauseToggle();
@@ -1288,16 +1310,15 @@ void Level::pauseScreen()
 
     // render text and selection
 	Vector2di mousePos = input->getMouse();
-	if (mousePos != lastPos)
-		lastPos = mousePos;
-	else
-		mousePos = Vector2di(-1,-1);
+
+	mouseInBounds = false;
     for (int I = 0; I < pauseItems.size(); ++I)
     {
     	// NOTE: do mouse selection handling here, so I don't have to copy code
 		if (mousePos.y >= pos && mousePos.y <= pos + NAME_RECT_HEIGHT)
 		{
 			pauseSelection = I;
+			mouseInBounds = true;
 		}
 
         nameRect.setPosition(0,pos);
@@ -1579,11 +1600,11 @@ void Level::removeLink(BaseUnit *source)
 #ifdef _DEBUG
 string Level::debugInfo()
 {
-    string result = "";
-    result += "Players alive: " + StringUtility::intToString(players.size()) + "\n";
-    result += "Units alive: " + StringUtility::intToString(units.size()) + "\n";
-    result += "Particles: " + StringUtility::intToString(effects.size()) + "\n";
-    result += "Links: " + StringUtility::intToString(links.size()) + "\n";
+    string result = levelFileName + "\n";
+    result += "Players alive: " + StringUtility::intToString(players.size()) + " (" + StringUtility::intToString(players.capacity()) + ")\n";
+    result += "Units alive: " + StringUtility::intToString(units.size()) + " (" + StringUtility::intToString(units.capacity()) + ")\n";
+    result += "Particles: " + StringUtility::intToString(effects.size()) + " (" + StringUtility::intToString(effects.capacity()) + ")\n";
+    result += "Links: " + StringUtility::intToString(links.size()) + " (" + StringUtility::intToString(links.capacity()) + ")\n";
     result += "Camera: " + StringUtility::vecToString(drawOffset) + " | " +
         StringUtility::vecToString(cam.getDest()) + " | " +
         StringUtility::vecToString(cam.getSpeed()) + "\n";
@@ -1818,9 +1839,11 @@ void Level::saveMusicToFile(CRstring musicFile)
 	}
 	file.close();
 	file.open(levelFileName.c_str(), fstream::out | fstream::trunc);
-	for (vector<string>::const_iterator I = lines.begin(); I != lines.end(); ++I)
+	vector<string>::const_iterator I = lines.begin();
+	file << *I;
+	for (++I; I != lines.end(); ++I)
 	{
-		file << *I << endl;
+		file << endl << *I;
 	}
 }
 #endif

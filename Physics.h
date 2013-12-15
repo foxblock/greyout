@@ -16,11 +16,6 @@ See readme file for more details (such as advantages and problems with this impl
 
 #define PHYSICS (Physics::GetSingleton())
 
-// you can do funky horizontal gravity, but the collision checking would need some tinkering to make it work
-// it currently checks the y-directions last for a reason...
-#define DEFAULT_GRAVITY Vector2df(0,1)
-#define DEFAULT_MAXIMUM Vector2df(10,10) // this should be the size of a tile if that's applicable
-
 class Level;
 class BaseUnit;
 class SimpleDirection;

@@ -26,7 +26,7 @@ void Camera::update()
 {
     parent->drawOffset += speed;
     if ((speed.x != 0 || speed.y != 0) &&
-        fabs(parent->drawOffset.x - dest.x) < 2 && fabs(parent->drawOffset.y - dest.y) < 2)
+        abs(parent->drawOffset.x - dest.x) < 2 && abs(parent->drawOffset.y - dest.y) < 2)
     {
         speed = Vector2df(0,0);
         parent->drawOffset = dest;

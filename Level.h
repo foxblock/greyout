@@ -223,6 +223,7 @@ protected:
     SDL_Surface* pauseSurf;
     vector<string> pauseItems;
     int pauseSelection;
+    bool mouseInBounds;
     Rectangle overlay;
     Text timeTrialText;
     int timeDisplay;
@@ -230,8 +231,6 @@ protected:
 
     bool hideHor;
     bool hideVert;
-
-    Vector2di lastPos;
 
     AnimatedSprite arrows;
 

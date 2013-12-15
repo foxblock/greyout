@@ -12,10 +12,12 @@ FadingBox::FadingBox(Level* newParent) : PushableBox(newParent)
 
     stringToProp["farcolour"] = fpFarColour;
     stringToProp["faderadius"] = fpFadeRadius;
+    stringToProp["fadesteps"] = fpFadeSteps;
 
     colours.first = WHITE;
     colours.second = BLACK;
     fadeRadius = Vector2df(32,96);
+    fadeSteps = 0;
 }
 
 FadingBox::~FadingBox()
@@ -67,6 +69,11 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
         }
         break;
     }
+    case fpFadeSteps:
+	{
+        fadeSteps = StringUtility::stringToInt(value.second);
+        break;
+	}
     default:
         parsed = false;
     }
@@ -81,16 +88,19 @@ void FadingBox::update()
 {
     BaseUnit::update();
 
-    float distance = fadeRadius.y + 1;
+    float distance = fadeRadius.y;
 
     for (vector<ControlUnit*>::const_iterator unit = parent->players.begin();
          unit != parent->players.end(); ++unit)
     {
-        float dist = ((*unit)->getPixel(diMIDDLE) - getPixel(diMIDDLE)).length();
-        if (dist < fadeRadius.y && checkCollisionColour((*unit)->col))
-        {
-            distance = min(distance,dist);
-        }
+        if ( checkCollisionColour((*unit)->col) )
+		{
+			float temp = ((*unit)->getPixel(diMIDDLE) - getPixel(diMIDDLE)).length();
+			if ( temp < distance )
+			{
+				distance = temp;
+			}
+		}
     }
     if (distance >= fadeRadius.y)
     {
@@ -102,10 +112,14 @@ void FadingBox::update()
     }
     else
     {
-        distance -= fadeRadius.x;
-        col.red = colours.first.red + (float)(colours.second.red - colours.first.red) / (fadeRadius.y - fadeRadius.x) * distance;
-        col.green = colours.first.green + (float)(colours.second.green - colours.first.green) / (fadeRadius.y - fadeRadius.x) * distance;
-        col.blue = colours.first.blue + (float)(colours.second.blue - colours.first.blue) / (fadeRadius.y - fadeRadius.x) * distance;
+        float factor =  (distance - fadeRadius.x) / (fadeRadius.y - fadeRadius.x); // 0..1
+        if ( fadeSteps > 0 )
+		{
+			factor = round( factor * fadeSteps ) / fadeSteps;
+		}
+        col.red = colours.first.red + (float)(colours.second.red - colours.first.red) * factor;
+        col.green = colours.first.green + (float)(colours.second.green - colours.first.green) * factor;
+        col.blue = colours.first.blue + (float)(colours.second.blue - colours.first.blue) * factor;
     }
 }
 
@@ -127,7 +141,7 @@ string FadingBox::debugInfo()
 {
     string result = PushableBox::debugInfo();
 
-    result += StringUtility::vecToString(fadeRadius) + "\n";
+    result += "FR: " + StringUtility::vecToString(fadeRadius) + "\n";
 
     return result;
 }

@@ -36,6 +36,8 @@
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
 #define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
 
+map<string,SDL_Surface*> StateLevelSelect::previewCache;
+
 
 struct PreviewData
 {
@@ -59,6 +61,7 @@ StateLevelSelect::StateLevelSelect()
     intermediateSelection = 0;
     lastPos = Vector2di(-1,-1);
     mousePos = Vector2di(0,0);
+    mouseInBounds = false;
 
     // graphic stuff
     // TODO: Use 320x240 bg here (and make that)
@@ -128,7 +131,6 @@ StateLevelSelect::~StateLevelSelect()
 
 void StateLevelSelect::init()
 {
-    ENGINE->timeTrial = false; // reset time trial mode
     MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
 
@@ -148,13 +150,6 @@ void StateLevelSelect::clearLevelListing()
         levelThread = NULL;
     }
 
-    vector<PreviewData>::iterator iter;
-    for (iter = levelPreviews.begin(); iter != levelPreviews.end(); ++iter)
-    {
-        if (not (*iter).hasBeenLoaded) // stop when reaching end of loaded levels
-            break;
-        SDL_FreeSurface((*iter).surface);
-    }
     levelPreviews.clear();
     delete exChapter;
     exChapter = NULL;
@@ -170,13 +165,6 @@ void StateLevelSelect::clearChapterListing()
         chapterThread = NULL;
     }
 
-    vector<PreviewData>::iterator iter;
-    for (iter = chapterPreviews.begin(); iter != chapterPreviews.end(); ++iter)
-    {
-        if (not (*iter).hasBeenLoaded) // stop when reaching end of loaded levels
-            break;
-        SDL_FreeSurface((*iter).surface);
-    }
     chapterPreviews.clear();
 }
 
@@ -208,37 +196,27 @@ void StateLevelSelect::userInput()
 			lastPos = Vector2di(-1,-1);
 			if (state == lsLevel)
 			{
-				checkGridOffset( levelPreviews,gridOffset );
+				checkGridOffset( levelPreviews, gridOffset );
 			}
 			else if (state == lsChapter)
 			{
-				checkGridOffset( chapterPreviews,gridOffset );
+				checkGridOffset( chapterPreviews, gridOffset );
 			}
 		}
 
         if (mousePos != lastPos)
 		{
+			mouseInBounds = true;
 			Vector2di newPos(-1,-1);
-			for (int I = 0; I < PREVIEW_COUNT_X; ++I)
-			{
-				if (mousePos.x >= spacing.x * (I+1) + size.x * I &&
-					mousePos.x <= spacing.x * (I+1) + size.x * (I+1))
-				{
-					newPos.x = I;
-					break;
-				}
-			}
-			for (int I = 0; I < PREVIEW_COUNT_Y; ++I)
-			{
-				if (mousePos.y >= OFFSET_Y + spacing.y * (I+1) + size.y * I &&
-					mousePos.y <= OFFSET_Y + spacing.y * (I+1) + size.y * (I+1))
-				{
-					newPos.y = I;
-					break;
-				}
-			}
-			if (newPos.y >= 0)
+			newPos.x = floor( (float)(mousePos.x - spacing.x) / (float)( size.x + spacing.x ) );
+			newPos.y = floor( (float)(mousePos.y - spacing.y / 2.0f - OFFSET_Y) / (float)( size.y + spacing.y) );
+			if (newPos.y >= 0 && newPos.y < PREVIEW_COUNT_Y)
 				newPos.y += gridOffset;
+			else
+			{
+				mouseInBounds = false;
+				newPos.y = -1;
+			}
 			if (newPos.x >= 0 && newPos.y >= 0 && newPos != selection)
 			{
 				selection = newPos;
@@ -250,22 +228,36 @@ void StateLevelSelect::userInput()
 		{
 			if (mousePos.y > OFFSET_Y + spacing.y * PREVIEW_COUNT_Y + size.y * PREVIEW_COUNT_Y)
 			{
-				++selection.y;
-				input->resetMouseButtons();
+				++gridOffset;
+				if (state == lsLevel)
+				{
+					checkGridOffset( levelPreviews, gridOffset );
+				}
+				else if (state == lsChapter)
+				{
+					checkGridOffset( chapterPreviews, gridOffset );
+				}
 			}
 			else if (mousePos.y < OFFSET_Y + spacing.y)
 			{
-				--selection.y;
-				input->resetMouseButtons();
+				--gridOffset;
+				if (state == lsLevel)
+				{
+					checkGridOffset( levelPreviews, gridOffset );
+				}
+				else if (state == lsChapter)
+				{
+					checkGridOffset( chapterPreviews, gridOffset );
+				}
 			}
 		}
 		if (state == lsLevel)
 		{
-			checkSelection( levelPreviews,selection );
+			checkSelection( levelPreviews, selection );
 		}
 		else if (state == lsChapter)
 		{
-			checkSelection( chapterPreviews,selection );
+			checkSelection( chapterPreviews, selection );
 		}
 		if (selection != oldSel)
 			MUSIC_CACHE->playSound("sounds/level_select.wav");
@@ -298,19 +290,28 @@ void StateLevelSelect::userInput()
         if (mousePos != lastPos)
 		{
 			int pos = (GFX::getYResolution() - INTERMEDIATE_MENU_SPACING * (menuItemCount-1) - OFFSET_Y * menuItemCount) / 2;
+			int temp = -1;
 			for (int I = 0; I < menuItemCount; ++I)
 			{
 				if (mousePos.y >= pos && mousePos.y <= pos + OFFSET_Y)
 				{
-					intermediateSelection = I;
+					temp = I;
 					break;
 				}
 				pos += OFFSET_Y + INTERMEDIATE_MENU_SPACING;
 			}
+			if ( temp != -1 )
+			{
+				intermediateSelection = temp;
+				mouseInBounds = true;
+			}
+			else
+				mouseInBounds = false;
+
 			lastPos = mousePos;
 		}
 
-        if (ACCEPT_KEY || input->isLeftClick())
+        if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
 			int value = selection.y * PREVIEW_COUNT_X + selection.x;
         	if (state == lsIntermediate)
@@ -369,7 +370,7 @@ void StateLevelSelect::userInput()
             input->resetKeys();
             return;
         }
-        if (ACCEPT_KEY || input->isLeftClick())
+        if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
 			if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
 			{
@@ -402,7 +403,7 @@ void StateLevelSelect::userInput()
             MUSIC_CACHE->playSound("sounds/menu_back.wav");
             return;
         }
-        if (ACCEPT_KEY || input->isLeftClick())
+        if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
             int value = selection.y * PREVIEW_COUNT_X + selection.x;
             if (value == 0) // level folder
@@ -506,12 +507,12 @@ void StateLevelSelect::render()
 			items.push_back("PLAY");
 			items.push_back("EXPLORE");
 			if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
-				items.push_back("TIME ATTACK");
+				items.push_back("SPEEDRUN");
 		}
 		else
 		{
 			items.push_back("PLAY");
-			items.push_back("TIME ATTACK");
+			items.push_back("SPEEDRUN");
 		}
 
         // OFFSET_Y is also the height of the rectangle used
@@ -572,7 +573,7 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
                 SDL_mutexV(levelLock);
                 if (state == lsLevel && exChapter && (I > maxUnlocked)) // locked
                 {
-                    // actually we need to add an offset here as we need to preserver the top-left
+                    // actually we need to add an offset here as we need to preserve the top-left
                     // corner (Penjin scales centred), but I rather scale the images properly
                     // than add code to compensate for my stupidity in that regard
                     locked.setPosition(pos);
@@ -751,7 +752,10 @@ void StateLevelSelect::checkSelection(const vector<PreviewData>& data, Vector2di
     {
         int rows = ceil((float)data.size() / (float)PREVIEW_COUNT_X);
         if (sel.y >= rows)
+		{
             sel.y = rows - 1;
+            mouseInBounds = false;
+		}
     }
 
     if (sel.x < 0)
@@ -760,7 +764,10 @@ void StateLevelSelect::checkSelection(const vector<PreviewData>& data, Vector2di
     {
         int cols = min(PREVIEW_COUNT_X,(int)data.size() - sel.y * PREVIEW_COUNT_X);
         if (sel.x >= cols)
+		{
             sel.x = cols - 1;
+            mouseInBounds = false;
+		}
     }
 }
 
@@ -774,6 +781,10 @@ void StateLevelSelect::checkGridOffset(const vector<PreviewData>& data, int& off
 		if ( offset > temp )
 			offset = temp;
 	}
+	if ( selection.y < offset )
+		selection.y = offset;
+	else if ( selection.y >= offset + PREVIEW_COUNT_Y )
+		selection.y = offset + PREVIEW_COUNT_Y - 1;
 }
 
 
@@ -786,48 +797,59 @@ int StateLevelSelect::loadLevelPreviews(void* data)
     int maxUnlocked = 0;
     if (self->exChapter)
         maxUnlocked = self->exChapter->getProgress();
+	cout << "SIZE OF PREVIEW CACHE: " << previewCache.size() << endl;
 
     while (not self->abortLevelLoading && iter != self->levelPreviews.end())
     {
-        string filename = (*iter).filename;
-
-        Level* level;
-        if (self->exChapter) // we are browsing a chapter
-        {
-            // check whether the level has been unlocked, else don't load
-            if (levelNumber <= maxUnlocked)
-                level = LEVEL_LOADER->loadLevelFromFile(filename,self->exChapter->path);
-            else
-                level = NULL;
-        }
-        else
-            level = LEVEL_LOADER->loadLevelFromFile(filename);
-        if (level)
-        {
-            SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-            level->init();
-            level->update(); // update once to properly position units
-            level->render(temp); // render at full resolution
-            // scale down, then delete full resolution copy
-            SDL_Surface* surf = zoomSurface(temp,(float)self->size.x / GFX::getXResolution(), (float)self->size.y / GFX::getYResolution(), SMOOTHING_OFF);
-            SDL_FreeSurface(temp);
+    	map<string,SDL_Surface*>::iterator cachedImage = self->previewCache.find( (*iter).filename );
+    	if ( cachedImage != self->previewCache.end() )
+		{
             SDL_mutexP(self->levelLock);
-            // set results for drawing
-            (*iter).surface = surf;
+            (*iter).surface = cachedImage->second;
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->levelLock);
-        }
-        else // error on load
-        {
-            SDL_mutexP(self->levelLock);
-            // set loaded to true, but keep surface == NULL indicating an error
-            (*iter).surface = NULL;
-            (*iter).hasBeenLoaded = true;
-            SDL_mutexV(self->levelLock);
-            if (LEVEL_LOADER->errorString[0] != 0)
-                printf("ERROR: %s\n",LEVEL_LOADER->errorString.c_str());
-        }
-        delete level;
+		}
+		else
+		{
+			Level* level;
+			if (self->exChapter) // we are browsing a chapter
+			{
+				// check whether the level has been unlocked, else don't load
+				if (levelNumber <= maxUnlocked)
+					level = LEVEL_LOADER->loadLevelFromFile(iter->filename,self->exChapter->path);
+				else
+					level = NULL;
+			}
+			else
+				level = LEVEL_LOADER->loadLevelFromFile(iter->filename);
+			if (level)
+			{
+				SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+				level->init();
+				level->update(); // update once to properly position units
+				level->render(temp); // render at full resolution
+				// scale down, then delete full resolution copy
+				SDL_Surface* surf = zoomSurface(temp,(float)self->size.x / GFX::getXResolution(), (float)self->size.y / GFX::getYResolution(), SMOOTHING_OFF);
+				SDL_FreeSurface(temp);
+				self->previewCache[iter->filename] = surf;
+				SDL_mutexP(self->levelLock);
+				// set results for drawing
+				(*iter).surface = surf;
+				(*iter).hasBeenLoaded = true;
+				SDL_mutexV(self->levelLock);
+			}
+			else // error on load
+			{
+				SDL_mutexP(self->levelLock);
+				// set loaded to true, but keep surface == NULL indicating an error
+				(*iter).surface = NULL;
+				(*iter).hasBeenLoaded = true;
+				SDL_mutexV(self->levelLock);
+				if (LEVEL_LOADER->errorString[0] != 0)
+					printf("ERROR: %s\n",LEVEL_LOADER->errorString.c_str());
+			}
+			delete level;
+		}
         ++iter;
         ++levelNumber;
     }
@@ -852,51 +874,63 @@ int StateLevelSelect::loadChapterPreviews(void* data)
 
     while (not self->abortChapterLoading && iter != self->chapterPreviews.end())
     {
-        string filename = (*iter).filename;
+    	map<string,SDL_Surface*>::iterator cachedImage = self->previewCache.find( iter->filename );
 
-        if (not chapter.loadFromFile(filename))
-        {
-            // oops, we have error
-            SDL_mutexP(self->chapterLock);
-            (*iter).hasBeenLoaded = true;
-            SDL_mutexV(self->chapterLock);
-            printf("ERROR: %s\n",chapter.errorString.c_str());
-            ++iter;
-            continue;
-        }
+    	if ( cachedImage != self->previewCache.end() )
+		{
+			SDL_mutexP(self->chapterLock);
+			(*iter).surface = cachedImage->second;
+			(*iter).hasBeenLoaded = true;
+			SDL_mutexV(self->chapterLock);
+		}
+		else
+		{
+			if (not chapter.loadFromFile(iter->filename))
+			{
+				// oops, we have error
+				SDL_mutexP(self->chapterLock);
+				(*iter).hasBeenLoaded = true;
+				SDL_mutexV(self->chapterLock);
+				printf("ERROR: %s\n",chapter.errorString.c_str());
+				++iter;
+				continue;
+			}
 
-        // loaded chapter fine
-        if (chapter.imageFile[0] != 0) // we have an image file
-        {
-            SDL_Surface* img = SURFACE_CACHE->loadSurface(chapter.imageFile,chapter.path,true);
-            if (img) // load successful
-            {
-                if (img->w != self->size.x || img->h != self->size.y) // scale if needed
-                {
-                    img = zoomSurface(img,(float)self->size.x / (float)img->w , (float)self->size.y / (float)img->h, SMOOTHING_OFF);
-                }
-                else // remove the surface from the cache to prevent double freeing
-                {
-                    SURFACE_CACHE->removeSurface(chapter.imageFile,false);
-                    SURFACE_CACHE->removeSurface(chapter.path + chapter.imageFile,false);
-                }
-                SDL_mutexP(self->chapterLock);
-                (*iter).surface = img;
-                (*iter).hasBeenLoaded = true;
-                SDL_mutexV(self->chapterLock);
-                ++iter;
-                continue;
-            }
-        }
-        // reaching here we either have no image file or loading it resulted in an error
-        // render text instead
-        SDL_Surface* surf = SDL_CreateRGBSurface(SDL_SWSURFACE,self->size.x,self->size.y,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-        SDL_FillRect(surf, NULL, SDL_MapRGB(surf->format,0,0,0));
-        self->imageText.print(surf,chapter.name);
-        SDL_mutexP(self->chapterLock);
-        (*iter).surface = surf;
-        (*iter).hasBeenLoaded = true;
-        SDL_mutexV(self->chapterLock);
+			// loaded chapter fine
+			if (chapter.imageFile[0] != 0) // we have an image file
+			{
+				SDL_Surface* img = SURFACE_CACHE->loadSurface(chapter.imageFile,chapter.path,true);
+				if (img) // load successful
+				{
+					if (img->w != self->size.x || img->h != self->size.y) // scale if needed
+					{
+						img = zoomSurface(img,(float)self->size.x / (float)img->w , (float)self->size.y / (float)img->h, SMOOTHING_OFF);
+					}
+					else // remove the surface from the cache to prevent double freeing
+					{
+						SURFACE_CACHE->removeSurface(chapter.imageFile,false);
+						SURFACE_CACHE->removeSurface(chapter.path + chapter.imageFile,false);
+					}
+					self->previewCache[iter->filename] = img;
+					SDL_mutexP(self->chapterLock);
+					(*iter).surface = img;
+					(*iter).hasBeenLoaded = true;
+					SDL_mutexV(self->chapterLock);
+					++iter;
+					continue;
+				}
+			}
+			// reaching here we either have no image file or loading it resulted in an error
+			// render text instead
+			SDL_Surface* surf = SDL_CreateRGBSurface(SDL_SWSURFACE,self->size.x,self->size.y,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+			SDL_FillRect(surf, NULL, SDL_MapRGB(surf->format,0,0,0));
+			self->imageText.print(surf,chapter.name);
+			self->previewCache[iter->filename] = surf;
+			SDL_mutexP(self->chapterLock);
+			(*iter).surface = surf;
+			(*iter).hasBeenLoaded = true;
+			SDL_mutexV(self->chapterLock);
+		}
         ++iter;
     }
     if (self->abortChapterLoading)

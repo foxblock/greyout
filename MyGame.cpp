@@ -141,8 +141,11 @@ void MyGame::stateManagement()
             returnState = STATE_MAIN; // reset return state
         }
     }
-    else
+    if ( next != STATE_LEVEL )
+	{
 		chapterTrial = false; // reset trial mode when going to anything but a level state
+		timeTrial = false;
+	}
 
     currentState = next;
     state = createState(next,stateParameter);

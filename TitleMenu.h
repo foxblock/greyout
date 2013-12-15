@@ -36,6 +36,7 @@ class TitleMenu : public BaseState
         vector<SDL_Surface*> inverseBG;
         AnimatedSprite marker;
         int selection;
+        bool mouseInBounds;
         SDL_Rect invertRegion;
         Vector2di lastPos;
 };

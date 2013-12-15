@@ -632,6 +632,7 @@ string BaseUnit::debugInfo()
         result += " (" + StringUtility::intToString(currentSprite->getCurrentFrame()) + ")\n";
     else
         result += "\n";
+	result += "C: " + StringUtility::intToString(col.red) + "r" + StringUtility::intToString(col.green) + "g" + StringUtility::intToString(col.blue) + "b\n";
     if (!orderList.empty())
     {
         if (currentOrder < orderList.size())

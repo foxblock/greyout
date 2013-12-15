@@ -26,11 +26,13 @@ protected:
     pair<Colour,Colour> colours;
     // x = inner radius (full close colour), y = outer radius (full distant colour)
     Vector2df fadeRadius;
+    int fadeSteps;
 
     enum FadingProp
     {
         fpFarColour=BaseUnit::upEOL,
         fpFadeRadius,
+        fpFadeSteps,
         fpEOL
     };
 

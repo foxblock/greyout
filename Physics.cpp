@@ -9,6 +9,11 @@
 #include "BaseUnit.h"
 #include "Level.h"
 
+// you can do funky horizontal gravity, but the collision checking would need some tinkering to make it work
+// it currently checks the y-directions last for a reason...
+#define DEFAULT_GRAVITY Vector2df(0,1)
+#define DEFAULT_MAXIMUM Vector2df(10,10) // this should be the size of a tile if that's applicable
+
 Physics* Physics::self = 0;
 
 Physics::Physics()
@@ -86,12 +91,14 @@ void Physics::applyPhysics(BaseUnit* const unit) const
     }
 
     // Check for max
-    unit->velocity.x = NumberUtility::signMin(unit->velocity.x,maximum.x);
-    unit->velocity.y = NumberUtility::signMin(unit->velocity.y,maximum.y);
-    /*unit->acceleration[0].x = NumberUtility::signMin(unit->acceleration[0].x,maximum.x);
-    unit->acceleration[0].y = NumberUtility::signMin(unit->acceleration[0].x,maximum.y);
-    unit->acceleration[1].x = NumberUtility::signMin(unit->acceleration[1].y,maximum.x);
-    unit->acceleration[1].y = NumberUtility::signMin(unit->acceleration[1].y,maximum.y);*/
+    if ( unit->velocity.x > maximum.x )
+		unit->velocity.x = maximum.x;
+	else if ( unit->velocity.x < -maximum.x )
+		unit->velocity.x = -maximum.x;
+	if ( unit->velocity.y > maximum.y )
+		unit->velocity.y = maximum.y;
+	else if ( unit->velocity.y < -maximum.y )
+		unit->velocity.y = -maximum.y;
 }
 
 /** NOTICE:
@@ -105,7 +112,8 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
     /// compare to y-correction values and step-size
     /// TODO: Take the unit's velocity into account when returning correction value, so sub-pixel movements get corrected properly
 
-    vector<MapCollisionEntry> collisionDir;
+    static vector<MapCollisionEntry> collisionDir;
+    collisionDir.clear();
     Vector2df correction(0,0);
     Vector2di pixelCorrection(0,0); // unit will be moved by this step until no collision occurs
     Colour colColour; // the colour taken from the collision surface at the tested point
@@ -230,7 +238,6 @@ void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colI
 
     correction.y = correctionY;
     unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
-    collisionDir.clear();
 
     unit->collisionInfo.correction = correction;
 
