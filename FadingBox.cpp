@@ -35,21 +35,13 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
     {
     case upColour:
     {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
-            colours.first = Colour(val);
-        else // string colour code
-            colours.first = Colour(value.second);
+        pLoadColour( value.second, colours.first );
         col = colours.first;
         break;
     }
     case fpFarColour:
     {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
-            colours.second = Colour(val);
-        else // string colour code
-            colours.second = Colour(value.second);
+        pLoadColour( value.second, colours.second );
         break;
     }
     case fpFadeRadius:

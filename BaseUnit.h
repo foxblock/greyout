@@ -138,6 +138,12 @@ public:
     list<PARAMETER_TYPE > parameters;
 
 protected:
+	// commonly used parameter load functions
+	static bool pLoadColour( CRstring input, Colour &output );
+	static bool pLoadVector( CRstring input, Vector2df &output );
+	static bool pLoadVector( CRstring input, Vector2di &output );
+	static bool pLoadUintIDs( CRstring input, vector<string> &output );
+
     // basically just a lazy way of writing position += velocity
     virtual void move();
 

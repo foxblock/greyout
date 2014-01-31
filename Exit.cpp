@@ -80,10 +80,7 @@ bool Exit::processParameter(const PARAMETER_TYPE& value)
     {
     case epLink:
     {
-        targetIDs.clear();
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        targetIDs.insert(targetIDs.begin(),token.begin(),token.end());
+		parsed = pLoadUintIDs( value.second, targetIDs );
         break;
     }
     default:

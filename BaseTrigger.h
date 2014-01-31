@@ -19,8 +19,8 @@ public:
     virtual void hitUnit(const UnitCollisionEntry& entry);
     virtual bool checkCollisionColour(const Colour& col) const;
 
-    int getWidth() const {return width;}
-    int getHeight() const {return height;}
+    int getWidth() const {return size.x;}
+    int getHeight() const {return size.y;}
 
     #ifdef _DEBUG
     virtual string debugInfo();
@@ -31,8 +31,7 @@ public:
 protected:
     virtual void doTrigger(const UnitCollisionEntry& entry);
 
-    int width;
-    int height;
+    Vector2di size;
     Colour triggerCol;
     vector<BaseUnit*> targets;
     vector<string> targetIDs;

@@ -30,6 +30,9 @@ MyGame::MyGame()
     restartCounter = 0;
     icon = NULL;
     settings = NULL;
+    #ifdef _DEBUG
+    frameAdvance = false;
+    #endif // _DEBUG
 }
 
 MyGame::~MyGame()
@@ -200,6 +203,19 @@ PENJIN_ERRORS MyGame::argHandler(int argc, char **argv)
 
 bool MyGame::stateLoop()
 {
+#ifdef _DEBUG
+	while ( frameAdvance && !input->isSelect() )
+	{
+		input->update();
+		if ( input->isKey("f") )
+		{
+			frameAdvance = false;
+		}
+	}
+	if ( frameAdvance )
+		input->resetSelect();
+#endif
+
 	if (chapterTrial && not chapterTrialPaused)
 		++chapterTrialTimer;
 
@@ -219,6 +235,13 @@ bool MyGame::stateLoop()
 		// the following will always last at least the time of one frame
 		gameTimer->start();
 		input->update();
+		#ifdef _DEBUG
+		if ( input->isKey("f") )
+		{
+			frameAdvance = true;
+		}
+		#endif // _DEBUG
+
 
 		#ifdef PLATFORM_PC
 			if (input->isQuit())
@@ -318,6 +341,9 @@ bool MyGame::stateLoop()
 			frameCount = calcFPS();
 		#endif
 		// if done in time, wait for the rest of the frame
+		#ifdef _DEBUG
+		if (!frameAdvance)
+		#endif // _DEBUG
 		limitFPS(gameTimer->getScaler() - gameTimer->getTicks());
 		return true;   // Continue program execution
 	}
