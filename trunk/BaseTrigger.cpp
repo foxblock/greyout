@@ -11,8 +11,8 @@ BaseTrigger::BaseTrigger( Level *newParent ) : BaseUnit( newParent )
 	stringToProp["action"] = bpAction;
 	stringToProp["activator"] = bpActivator;
 	stringToProp["autoreenable"] = bpAutoReEnable;
-	width = 32;
-	height = 32;
+	size.x = 32;
+	size.y = 32;
 	collisionColours.insert( Colour( BLACK ).getIntColour() );
 	collisionColours.insert( Colour( WHITE ).getIntColour() );
 	flags.addFlag( ufNoMapCollision );
@@ -46,15 +46,7 @@ bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 	{
 	case BaseUnit::upSize:
 	{
-		vector<string> token;
-		StringUtility::tokenize( value.second, token, DELIMIT_STRING );
-		if ( token.size() != 2 )
-		{
-			parsed = false;
-			break;
-		}
-		width = StringUtility::stringToInt( token[0] );
-		height = StringUtility::stringToInt( token[1] );
+		parsed = pLoadVector( value.second, size );
 		break;
 	}
 	case bpEnabled:
@@ -64,10 +56,7 @@ bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 	}
 	case BaseUnit::upTarget:
 	{
-		targetIDs.clear();
-		vector<string> tokens;
-		StringUtility::tokenize( value.second, tokens, DELIMIT_STRING );
-		targetIDs.insert( targetIDs.begin(), tokens.begin(), tokens.end() );
+		parsed = pLoadUintIDs( value.second, targetIDs );
 		break;
 	}
 	case bpAction:
@@ -85,10 +74,7 @@ bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 	}
 	case bpActivator:
 	{
-		activatorIDs.clear();
-		vector<string> tokens;
-		StringUtility::tokenize( value.second, tokens, DELIMIT_STRING );
-		activatorIDs.insert( activatorIDs.begin(), tokens.begin(), tokens.end() );
+		parsed = pLoadUintIDs( value.second, activatorIDs );
 		break;
 	}
 	case bpAutoReEnable:
@@ -109,8 +95,8 @@ bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 void BaseTrigger::reset()
 {
 	enabled = true;
-	width = 32;
-	height = 32;
+	size.x = 32;
+	size.y = 32;
 	enableTimer = 0;
 	BaseUnit::reset();
 }
@@ -147,16 +133,16 @@ void BaseTrigger::render( SDL_Surface *surf )
 		tempC = tempC - 64;
 	temp.x = position.x;
 	temp.y = position.y;
-	temp.w = width;
+	temp.w = size.x;
 	temp.h = 1;
 	SDL_FillRect( surf, &temp, tempC.getSDL_Uint32Colour( surf ) );
-	temp.y += height;
+	temp.y += size.y;
 	SDL_FillRect( surf, &temp, tempC.getSDL_Uint32Colour( surf ) );
 	temp.w = 1;
-	temp.h = height;
-	temp.y -= height;
+	temp.h = size.y;
+	temp.y -= size.y;
 	SDL_FillRect( surf, &temp, tempC.getSDL_Uint32Colour( surf ) );
-	temp.x += width;
+	temp.x += size.x;
 	SDL_FillRect( surf, &temp, tempC.getSDL_Uint32Colour( surf ) );
 #else
 	// Don't render anything

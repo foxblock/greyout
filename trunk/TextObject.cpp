@@ -94,15 +94,7 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
         // As Penjin's text size calculation is often incorrect you can manually
         // overwrite the value to prevent drawing errors
         // Bloody inconvenient, I am a lazy fuck, deal with it
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        size.x = StringUtility::stringToInt(token[0]);
-        size.y = StringUtility::stringToInt(token[1]);
+        parsed = pLoadVector( value.second, size );
         break;
     }
     case tpText:

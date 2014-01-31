@@ -34,8 +34,14 @@
 // DONE: Alternate number format for times in level file: XXf (XX number of frames instead of ms - default)
 // TODO: Change all time values to frames (?) --> Timer class based on frames (at least be consistent about it!)
 // TODO: Count-Down on speedrun (full chapter runs)
-// TODO: Lokal, (static) function in BaseUnit to load often used types (colour, target list, etc.)
+// DONE: Local, (static) function in BaseUnit to load often used types (colour, target list, etc.)
 // TODO: Other format for colour declaration in level files: XXXrXXXgXXXb
+// TODO: Add setting for camera movement (smooth following, looking ahead)
+// DONE: Add debug output for colour under cursor
+// DONE: Colour mapping to surface format after loading from level file
+// DONE: Debug function to advance game logic by single frames
+// TODO: Avoid converting back and forth of colour values in collision functions by saving collision colours in SDL uint (watch for bit depth!)
+// TODO: Fix jumping animation (switches to standing in mid-air)
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)

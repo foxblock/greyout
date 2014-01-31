@@ -153,10 +153,7 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
     }
     case BaseUnit::upTarget:
     {
-        targetIDs.clear();
-        vector<string> tokens;
-        StringUtility::tokenize(value.second,tokens,DELIMIT_STRING);
-        targetIDs.insert(targetIDs.begin(),tokens.begin(),tokens.end());
+        parsed = pLoadUintIDs( value.second, targetIDs );
         break;
     }
     default:

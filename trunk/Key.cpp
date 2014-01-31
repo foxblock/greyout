@@ -68,10 +68,7 @@ bool Key::processParameter(const PARAMETER_TYPE& value)
     {
     case BaseUnit::upTarget:
     {
-        targetIDs.clear();
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        targetIDs.insert(targetIDs.begin(),token.begin(),token.end());
+        parsed = pLoadUintIDs( value.second, targetIDs );
         break;
     }
     default:

@@ -102,7 +102,7 @@ BaseUnit::~BaseUnit()
     parameters.clear();
 }
 
-/// ---public---
+/// ---public-------------------------------------------------------------------
 
 bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 {
@@ -191,15 +191,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
     }
     case upVelocity:
     {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        velocity.x = StringUtility::stringToFloat(token[0]);
-        velocity.y = StringUtility::stringToFloat(token[1]);
+    	parsed = pLoadVector( value.second, velocity );
         break;
     }
     case upFlags:
@@ -225,11 +217,9 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         StringUtility::tokenize(value.second,token,DELIMIT_STRING);
         for (vector<string>::const_iterator col = token.begin(); col != token.end(); ++col)
         {
-            int val = StringUtility::stringToInt(*col);
-            if (val > 0 || (*col) == "0") // passed parameter is a numeric colour code
-                collisionColours.insert(Colour(val).getIntColour());
-            else // string colour code
-                collisionColours.insert(Colour(*col).getIntColour());
+        	Colour temp;
+        	pLoadColour( *col, temp );
+        	collisionColours.insert( temp.getIntColour() );
         }
         break;
     }
@@ -240,15 +230,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
     }
     case upTilesheet:
 	{
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-        if (token.size() != 2)
-        {
-            parsed = false;
-            break;
-        }
-        tiles.x = StringUtility::stringToFloat(token[0]);
-        tiles.y = StringUtility::stringToFloat(token[1]);
+		parsed = pLoadVector( value.second, tiles );
 		break;
 	}
 	case upFramerate:
@@ -263,21 +245,12 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 	}
     case upTransCol:
     {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
-            transCol = Colour(val);
-        else // string colour code
-            transCol = Colour(value.second);
+        parsed = pLoadColour( value.second, transCol );
         break;
     }
     case upColour:
     {
-        int val = StringUtility::stringToInt(value.second);
-        if (val > 0 || value.second == "0") // passed parameter is a numeric colour code
-            col = Colour(val);
-        else // string colour code
-            col = Colour(value.second);
-        collisionColours.insert(col.getIntColour());
+        parsed = pLoadColour( value.second, col );
         break;
     }
     case upHealth:
@@ -644,7 +617,54 @@ string BaseUnit::debugInfo()
 }
 #endif
 
-/// ---protected---
+/// ---protected----------------------------------------------------------------
+
+bool BaseUnit::pLoadColour(CRstring input, Colour& output)
+{
+	int val = StringUtility::stringToInt(input);
+	if (val > 0 || input == "0") // passed parameter is a numeric colour code
+		output = Colour(val);
+	else // string colour code
+		output = Colour(input);
+	if ( GFX::getBPP() < 24 )
+		output.adjustToDisplayColour();
+	return true;
+}
+
+bool BaseUnit::pLoadVector(CRstring input, Vector2df& output)
+{
+	vector<string> token;
+	StringUtility::tokenize(input,token,DELIMIT_STRING);
+	if (token.size() != 2)
+	{
+		return false;
+	}
+	output.x = StringUtility::stringToFloat(token[0]);
+	output.y = StringUtility::stringToFloat(token[1]);
+	return true;
+}
+
+bool BaseUnit::pLoadVector(CRstring input, Vector2di& output)
+{
+	vector<string> token;
+	StringUtility::tokenize(input,token,DELIMIT_STRING);
+	if (token.size() != 2)
+	{
+		return false;
+	}
+	output.x = StringUtility::stringToInt(token[0]);
+	output.y = StringUtility::stringToInt(token[1]);
+	return true;
+}
+
+bool BaseUnit::pLoadUintIDs(CRstring input, vector<string>& output)
+{
+	output.clear();
+	vector<string> tokens;
+	StringUtility::tokenize( input, tokens, DELIMIT_STRING );
+	output.insert( output.begin(), tokens.begin(), tokens.end() );
+}
+
 
 void BaseUnit::move()
 {

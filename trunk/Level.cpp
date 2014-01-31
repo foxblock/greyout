@@ -553,9 +553,9 @@ void Level::userInput()
 		frameLimiter = !frameLimiter;
 	}
 
-    if ((input->isL() || input->isR() || input->isSelect()) && not flags.hasFlag(lfDisableSwap))
+    if ((input->isL() || input->isR()) && not flags.hasFlag(lfDisableSwap))
 #else
-    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick() || input->isSelect())
+    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick())
         && not flags.hasFlag(lfDisableSwap))
 #endif
     {
@@ -1614,7 +1614,16 @@ string Level::debugInfo()
     result += "Flags: " + StringUtility::intToString(flags.flags) + "\n";
     if (input)
 	{
-		result += "Mouse: " + StringUtility::vecToString(input->getMouse()) + "\n";
+		result += "Mouse: " + StringUtility::vecToString(input->getMouse());
+		Vector2di pos = input->getMouse() + drawOffset;
+		if ( pos.x >= 0 && pos.y >= 0 && pos.x < collisionLayer->w && pos.y < collisionLayer->h )
+		{
+			Colour temp = GFX::getPixel(collisionLayer,pos.x,pos.y);
+			result += " | " + StringUtility::intToString(temp.red) + "r" + StringUtility::intToString(temp.green) +
+					"g" + StringUtility::intToString(temp.blue) + "b\n";
+		}
+		else
+			result += "\n";
 		result += controlsString;
 	}
     result += "---\n";

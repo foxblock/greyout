@@ -55,6 +55,9 @@ class MyGame : public Engine
         bool chapterTrialPaused;
         uint restartCounter;
         string activeChapter; // the chapter started when selecting "Start Game" in the main menu
+		#ifdef _DEBUG
+        bool frameAdvance;
+        #endif
 
         Settings *settings;
 
