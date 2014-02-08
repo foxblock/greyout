@@ -218,7 +218,11 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         for (vector<string>::const_iterator col = token.begin(); col != token.end(); ++col)
         {
         	Colour temp;
-        	pLoadColour( *col, temp );
+        	if ( !pLoadColour( *col, temp ) )
+			{
+				parsed = false;
+				break;
+			}
         	collisionColours.insert( temp.getIntColour() );
         }
         break;
@@ -622,11 +626,25 @@ string BaseUnit::debugInfo()
 bool BaseUnit::pLoadColour(CRstring input, Colour& output)
 {
 	int val = StringUtility::stringToInt(input);
-	if (val > 0 || input == "0") // passed parameter is a numeric colour code
-		output = Colour(val);
+	if ( input[input.length()-1] == 'x' ) // hex colour: 00FFEEx
+		output.setColour(StringUtility::hexToInt(input.substr(0,input.length()-1)));
+	else if ( input.find('r') != string::npos && input[0] >= 48 && input[0] <= 57 ) // rgb colour: 0r255g238b
+	{
+		vector<string> tokens;
+		StringUtility::tokenize(input,tokens,"rgb");
+		if (tokens.size() < 3)
+			return false;
+		output.setColour(StringUtility::stringToInt(tokens[0]),
+						 StringUtility::stringToInt(tokens[1]),
+						 StringUtility::stringToInt(tokens[2]));
+	}
+	else if ( val > 0 || input == "0" ) // numeric colour code: 196590
+	{
+		output.setColour(val);
+	}
 	else // string colour code
-		output = Colour(input);
-	if ( GFX::getBPP() < 24 )
+		output.setColour(input);
+	if ( GFX::getBPP() < 24 ) // convert colour to lower bitdepth (slight accuracy loss)
 		output.adjustToDisplayColour();
 	return true;
 }
@@ -663,6 +681,7 @@ bool BaseUnit::pLoadUintIDs(CRstring input, vector<string>& output)
 	vector<string> tokens;
 	StringUtility::tokenize( input, tokens, DELIMIT_STRING );
 	output.insert( output.begin(), tokens.begin(), tokens.end() );
+	return true;
 }
 
 
@@ -734,12 +753,8 @@ bool BaseUnit::processOrder(Order& next)
         tempColour.y = col.green;
         tempColour.z = col.blue;
 
-        int val = StringUtility::stringToInt(tokens[1]);
-        Colour temp;
-        if (val > 0 || tokens[1] == "0") // passed parameter is a numeric colour code
-            temp = Colour(val);
-        else // string colour code
-            temp = Colour(tokens[1]);
+		Colour temp;
+		pLoadColour( tokens[1], temp );
 
         tempColourChange.x = (float)(temp.red - col.red) / (float)ticks;
         tempColourChange.y = (float)(temp.green - col.green) / (float)ticks;
