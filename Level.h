@@ -94,7 +94,7 @@ public:
     // returns NULL if none is found
     ControlUnit* getFirstActivePlayer() const;
 
-    void swapControl();
+    void swapControl(const bool &cycleForward = true);
     void lose();
     void win();
 
@@ -143,7 +143,8 @@ public:
         lfSplitX = 256,
         lfSplitY = 512,
         lfDrawPattern = 1024,
-        lfEOL = 2048
+        lfCyclePlayers = 2048,
+        lfEOL = 4096
     };
     static map<string,int> stringToFlag;
 

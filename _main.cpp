@@ -20,7 +20,7 @@
 // DONE: implement rest of settings class (controls, mouse, arrows on lists and sliders)
 // DONE: Improve creation and destruction of links (better checks in hitUnit and removal in update - since hitUnit is not called when no hit occurs)
 // DONE: Move handling of key units to exit class (to allow multiple keys per exit and draw links, checks performed simply by destruction of key - possible, race conditions?)
-// TODO: Option for swapControl to cycle through the player vector instead of toggling two groups (level flag?)
+// DONE: Option for swapControl to cycle through the player vector instead of toggling two groups (level flag?)
 // DONE: Consitent button usage (right click -> start- / cancel- button)
 // DONE: Handling of settings in MyGame (via Settings::show function)
 // DONE: Drawing of FPS in MyGame

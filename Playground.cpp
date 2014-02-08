@@ -76,7 +76,7 @@ void Playground::userInput()
     {
         if (players.size() > 1)
         {
-            swapControl();
+            swapControl( input->isR() );
         }
         input->resetL();
         input->resetR();

@@ -71,6 +71,7 @@ Level::Level()
     stringToFlag["splitx"] = lfSplitX;
     stringToFlag["splity"] = lfSplitY;
     stringToFlag["drawpattern"] = lfDrawPattern;
+    stringToFlag["cycleplayers"] = lfCyclePlayers;
 
     stringToProp["image"] = lpImage;
     stringToProp["flags"] = lpFlags;
@@ -552,16 +553,13 @@ void Level::userInput()
 			ENGINE->setFrameRate(FRAME_RATE);
 		frameLimiter = !frameLimiter;
 	}
+#endif
 
     if ((input->isL() || input->isR()) && not flags.hasFlag(lfDisableSwap))
-#else
-    if ((input->isL() || input->isR() || input->isLeftClick() || input->isRightClick())
-        && not flags.hasFlag(lfDisableSwap))
-#endif
     {
         if (players.size() > 1)
         {
-            swapControl();
+            swapControl( input->isR() );
         }
         input->resetL();
         input->resetR();
@@ -1491,7 +1489,7 @@ ControlUnit* Level::getFirstActivePlayer() const
     return NULL;
 }
 
-void Level::swapControl()
+void Level::swapControl(const bool &cycleForward)
 {
     bool valid = false;
     // check whether there is a player without control
@@ -1506,18 +1504,82 @@ void Level::swapControl()
 
     if (valid)
     {
-        for (vector<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
-        {
-            (*unit)->takesControl = not (*unit)->takesControl;
-            if ((*unit)->takesControl)
-                (*unit)->setSpriteState("wave",true);
+    	if ( flags.hasFlag( lfCyclePlayers ) )
+		{
+			int activePlayers = 0;
+			if ( cycleForward )
+			{
+				for (vector<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
+				{
+					if ( (*unit)->takesControl )
+					{
+						++activePlayers;
+						(*unit)->takesControl = false;
+						(*unit)->velocity.x = 0;
+						(*unit)->acceleration[0].x = 0;
+						(*unit)->acceleration[1].x = 0;
+					}
+					else if ( activePlayers > 0 )
+					{
+						--activePlayers;
+						(*unit)->takesControl = true;
+						(*unit)->setSpriteState("wave",true);
+					}
+				}
+				if ( activePlayers > 0 )
+				{
+					for (int I = 0; I < activePlayers; ++I )
+					{
+						players[I]->takesControl = true;
+						players[I]->setSpriteState("wave",true);
+					}
+				}
+			}
 			else
 			{
-				(*unit)->velocity.x = 0;
-				(*unit)->acceleration[0].x = 0;
-				(*unit)->acceleration[1].x = 0;
+				for (vector<ControlUnit*>::reverse_iterator unit = players.rbegin(); unit != players.rend(); ++unit)
+				{
+					if ( (*unit)->takesControl )
+					{
+						++activePlayers;
+						(*unit)->takesControl = false;
+						(*unit)->velocity.x = 0;
+						(*unit)->acceleration[0].x = 0;
+						(*unit)->acceleration[1].x = 0;
+					}
+					else if ( activePlayers > 0 )
+					{
+						--activePlayers;
+						(*unit)->takesControl = true;
+						(*unit)->setSpriteState("wave",true);
+					}
+				}
+				if ( activePlayers > 0 )
+				{
+					for (int I = 1; I <= activePlayers; ++I )
+					{
+						players[players.size()-I]->takesControl = true;
+						players[players.size()-I]->setSpriteState("wave",true);
+					}
+				}
 			}
-        }
+
+		}
+		else
+		{
+			for (vector<ControlUnit*>::iterator unit = players.begin(); unit != players.end(); ++unit)
+			{
+				(*unit)->takesControl = not (*unit)->takesControl;
+				if ((*unit)->takesControl)
+					(*unit)->setSpriteState("wave",true);
+				else
+				{
+					(*unit)->velocity.x = 0;
+					(*unit)->acceleration[0].x = 0;
+					(*unit)->acceleration[1].x = 0;
+				}
+			}
+		}
     }
 }
 
