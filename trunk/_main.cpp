@@ -35,13 +35,12 @@
 // TODO: Change all time values to frames (?) --> Timer class based on frames (at least be consistent about it!)
 // TODO: Count-Down on speedrun (full chapter runs)
 // DONE: Local, (static) function in BaseUnit to load often used types (colour, target list, etc.)
-// TODO: Other format for colour declaration in level files: XXXrXXXgXXXb
+// DONE: Other format for colour declaration in level files: XXXrXXXgXXXb, also hex: YYYYYYx
 // TODO: Add setting for camera movement (smooth following, looking ahead)
 // DONE: Add debug output for colour under cursor
 // DONE: Colour mapping to surface format after loading from level file
 // DONE: Debug function to advance game logic by single frames
 // TODO: Avoid converting back and forth of colour values in collision functions by saving collision colours in SDL uint (watch for bit depth!)
-// TODO: Fix jumping animation (switches to standing in mid-air)
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)
@@ -50,16 +49,16 @@
 
 // Greyout colours:
 //            R   G   B      int
-// Green:    50 217  54  3594546
-// Grey:    147 149 152  9999763
-// Red:     255   0   0      255
+// Green:    50 217  54  3594546 - 3332406
+// Grey:    147 149 152  9999763 - 9672088
+// Red:     255   0   0 16711680
 // White:   255 255 255 16777215
 // Black:     0   0   0        0
-// Orange:  255 153   0    39423
-// LOrange: 255 220 168 11723007
-// Blue:      0  51 255 16724736
-// LBlue:   178 193 255 16761266
-// B+O Mix: 216 206 212 13946584
+// Orange:  255 153   0    39423 - 16750848
+// LOrange: 255 220 168 11723007 - 16768168
+// Blue:      0  51 255 16724736 - 13311
+// LBlue:   178 193 255 16761266 - 11715071
+// B+O Mix: 216 206 212 13946584 - 14208724
 
 int main(int argc, char** argv)
 {

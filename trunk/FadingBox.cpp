@@ -35,13 +35,13 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
     {
     case upColour:
     {
-        pLoadColour( value.second, colours.first );
+        parsed = pLoadColour( value.second, colours.first );
         col = colours.first;
         break;
     }
     case fpFarColour:
     {
-        pLoadColour( value.second, colours.second );
+        parsed = pLoadColour( value.second, colours.second );
         break;
     }
     case fpFadeRadius:
