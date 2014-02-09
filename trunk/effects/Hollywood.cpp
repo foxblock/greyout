@@ -80,7 +80,7 @@ void Hollywood::fadeIn(CRint time, const Colour& col)
 void Hollywood::fadeOut(CRint time, const Colour& col)
 {
     checkEffectLimit(etFade);
-    EffectFade* temp = new EffectFade(time * -1,col);
+    EffectFade* temp = new EffectFade(-time,col);
     effects.push_back(temp);
 }
 

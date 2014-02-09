@@ -188,7 +188,7 @@ void PushableBox::explode()
             {
                 vel.x = Random::nextFloat(-5,5);
                 vel.y = Random::nextFloat(-8,-3);
-                time = Random::nextInt(750,1250);
+                time = Random::nextInt(45,75);
                 parent->addParticle(this,col,position + Vector2df(X,Y),vel,time);
             }
         }

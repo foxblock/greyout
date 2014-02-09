@@ -46,7 +46,7 @@ bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 	{
 	case BaseUnit::upSize:
 	{
-		parsed = pLoadVector( value.second, size );
+		size = StringUtility::stringToVec<Vector2di>(value.second);
 		break;
 	}
 	case bpEnabled:

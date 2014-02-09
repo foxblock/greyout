@@ -191,7 +191,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
     }
     case upVelocity:
     {
-    	parsed = pLoadVector( value.second, velocity );
+    	velocity = StringUtility::stringToVec<Vector2df>(value.second);
         break;
     }
     case upFlags:
@@ -234,7 +234,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
     }
     case upTilesheet:
 	{
-		parsed = pLoadVector( value.second, tiles );
+		tiles = StringUtility::stringToVec<Vector2di>(value.second);
 		break;
 	}
 	case upFramerate:
@@ -577,7 +577,7 @@ void BaseUnit::explode()
                 {
                     vel.x = Random::nextFloat(-5,5);
                     vel.y = Random::nextFloat(-8,-3);
-                    time = Random::nextInt(750,1250);
+                    time = Random::nextInt(45,75);
                     parent->addParticle(this,pix,position + Vector2df(X,Y),vel,time);
                 }
             }
@@ -649,38 +649,22 @@ bool BaseUnit::pLoadColour(CRstring input, Colour& output)
 	return true;
 }
 
-bool BaseUnit::pLoadVector(CRstring input, Vector2df& output)
-{
-	vector<string> token;
-	StringUtility::tokenize(input,token,DELIMIT_STRING);
-	if (token.size() != 2)
-	{
-		return false;
-	}
-	output.x = StringUtility::stringToFloat(token[0]);
-	output.y = StringUtility::stringToFloat(token[1]);
-	return true;
-}
-
-bool BaseUnit::pLoadVector(CRstring input, Vector2di& output)
-{
-	vector<string> token;
-	StringUtility::tokenize(input,token,DELIMIT_STRING);
-	if (token.size() != 2)
-	{
-		return false;
-	}
-	output.x = StringUtility::stringToInt(token[0]);
-	output.y = StringUtility::stringToInt(token[1]);
-	return true;
-}
-
 bool BaseUnit::pLoadUintIDs(CRstring input, vector<string>& output)
 {
 	output.clear();
 	vector<string> tokens;
 	StringUtility::tokenize( input, tokens, DELIMIT_STRING );
 	output.insert( output.begin(), tokens.begin(), tokens.end() );
+	return true;
+}
+
+bool BaseUnit::pLoadTime(CRstring input, int& output)
+{
+	string time = input;
+	if (time[time.length()-1] == 'f')
+		output = StringUtility::stringToInt(time.substr(0,time.length()-1));
+	else // This is kinda fucked up, because of the frame based movement
+		output = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
 	return true;
 }
 
@@ -706,11 +690,7 @@ bool BaseUnit::processOrder(Order& next)
     int ticks = 1;
     if (!tokens.empty())
     {
-    	string time = tokens.front();
-    	if (time[time.length()-1] == 'f')
-			ticks = StringUtility::stringToInt(time.substr(0,time.length()-1));
-		else // This is kinda fucked up, because of the frame based movement
-			ticks = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
+    	pLoadTime( tokens.front(), ticks );
     }
 
     switch (next.key)

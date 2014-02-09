@@ -6,7 +6,6 @@
 #include "Colour.h"
 #include "Rectangle.h"
 #include "SimpleDirection.h"
-#include "CountDown.h"
 
 class EffectWipe : public BaseEffect
 {
@@ -22,7 +21,8 @@ public:
 private:
     Rectangle rect;
     SimpleDirection direction;
-    CountDown timer;
+    int timer;
+    int startTime;
     bool isInverted;
 };
 

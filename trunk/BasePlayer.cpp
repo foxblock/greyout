@@ -12,7 +12,7 @@ BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
     canJump = false;
     isJumping = false;
     flags.addFlag(ufMissionObjective);
-    fallCounter.init(500,MILLI_SECONDS);
+    fallCounter = 0;
     standDelay = 0;
     activelyMoving = false;
 }
@@ -112,9 +112,11 @@ void BasePlayer::update()
     }
     else // air
     {
+    	if ( fallCounter > 0 )
+			--fallCounter;
         if (currentState == "stand")
         {
-			if (fallCounter.hasFinished() || not fallCounter.isStarted())
+			if (fallCounter == 0)
 			{
 				if (velocity.y > 3.0f)
 				{
@@ -230,7 +232,7 @@ void BasePlayer::control(SimpleJoy* input)
             setSpriteState("jumpleft",true);
         else
             setSpriteState("jumpright",true);
-        fallCounter.start();
+        fallCounter = 30;
     }
     if (!(input->isB() || input->isY()))
 		canJump = true;

@@ -9,8 +9,6 @@
 #include "Rectangle.h"
 #include <SDL/SDL.h>
 
-#include "CountDown.h"
-
 class EffectZoom : public BaseEffect
 {
 public:
@@ -28,7 +26,7 @@ private:
     Colour zoomCol;
     Vector2df position;
     Vector2df size;
-    CountDown timer;
+    int timer;
     int zoomTime;
 };
 

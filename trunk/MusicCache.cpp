@@ -95,7 +95,7 @@ bool MusicCache::playMusic(CRstring filename, CRstring pathOverwrite)
     if (pathOverwrite[0] == 0)
         return playMusic(filename);
 
-    printf("Trying to load custom music track \%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
+    printf("Trying to load custom music track \"%s%s\"\n",pathOverwrite.c_str(),filename.c_str());
 
     if (not playMusic(pathOverwrite + filename,true))
     {

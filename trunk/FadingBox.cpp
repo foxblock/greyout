@@ -48,7 +48,7 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
     {
         if (value.second.find(DELIMIT_STRING) != string::npos) // Inner and outer radius defined
         {
-            fadeRadius = StringUtility::stringToVec(value.second);
+            fadeRadius = StringUtility::stringToVec<Vector2df>(value.second);
         }
         else // only outer radius defined
         {

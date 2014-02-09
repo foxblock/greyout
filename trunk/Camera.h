@@ -2,7 +2,6 @@
 #define CAMERA_H
 
 #include "PenjinTypes.h"
-#include "CountDown.h"
 #include "Vector2df.h"
 
 class BaseUnit;

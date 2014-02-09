@@ -6,6 +6,7 @@
 
 ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	BaseUnit(newParent),
+	particleTimer(0),
 	emitDir(0,0),
 	angleScatter(0),
 	emitPower(0,0),
@@ -52,8 +53,7 @@ void ParticleEmitter::update()
 	BaseUnit::update();
 	if (active)
 	{
-		particleTimer.update();
-		if (particleTimer.hasFinished() || !particleTimer.isStarted())
+		if (particleTimer == 0)
 		{
 			for (int I = 0; I < multiplier; ++I)
 			{
@@ -67,8 +67,9 @@ void ParticleEmitter::update()
 				tempDir *= Random::nextFloat(emitPower.x,emitPower.y);
 				parent->addParticle(this,col,position,tempDir,Random::nextInt(particleLifetime.x,particleLifetime.y));
 			}
-			particleTimer.start(Random::nextInt(nextParticleTime.x,nextParticleTime.y));
+			particleTimer = Random::nextInt(nextParticleTime.x,nextParticleTime.y);
 		}
+		--particleTimer;
 	}
 }
 
@@ -115,12 +116,12 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 //    }
     case epActive:
     {
-        active = StringUtility::stringToVec(value.second);
+        active = StringUtility::stringToBool(value.second);
         break;
     }
     case epDirection:
 	{
-		emitDir = StringUtility::stringToVec(value.second);
+		emitDir = StringUtility::stringToVec<Vector2df>(value.second);
 		emitDir.normalise();
 		break;
 	}
@@ -133,14 +134,16 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 	}
     case epLifetime:
 	{
-		int temp = StringUtility::stringToInt(value.second);
+		int temp = 0;
+		pLoadTime( value.second, temp );
 		particleLifetime.x = temp;
 		particleLifetime.y = temp;
 		break;
 	}
     case epDelay:
 	{
-		int temp = StringUtility::stringToInt(value.second);
+		int temp = 0;
+		pLoadTime( value.second, temp );
 		nextParticleTime.x = temp;
 		nextParticleTime.y = temp;
 		break;
@@ -157,9 +160,18 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		emitPower.y += temp;
 		break;
 	}
+	case epLifetimeScatter:
+	{
+		int temp = 0;
+		pLoadTime( value.second, temp );
+		particleLifetime.x -= temp;
+		particleLifetime.y += temp;
+		break;
+	}
     case epDelayScatter:
 	{
-		int temp = StringUtility::stringToInt(value.second);
+		int temp = 0;
+		pLoadTime( value.second, temp );
 		nextParticleTime.x -= temp;
 		nextParticleTime.y += temp;
 		break;

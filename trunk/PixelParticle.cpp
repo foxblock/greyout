@@ -3,9 +3,7 @@
 PixelParticle::PixelParticle(Level* const parent, CRint lifeTime) : BaseUnit(parent)
 {
     toBeRemoved = false;
-    counter.init(lifeTime,MILLI_SECONDS,this,PixelParticle::counterCallback);
-    counter.setRewind(STOP);
-    counter.start();
+    counter = lifeTime;
     offset = Vector2di(0,0);
 }
 
@@ -16,7 +14,10 @@ PixelParticle::~PixelParticle()
 
 void PixelParticle::update()
 {
-    counter.update();
+	if ( counter > 0 )
+		--counter;
+	else
+		toBeRemoved = true;
 
     position += velocity;
 }
@@ -41,9 +42,4 @@ void PixelParticle::hitMap(const Vector2df& correction)
     {
         velocity.y *= -0.5;
     }
-}
-
-void PixelParticle::counterCallback(void* data)
-{
-    ((PixelParticle*)data)->toBeRemoved = true;
 }
