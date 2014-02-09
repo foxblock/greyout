@@ -38,8 +38,8 @@ EffectWipe::EffectWipe(CRint time, const SimpleDirection& startingDirection, con
     }
 
     rect.setColour(wipeColour);
-    timer.setRewind(STOP);
-    timer.start(time);
+    timer = time;
+    startTime = time;
 
     type = etWipe;
     limit = 1;
@@ -52,13 +52,13 @@ EffectWipe::~EffectWipe()
 
 void EffectWipe::update()
 {
-    if (not timer.hasFinished())
+    if (timer > 0)
     {
         if (isInverted)
         {
             if (direction.xDirection() != 0) // wipe left/right
             {
-                int width = GFX::getXResolution() * ((float)timer.getTimeLeft() / (float)timer.getLimit());
+                int width = GFX::getXResolution() * ((float)timer / (float)startTime);
                 rect.setWidth(width);
                 if (direction.xDirection() < 0) // wipe from left to right (but inverted, so the box has to move across the screen)
                 {
@@ -67,7 +67,7 @@ void EffectWipe::update()
             }
             else // wipe top/bottom
             {
-                int height = GFX::getYResolution() * ((float)timer.getTimeLeft() / (float)timer.getLimit());
+                int height = GFX::getYResolution() * ((float)timer / (float)startTime);
                 rect.setHeight(height);
                 if (direction.yDirection() < 0) // wipe from top to bottom (but inverted, so the box has to move across the screen)
                 {
@@ -79,7 +79,7 @@ void EffectWipe::update()
         {
             if (direction.xDirection() != 0) // wipe left/right
             {
-                int width = GFX::getXResolution() * ((float)timer.getScaledTicks() / (float)timer.getLimit());
+                int width = GFX::getXResolution() * (1.0f - (float)timer / (float)startTime);
                 rect.setWidth(width);
                 if (direction.xDirection() > 0) // wipe from right to left
                 {
@@ -89,7 +89,7 @@ void EffectWipe::update()
             }
             else // wipe top/bottom
             {
-                int height = GFX::getYResolution() * ((float)timer.getScaledTicks() / (float)timer.getLimit());
+                int height = GFX::getYResolution() * (1.0f - (float)timer / (float)startTime);
                 rect.setHeight(height);
                 if (direction.yDirection() > 0) // wipe from bottom to top
                 {
@@ -97,6 +97,7 @@ void EffectWipe::update()
                 }
             }
         }
+    	--timer;
     }
     else
         finished = true;

@@ -5,7 +5,6 @@
 
 #include "Colour.h"
 #include "Rectangle.h"
-#include "CountDown.h"
 
 class EffectFade : public BaseEffect
 {
@@ -19,7 +18,7 @@ public:
     virtual void render();
 
 private:
-    CountDown timer;
+    int timer;
     Rectangle rect;
     int fadeTime;
 };

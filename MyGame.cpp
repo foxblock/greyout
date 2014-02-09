@@ -9,6 +9,8 @@
 
 #include "StringUtility.h"
 
+#include "version.h"
+
 #define SAVE_FILE "save.me"
 #define FPS_FONT_SIZE 24
 
@@ -55,6 +57,8 @@ MyGame *MyGame::getMyGame()
 PENJIN_ERRORS MyGame::init()
 {
     //Set up first level password and filename
+    printf("GREYOUT version %s built %s.%s.%s\n",AutoVersion::FULLVERSION_STRING,
+			AutoVersion::DATE,AutoVersion::MONTH,AutoVersion::YEAR);
     setInitialState(STATE_TITLE);
     gameTimer->start();
     icon = IMG_Load("images/general/icon_win.png");
@@ -208,9 +212,14 @@ bool MyGame::stateLoop()
 	{
 		input->update();
 		if ( input->isKey("f") )
-		{
 			frameAdvance = false;
+	#ifdef PLATFORM_PC
+		if (input->isQuit())
+		{
+			state->nullifyState();
+			return false;
 		}
+	#endif
 	}
 	if ( frameAdvance )
 		input->resetSelect();

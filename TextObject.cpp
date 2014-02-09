@@ -94,7 +94,7 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
         // As Penjin's text size calculation is often incorrect you can manually
         // overwrite the value to prevent drawing errors
         // Bloody inconvenient, I am a lazy fuck, deal with it
-        parsed = pLoadVector( value.second, size );
+        size = StringUtility::stringToVec<Vector2di>(value.second);
         break;
     }
     case tpText:
@@ -191,7 +191,7 @@ void TextObject::explode()
             {
                 vel.x = Random::nextFloat(-5,5);
                 vel.y = Random::nextFloat(-8,-3);
-                time = Random::nextInt(750,1250);
+                time = Random::nextInt(45,75);
                 parent->addParticle(this,pix,position + Vector2df(X,Y),vel,time);
             }
         }

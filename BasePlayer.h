@@ -1,8 +1,6 @@
 #ifndef BASEPLAYER_H
 #define BASEPLAYER_H
 
-#include "CountDown.h"
-
 #include "ControlUnit.h"
 
 /**
@@ -38,7 +36,7 @@ class BasePlayer : public ControlUnit
 
         bool canJump;
         bool isJumping;
-        CountDown fallCounter;
+        int fallCounter;
         int standDelay;
 
     private:

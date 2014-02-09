@@ -73,7 +73,7 @@ TitleMenu::~TitleMenu()
 void TitleMenu::init()
 {
     input->resetKeys(); // avoid sticky keys when returning from level
-    EFFECTS->fadeIn(1000);
+    EFFECTS->fadeIn(60);
 
     MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }

@@ -94,8 +94,9 @@ Level::Level()
     idCounter = 0;
     PHYSICS->reset();
 
-    eventTimer.init(1000,MILLI_SECONDS);
-    eventTimer.setRewind(STOP_AND_REWIND);
+	nameTimer = 0;
+	eventTimer = 0;
+	eventState = fsNone;
     winCounter = 0;
     firstLoad = true;
     trialEnd = false;
@@ -126,7 +127,6 @@ Level::Level()
     nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
     nameRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
     nameRect.setColour(BLACK);
-    nameTimer.init(2000,MILLI_SECONDS);
 
     if (ENGINE->timeTrial || ENGINE->chapterTrial)
     {
@@ -424,6 +424,7 @@ void Level::reset()
     cam.reset();
     PHYSICS->reset();
     drawOffset = Vector2df(0,0);
+    eventState = fsNone;
 
     load(parameters);
     init();
@@ -442,9 +443,9 @@ void Level::init()
 
     if (firstLoad)
     {
-        nameTimer.start(2000);
+        nameTimer = 120;
         if (ENGINE->currentState != STATE_LEVELSELECT)
-            EFFECTS->fadeIn(1000);
+            EFFECTS->fadeIn(60);
     }
     timeCounter = 0;
     newRecord = false;
@@ -581,6 +582,8 @@ void Level::userInput()
 void Level::update()
 {
     ++timeCounter;
+    if ( firstLoad && nameTimer > 0 )
+		--nameTimer;
 
     // Check for units to be removed, also reset temporary data
     for (vector<ControlUnit*>::iterator player = players.begin(); player != players.end();)
@@ -726,13 +729,35 @@ void Level::update()
     // other update stuff
     if (flags.hasFlag(lfKeepCentred))
         cam.centerOnUnit(getFirstActivePlayer(),500);
-    eventTimer.update();
-    DIALOGUE->update();
+	if ( eventTimer == 0 && eventState != fsNone )
+	{
+		switch ( eventState )
+		{
+		case fsWin:
+			setNextState(STATE_NEXT);
+			break;
+		case fsLose:
+			eventState = fsRestart;
+			eventTimer = 8;
+			EFFECTS->fadeOut(8,WHITE);
+			break;
+		case fsRestart:
+			reset();
+			EFFECTS->fadeIn(8,WHITE);
+			break;
+		default:
+			break;
+		}
+	}
+    if ( eventTimer > 0 )
+		--eventTimer;
 
-    if (winCounter <= 0)
+	if (winCounter <= 0)
     {
         win();
     }
+
+    DIALOGUE->update();
 
     EFFECTS->update();
 
@@ -956,7 +981,7 @@ void Level::render()
     // draw level name overlay
     if (firstLoad)
     {
-        if (name[0] != 0 && not nameTimer.hasFinished())
+        if (name[0] != 0 && nameTimer > 0)
         {
             nameRect.render();
             nameText.print(name);
@@ -1189,9 +1214,9 @@ void Level::pauseInput()
                 pauseToggle();
                 break;
             case 1:
-                eventTimer.setCallback(this,Level::winCallback);
-                eventTimer.start(1000);
-                EFFECTS->fadeOut(1000);
+                eventTimer = 60;
+                eventState = fsWin;
+                EFFECTS->fadeOut(60);
                 pauseToggle();
                 break;
             case 2:
@@ -1585,16 +1610,16 @@ void Level::swapControl(const bool &cycleForward)
 
 void Level::lose()
 {
-    if (not eventTimer.isStarted())
+    if ( eventTimer == 0 && eventState == fsNone )
     {
-        eventTimer.setCallback(this,Level::loseCallback);
-        eventTimer.start(750);
+        eventState = fsLose;
+        eventTimer = 45;
     }
 }
 
 void Level::win()
 {
-    if (not eventTimer.isStarted())
+    if ( eventTimer == 0 && eventState == fsNone )
     {
         Savegame::LevelStats stats = {timeCounter};
         newRecord = SAVEGAME->setLevelStats(levelFileName,stats);
@@ -1605,9 +1630,9 @@ void Level::win()
         }
         else
         {
-            eventTimer.setCallback(this,Level::winCallback);
-            eventTimer.start(1000);
-            EFFECTS->fadeOut(1000);
+            eventState = fsWin;
+            eventTimer = 60;
+            EFFECTS->fadeOut(60);
         }
     }
 }
@@ -1849,25 +1874,6 @@ bool Level::adjustPosition( BaseUnit* const unit, const bool adjustCamera )
         changed = true;
     }
     return changed;
-}
-
-void Level::loseCallback(void* data)
-{
-    ((Level*)data)->eventTimer.setCallback(data,Level::lose2Callback);
-    ((Level*)data)->eventTimer.start(125);
-    EFFECTS->fadeOut(125,WHITE);
-}
-
-void Level::lose2Callback(void* data)
-{
-    ((Level*)data)->reset();
-    EFFECTS->fadeIn(125,WHITE);
-}
-
-void Level::winCallback(void* data)
-{
-    Level* self = (Level*)data;
-    self->setNextState(STATE_NEXT);
 }
 
 bool Level::playersVisible() const

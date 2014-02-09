@@ -60,7 +60,7 @@ EffectZoom::EffectZoom(CRint time, const Vector2df& pos, const Vector2df& newSiz
     size = newSize;
     type = etZoom;
 
-    timer.start(abs(time));
+    timer = abs(time);
 }
 
 EffectZoom::~EffectZoom()
@@ -70,15 +70,15 @@ EffectZoom::~EffectZoom()
 
 void EffectZoom::update()
 {
-    if (not timer.hasFinished())
+    if (timer > 0)
     {
         // calculate factor to determine scaling (dependant on position in zoom)
         // preserve aspect ratio of given size
         float factor = 1.0f;
         if (zoomTime > 0) // zoom in
-            factor = max(max(position.x, (float)GFX::getXResolution() - position.x) / size.x, max(position.y, (float)GFX::getYResolution() - position.y) / size.y) * ((float)timer.getTimeLeft() / (float)zoomTime);
+            factor = max(max(position.x, (float)GFX::getXResolution() - position.x) / size.x, max(position.y, (float)GFX::getYResolution() - position.y) / size.y) * ((float)timer / (float)zoomTime);
         else
-            factor = max(max(position.x, (float)GFX::getXResolution() - position.x) / size.x, max(position.y, (float)GFX::getYResolution() - position.y) / size.y) * (((float)zoomTime + (float)timer.getTimeLeft()) / (float)zoomTime);
+            factor = max(max(position.x, (float)GFX::getXResolution() - position.x) / size.x, max(position.y, (float)GFX::getYResolution() - position.y) / size.y) * (1.0f + (float)timer / (float)zoomTime);
         float halfSizeX = size.x * factor;
         float halfSizeY = size.y * factor;
         float diffX[2] = {max(0 - (position.x - halfSizeX),0.0f), max(position.x + halfSizeX - GFX::getXResolution(),0.0f) }; // > 0 when out of screen's bounds to cut off part which is not shown anyway
@@ -86,6 +86,7 @@ void EffectZoom::update()
 
         rect.setDimensions(halfSizeX * 2 - diffX[0] - diffX[1], halfSizeY * 2 - diffY[0] - diffY[1]);
         rect.setPosition(position.x - halfSizeX + diffX[0], position.y - halfSizeY + diffY[0]);
+        --timer;
     }
     else
         finished = true;

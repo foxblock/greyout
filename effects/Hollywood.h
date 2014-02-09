@@ -27,7 +27,7 @@ public:
     // state checking
     bool hasFinished(CRint index=-1);
 
-    // time always in milliseconds
+    // time always in FRAMES (!!!)
     /// fading
     // alpha-fade in or out
     void fadeIn(CRint time, const Colour& col=BLACK); // fade from colour

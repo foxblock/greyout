@@ -3,8 +3,6 @@
 
 #include "BaseUnit.h"
 
-#include "CountDown.h"
-
 class ParticleEmitter : public BaseUnit
 {
 public:
@@ -22,7 +20,7 @@ public:
 	virtual bool processParameter(const PARAMETER_TYPE& value);
 
 protected:
-	CountDown particleTimer;
+	int particleTimer;
 	Vector2df emitDir;
 	float angleScatter;
 	Vector2df emitPower;

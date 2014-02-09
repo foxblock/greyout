@@ -87,7 +87,7 @@ bool Savegame::setFile(CRstring filename)
     if (file.is_open())
         file.close();
 
-    printf("Save file successfully loaded!\n");
+    printf("Save file successfully loaded! \"%s\"\n",filename.c_str());
 
     this->filename = filename;
     return true;

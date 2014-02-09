@@ -12,7 +12,6 @@
 #include "Image.h"
 #include "Text.h"
 #include "Rectangle.h"
-#include "CountDown.h"
 #include "BaseState.h"
 #include "FileLister.h"
 #include "SimpleDirection.h"
@@ -178,10 +177,6 @@ protected:
     // checks whether the unit has left the bounds and adjust position accordingly
     bool adjustPosition(BaseUnit* const unit, const bool adjustCamera = false);
 
-    static void loseCallback(void* data); // fades out
-    static void lose2Callback(void* data); // fades in and resets the level
-    static void winCallback(void* data);
-
     bool playersVisible() const;
 
     enum LevelProp
@@ -214,11 +209,19 @@ protected:
     bool frameLimiter;
     #endif
     SDL_Surface* collisionLayer;
-    CountDown eventTimer; // used for fading in and out
+    int eventTimer; // used for fading in and out
+    enum LevelFinishState
+    {
+    	fsNone=0,
+    	fsWin,
+    	fsLose,
+    	fsRestart
+    };
+    LevelFinishState eventState;
 
     Text nameText;
     Rectangle nameRect;
-    CountDown nameTimer;
+    int nameTimer;
 
     // pause menu is also used for displaying time trial results
     SDL_Surface* pauseSurf;

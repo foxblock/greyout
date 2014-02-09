@@ -1,7 +1,6 @@
 #ifndef PIXELPARTICLE_H
 #define PIXELPARTICLE_H
 
-#include "CountDown.h"
 #include "BaseUnit.h"
 
 /**
@@ -22,9 +21,8 @@ class PixelParticle : public BaseUnit
         virtual void hitMap(const Vector2df& correction);
 
     protected:
-        static void counterCallback(void* data);
 
-        CountDown counter;
+        int counter;
         Vector2di offset;
     private:
 
