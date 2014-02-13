@@ -39,6 +39,8 @@ class TitleMenu : public BaseState
         bool mouseInBounds;
         SDL_Rect invertRegion;
         Vector2di lastPos;
+
+        int fadeTimer;
 };
 
 

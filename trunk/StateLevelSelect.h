@@ -68,6 +68,9 @@ protected:
 	// switches between states and resets certain variables
 	void switchState( const LevelSelectState &toState );
 
+	void doSelection();
+	bool fadeOut();
+
 	// checks whether the passed selection is valid in the context of the
 	// currently displayed data (i.e. it does not go out of bounds)
 	void checkSelection( const vector<PreviewData> &data, Vector2di &sel );
@@ -123,6 +126,8 @@ protected:
 	FileLister dirLister;
 	// the currently active chapter (or NULL if level folder)
 	Chapter *exChapter;
+
+	int fadeTimer;
 private:
 
 };
