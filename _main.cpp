@@ -30,7 +30,7 @@
 // DONE: Fix arrow draw mode on scrolling levels
 // DONE: Better arrows (contrast on white bg)
 // DONE: Reposition arrows on settings menu (centred with clickable area)
-// TODO: Fades between menus (fade out on exit, fade in on enter)
+// DONE: Fades between menus (fade out on exit, fade in on enter)
 // DONE: Alternate number format for times in level file: XXf (XX number of frames instead of ms - default)
 // DONE: Change all time values to frames (?) --> Timer class based on frames (at least be consistent about it!)
 // TODO: Count-Down on speedrun (full chapter runs)

@@ -11,6 +11,7 @@
 #include "MusicCache.h"
 #include "gameDefines.h"
 #include "Savegame.h"
+#include "effects/Hollywood.h"
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
@@ -117,6 +118,8 @@ StateLevelSelect::StateLevelSelect()
     state = lsChapter;
     setChapterDirectory(DEFAULT_CHAPTER_FOLDER);
     exChapter = NULL;
+
+    fadeTimer = -1;
 }
 
 StateLevelSelect::~StateLevelSelect()
@@ -132,6 +135,7 @@ StateLevelSelect::~StateLevelSelect()
 void StateLevelSelect::init()
 {
     MUSIC_CACHE->playMusic("music/title_menu.ogg");
+    EFFECTS->fadeIn(30);
 }
 
 void StateLevelSelect::clear()
@@ -170,6 +174,8 @@ void StateLevelSelect::clearChapterListing()
 
 void StateLevelSelect::userInput()
 {
+	if ( fadeTimer > 0 )
+		return;
 	mousePos = input->getMouse();
     if (state != lsIntermediate && state != lsIntermediateLevel) // grid navigation
     {
@@ -313,43 +319,7 @@ void StateLevelSelect::userInput()
 
         if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
-			int value = selection.y * PREVIEW_COUNT_X + selection.x;
-        	if (state == lsIntermediate)
-			{
-				switch (intermediateSelection)
-				{
-				case 0: // play
-					ENGINE->playChapter(chapterPreviews[value].filename);
-					MUSIC_CACHE->playSound("sounds/drip.wav");
-					break;
-				case 1: // explore
-					exploreChapter(chapterPreviews[value].filename);
-					switchState(lsLevel);
-					break;
-				case 2: // time attack (speedrun!)
-					ENGINE->startChapterTrial();
-					ENGINE->playChapter(chapterPreviews[value].filename,0);
-					MUSIC_CACHE->playSound("sounds/drip.wav");
-					break;
-				default: // nothing
-					break;
-				}
-            }
-            else
-			{
-				if (intermediateSelection == 1)
-					ENGINE->timeTrial = true;
-
-				abortLevelLoading = true;
-				if (not exChapter) // level from level folder
-					ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
-				else // exploring chapter -> start chapter at selected level
-				{
-					if (value <= exChapter->getProgress())
-						ENGINE->playChapter(exChapter->filename,value);
-				}
-				MUSIC_CACHE->playSound("sounds/drip.wav");
-			}
+			doSelection();
         }
         else if (CANCEL_KEY || input->isRightClick())
         {
@@ -372,25 +342,7 @@ void StateLevelSelect::userInput()
         }
         if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
-			if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
-			{
-				switchState(lsIntermediateLevel);
-				input->resetKeys();
-				return;
-			}
-			else
-			{
-				int value = selection.y * PREVIEW_COUNT_X + selection.x;
-				abortLevelLoading = true;
-				if (not exChapter) // level from level folder
-					ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
-				else // exploring chapter -> start chapter at selected level
-				{
-					if (value <= exChapter->getProgress())
-						ENGINE->playChapter(exChapter->filename,value);
-				}
-				MUSIC_CACHE->playSound("sounds/drip.wav");
-			}
+			doSelection();
         }
     }
     else if (state == lsChapter)
@@ -405,21 +357,7 @@ void StateLevelSelect::userInput()
         }
         if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
-            int value = selection.y * PREVIEW_COUNT_X + selection.x;
-            if (value == 0) // level folder
-            {
-                setLevelDirectory(DEFAULT_LEVEL_FOLDER);
-                switchState(lsLevel);
-            }
-            else // show play/explore menu
-            {
-                if (chapterPreviews[value].surface && chapterPreviews[value].hasBeenLoaded)
-                {
-                    switchState(lsIntermediate);
-                    input->resetKeys();
-                    return;
-                }
-            }
+			doSelection();
         }
     }
 
@@ -428,6 +366,10 @@ void StateLevelSelect::userInput()
 
 void StateLevelSelect::update()
 {
+	if ( fadeTimer > 0 )
+		--fadeTimer;
+	else if ( fadeTimer == 0 )
+		doSelection();
     if (state != lsIntermediate && state != lsIntermediateLevel)
     {
         // check selection and adjust grid offset
@@ -449,6 +391,7 @@ void StateLevelSelect::update()
                            OFFSET_Y + (selection.y - gridOffset) * size.y + (selection.y - gridOffset + 1) * spacing.y - CURSOR_BORDER);
 
     }
+    EFFECTS->update();
 }
 
 void StateLevelSelect::render()
@@ -536,9 +479,8 @@ void StateLevelSelect::render()
             title.print(items[I]);
             pos += OFFSET_Y + INTERMEDIATE_MENU_SPACING;
         }
-
     }
-
+	EFFECTS->render();
 }
 
 void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surface* const target, CRint addOffset)
@@ -742,6 +684,107 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
     }
 
     state = toState;
+}
+
+void StateLevelSelect::doSelection()
+{
+	int value = selection.y * PREVIEW_COUNT_X + selection.x;
+	if (state == lsIntermediate)
+	{
+		switch (intermediateSelection)
+		{
+		case 0: // play
+			if ( fadeOut() ) return;
+			ENGINE->playChapter(chapterPreviews[value].filename);
+			MUSIC_CACHE->playSound("sounds/drip.wav");
+			break;
+		case 1: // explore
+			exploreChapter(chapterPreviews[value].filename);
+			switchState(lsLevel);
+			break;
+		case 2: // time attack (speedrun!)
+			if ( fadeOut() ) return;
+			ENGINE->startChapterTrial();
+			ENGINE->playChapter(chapterPreviews[value].filename,0);
+			MUSIC_CACHE->playSound("sounds/drip.wav");
+			break;
+		default: // nothing
+			break;
+		}
+	}
+	else if ( state == lsIntermediateLevel )// intermediate menu after selecting level
+	{
+		if (intermediateSelection == 1)
+			ENGINE->timeTrial = true;
+
+		abortLevelLoading = true;
+		if (not exChapter) // level from level folder
+		{
+			if ( fadeOut() ) return;
+			ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
+		}
+		else // exploring chapter -> start chapter at selected level
+		{
+			if (value <= exChapter->getProgress())
+			{
+				if ( fadeOut() ) return;
+				ENGINE->playChapter(exChapter->filename,value);
+			}
+		}
+		MUSIC_CACHE->playSound("sounds/drip.wav");
+	}
+	else if ( state == lsLevel )
+	{
+		if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
+		{
+			switchState(lsIntermediateLevel);
+		}
+		else
+		{
+			abortLevelLoading = true;
+			if (not exChapter) // level from level folder
+			{
+				if ( fadeOut() ) return;
+				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
+			}
+			else // exploring chapter -> start chapter at selected level
+			{
+				if (value <= exChapter->getProgress())
+				{
+					if ( fadeOut() ) return;
+					ENGINE->playChapter(exChapter->filename,value);
+				}
+			}
+			MUSIC_CACHE->playSound("sounds/drip.wav");
+		}
+	}
+	else
+	{
+		if (value == 0) // level folder
+		{
+			setLevelDirectory(DEFAULT_LEVEL_FOLDER);
+			switchState(lsLevel);
+		}
+		else // show play/explore menu
+		{
+			if (chapterPreviews[value].surface && chapterPreviews[value].hasBeenLoaded)
+			{
+				switchState(lsIntermediate);
+			}
+		}
+	}
+}
+
+bool StateLevelSelect::fadeOut()
+{
+	if ( fadeTimer < 0 )
+	{
+		fadeTimer = 30;
+		EFFECTS->fadeOut(30);
+	}
+	if ( fadeTimer > 0 )
+		return true;
+	return false;
 }
 
 void StateLevelSelect::checkSelection(const vector<PreviewData>& data, Vector2di& sel)

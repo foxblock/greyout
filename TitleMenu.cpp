@@ -51,6 +51,7 @@ TitleMenu::TitleMenu()
     setSelection(true);
     lastPos = Vector2di(0,0);
     mouseInBounds = false;
+    fadeTimer = -1;
 
     // cache the inverted surfaces for faster drawing
     for (int I = 0; I < bg.frameCount(); ++I)
@@ -73,13 +74,15 @@ TitleMenu::~TitleMenu()
 void TitleMenu::init()
 {
     input->resetKeys(); // avoid sticky keys when returning from level
-    EFFECTS->fadeIn(60);
+    EFFECTS->fadeIn(30);
 
     MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
 
 void TitleMenu::userInput()
 {
+	if ( fadeTimer >= 0 )
+		return;
 	if (lastPos != input->getMouse())
 	{
 		if ( input->getMouseY() > MENU_OFFSET_Y &&
@@ -103,7 +106,7 @@ void TitleMenu::userInput()
         incSelection();
 
     if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
-        doSelection();
+		doSelection();
 
     input->resetKeys();
 }
@@ -113,6 +116,12 @@ void TitleMenu::update()
     setSelection(false);
     bg.update();
     EFFECTS->update();
+    if ( fadeTimer > 0 )
+		--fadeTimer;
+	else if ( fadeTimer == 0 )
+	{
+		doSelection();
+	}
 }
 
 void TitleMenu::render()
@@ -165,6 +174,12 @@ void TitleMenu::decSelection()
 
 void TitleMenu::doSelection()
 {
+	if ( selection != 2 && fadeTimer < 0 )
+	{
+		EFFECTS->fadeOut(30);
+		fadeTimer = 30;
+		return;
+	}
     switch (selection)
     {
     case 0:
