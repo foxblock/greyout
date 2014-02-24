@@ -111,6 +111,8 @@ protected:
 	SDL_Thread *chapterThread;
 	bool abortChapterLoading; // if true chapter preview generation will exit
 
+	bool returnToMenu;
+
 	Vector2di size;
 	Vector2di spacing;
 	Vector2di selection;

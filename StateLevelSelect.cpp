@@ -120,6 +120,7 @@ StateLevelSelect::StateLevelSelect()
     exChapter = NULL;
 
     fadeTimer = -1;
+    returnToMenu = false;
 }
 
 StateLevelSelect::~StateLevelSelect()
@@ -350,9 +351,10 @@ void StateLevelSelect::userInput()
         if (CANCEL_KEY || input->isRightClick()) // return to menu
         {
             abortLevelLoading = true;
-            setNextState(STATE_MAIN);
             input->resetKeys();
             MUSIC_CACHE->playSound("sounds/menu_back.wav");
+            fadeOut();
+            returnToMenu = true;
             return;
         }
         if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
@@ -688,8 +690,10 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
 
 void StateLevelSelect::doSelection()
 {
+	if ( returnToMenu )
+		setNextState(STATE_MAIN);
 	int value = selection.y * PREVIEW_COUNT_X + selection.x;
-	if (state == lsIntermediate)
+	if ( state == lsIntermediate )
 	{
 		switch (intermediateSelection)
 		{
