@@ -215,7 +215,8 @@ protected:
     	fsNone=0,
     	fsWin,
     	fsLose,
-    	fsRestart
+    	fsRestart,
+    	fsMenu
     };
     LevelFinishState eventState;
 

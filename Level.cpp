@@ -1168,6 +1168,8 @@ void Level::onResume()
 
 void Level::pauseInput()
 {
+	if ( eventTimer > 0 )
+		return;
 #ifdef _MUSIC
 	if (showMusicList)
 	{
@@ -1220,7 +1222,9 @@ void Level::pauseInput()
                 pauseToggle();
                 break;
             case 2:
-                setNextState(STATE_MAIN);
+            	eventTimer = 30;
+            	eventState = fsMenu;
+            	EFFECTS->fadeOut(30);
                 MUSIC_CACHE->playSound("sounds/menu_back.wav");
                 break;
             default:
@@ -1258,7 +1262,9 @@ void Level::pauseInput()
 			}
             else if (pauseItems[pauseSelection] == "EXIT")
 			{
-                setNextState(STATE_MAIN);
+            	eventTimer = 30;
+            	eventState = fsMenu;
+            	EFFECTS->fadeOut(30);
                 MUSIC_CACHE->playSound("sounds/menu_back.wav");
 			}
 			else if (pauseItems[pauseSelection] == "SETTINGS")
@@ -1281,6 +1287,11 @@ void Level::pauseInput()
 
 void Level::pauseUpdate()
 {
+	if ( eventTimer == 0 && eventState == fsMenu )
+		setNextState(STATE_MAIN);
+	if ( eventTimer > 0 )
+		--eventTimer;
+
     if (trialEnd)
     {
         if (timeDisplay < timeCounter)
@@ -1297,6 +1308,7 @@ void Level::pauseUpdate()
 		musicLister.update();
 	}
 	#endif
+    EFFECTS->update();
 }
 
 void Level::pauseScreen()
@@ -1403,6 +1415,8 @@ void Level::pauseScreen()
 				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).time));
         }
     }
+
+    EFFECTS->render();
 }
 
 int Level::getWidth() const
