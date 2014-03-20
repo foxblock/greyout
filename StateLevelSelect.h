@@ -43,6 +43,7 @@ public:
 	// target surface, addOffset is the number of preview images to skip
 	// rendering (which have been rendered in the last cycle to speed things up)
 	virtual void renderPreviews( const vector<PreviewData> &data, SDL_Surface *const target, CRint addOffset );
+	virtual void renderName(SDL_Surface *target, CRstring name);
 
 	// set the browsing directories for chapters and levels
 	// setChapterDirectory will be called upon entering this state,
@@ -94,13 +95,14 @@ protected:
 	SDL_Surface *previewDraw;
 
 	Text imageText; // fallback text when encountering chapter without image
-	Text title;
+	Text titleText;
+	Text nameText;
 
 	// map<filename,pair<surface, hasbeenloaded>
 	// if hasBeenLoaded is true but surface is NULL an error occurred while loading
 	vector<PreviewData> levelPreviews;
 	vector<PreviewData> chapterPreviews;
-	static map<string,SDL_Surface*> previewCache;
+	static map<string,pair<string,SDL_Surface*> > previewCache;
 
 	// mutex to prevent sharing violations between main and loading thread
 	SDL_mutex *levelLock;

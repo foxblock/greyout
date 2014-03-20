@@ -21,12 +21,14 @@
 #define TITLE_FONT_SIZE 24
 #define IMAGE_FONT_SIZE 12
 #define CURSOR_BORDER 2
+#define NAME_SPACING 2
 #else
 #define SPACING_X 20
 #define OFFSET_Y 35
 #define TITLE_FONT_SIZE 48
 #define IMAGE_FONT_SIZE 24
 #define CURSOR_BORDER 5
+#define NAME_SPACING 4
 #endif
 
 
@@ -37,12 +39,13 @@
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
 #define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
 
-map<string,SDL_Surface*> StateLevelSelect::previewCache;
+map<string,pair<string, SDL_Surface*> > StateLevelSelect::previewCache;
 
 
 struct PreviewData
 {
     string filename;
+    string name;
     SDL_Surface* surface;
     bool hasBeenLoaded;
 };
@@ -92,11 +95,13 @@ StateLevelSelect::StateLevelSelect()
     imageText.setUpBoundary(size);
     imageText.setWrapping(true);
     imageText.setColour(WHITE);
-    title.loadFont(GAME_FONT,TITLE_FONT_SIZE);
-    title.setAlignment(LEFT_JUSTIFIED);
-    title.setColour(WHITE);
-    title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
-    title.setUpBoundary(Vector2di(GFX::getXResolution(),OFFSET_Y));
+    titleText.loadFont(GAME_FONT,TITLE_FONT_SIZE);
+    titleText.setAlignment(LEFT_JUSTIFIED);
+    titleText.setColour(WHITE);
+    titleText.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
+    titleText.setUpBoundary(Vector2di(GFX::getXResolution(),OFFSET_Y));
+    nameText.loadFont(GAME_FONT,IMAGE_FONT_SIZE);
+    nameText.setColour(BLACK);
     menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
     menu.setColour(BLACK);
     menu.setPosition(0,0);
@@ -163,12 +168,12 @@ void StateLevelSelect::clearLevelListing()
 void StateLevelSelect::clearChapterListing()
 {
     abortChapterLoading = true;
-    int* status = NULL;
-    if (chapterThread)
-    {
-        SDL_WaitThread(chapterThread,status);
-        chapterThread = NULL;
-    }
+	int *status = NULL;
+	if (chapterThread)
+	{
+		SDL_WaitThread(chapterThread, status);
+		chapterThread = NULL;
+	}
 
     chapterPreviews.clear();
 }
@@ -406,16 +411,16 @@ void StateLevelSelect::render()
         cursor.render();
         menu.render();
 
-        vector<PreviewData>* activeData;
+		vector<PreviewData>* activeData;
 
         switch (state)
         {
         case lsChapter:
-            title.print("CHAPTERS");
+            titleText.print("CHAPTERS");
             activeData = &chapterPreviews;
             break;
         case lsLevel:
-            title.print("LEVELS");
+            titleText.print("LEVELS");
             activeData = &levelPreviews;
             break;
         default:
@@ -426,6 +431,8 @@ void StateLevelSelect::render()
         renderPreviews(*activeData,previewDraw,lastDraw - gridOffset * PREVIEW_COUNT_X);
         // blit temp surface
         SDL_BlitSurface(previewDraw,NULL,GFX::getVideoSurface(),NULL);
+
+        renderName(GFX::getVideoSurface(), activeData->at(selection.y * PREVIEW_COUNT_X + selection.x).name);
 
         // show arrows
         if (gridOffset > 0)
@@ -466,19 +473,19 @@ void StateLevelSelect::render()
         for (int I = 0; I < items.size(); ++I)
         {
             menu.setPosition(0,pos);
-            title.setPosition(0,pos + OFFSET_Y - TITLE_FONT_SIZE);
+            titleText.setPosition(0,pos + OFFSET_Y - TITLE_FONT_SIZE);
             if (I == intermediateSelection)
             {
                 menu.setColour(WHITE);
-                title.setColour(BLACK);
+                titleText.setColour(BLACK);
             }
             else
             {
                 menu.setColour(BLACK);
-                title.setColour(WHITE);
+                titleText.setColour(WHITE);
             }
             menu.render();
-            title.print(items[I]);
+            titleText.print(items[I]);
             pos += OFFSET_Y + INTERMEDIATE_MENU_SPACING;
         }
     }
@@ -496,7 +503,8 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
         maxUnlocked = exChapter->getProgress();
     }
 
-    for (int I = numOffset + max(addOffset,0); (I < (numOffset + PREVIEW_COUNT_X * PREVIEW_COUNT_Y)) && (I < data.size()); ++I)
+	int I = 0;
+    for (I = numOffset + max(addOffset,0); (I < (numOffset + PREVIEW_COUNT_X * PREVIEW_COUNT_Y)) && (I < data.size()); ++I)
     {
         // calculate position of object to render
         Vector2di pos;
@@ -518,7 +526,7 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
                 if (state == lsLevel && exChapter && (I > maxUnlocked)) // locked
                 {
                     // actually we need to add an offset here as we need to preserve the top-left
-                    // corner (Penjin scales centred), but I rather scale the images properly
+                    // corner (Penjin scales centred), but I rather scale the image files properly
                     // than add code to compensate for my stupidity in that regard
                     locked.setPosition(pos);
                     locked.render(target);
@@ -543,13 +551,41 @@ void StateLevelSelect::renderPreviews(const vector<PreviewData>& data, SDL_Surfa
             }
             if (firstDraw) // only draw loading images once
             {
-                loading.setPosition(pos);
-                loading.render(target);
+				if (state == lsLevel && exChapter && (I > maxUnlocked)) // locked
+                {
+                    locked.setPosition(pos);
+                    locked.render(target);
+                }
+                else
+				{
+					loading.setPosition(pos);
+					loading.render(target);
+				}
             }
         }
     }
+    if (not reachedLoaded)
+		lastDraw = I;
     firstDraw = false;
 }
+
+void StateLevelSelect::renderName(SDL_Surface *target, CRstring name)
+{
+	if (name[0] == 0)
+		return;
+	Vector2df pos = cursor.getPosition();
+	if (selection.y == gridOffset + PREVIEW_COUNT_Y -1) // last row on screen
+		pos.y -= nameText.getHeight() + NAME_SPACING*2;
+	else
+		pos.y += cursor.getDimensions().y;
+	nameText.setPosition(pos.x + NAME_SPACING*2, pos.y + NAME_SPACING); // seems to be centred well with double horizontal spacing
+	nameText.print(name); // print once to let Penjin calculate the size of the text on screen
+	SDL_Rect rect = {pos.x,pos.y,nameText.getWidth() + NAME_SPACING*2,nameText.getHeight() + NAME_SPACING*2};
+	SDL_FillRect(target,&rect,SDL_MapRGB(target->format,255,128,0));
+	nameText.print(name);
+	return;
+}
+
 
 void StateLevelSelect::setLevelDirectory(CRstring dir)
 {
@@ -560,14 +596,14 @@ void StateLevelSelect::setLevelDirectory(CRstring dir)
     files.erase(files.begin()); // delete first element which is the current folder
 
     //#ifdef _DEBUG
-    PreviewData bench = {BENCHMARK_LEVEL,NULL,false};
+    PreviewData bench = {BENCHMARK_LEVEL,"[BENCHMARK]",NULL,false};
     levelPreviews.push_back(bench);
     //#endif
 
     // initialize map
     for (vector<string>::const_iterator file = files.begin(); file < files.end(); ++file)
     {
-        PreviewData temp = {dir + (*file),NULL,false};
+        PreviewData temp = {dir + (*file),"",NULL,false};
         levelPreviews.push_back(temp);
     }
     printf("%i files found in level directory\n",levelPreviews.size());
@@ -605,14 +641,14 @@ void StateLevelSelect::setChapterDirectory(CRstring dir)
         // remove image from cache to prevent double freeing
         SURFACE_CACHE->removeSurface("images/general/levelfolder.png",false);
     }
-    PreviewData temp = {DEFAULT_LEVEL_FOLDER,img,true};
+    PreviewData temp = {DEFAULT_LEVEL_FOLDER,"[SINGLE LEVELS]",img,true};
     chapterPreviews.push_back(temp);
 
     // set paths to info.txt files and initialize map
     for (vector<string>::iterator item = files.begin(); item < files.end(); ++item)
     {
         (*item) = dir + (*item) + "/" + DEFAULT_CHAPTER_INFO_FILE;
-        PreviewData temp2 = {(*item),NULL,false};
+        PreviewData temp2 = {(*item),"",NULL,false};
         chapterPreviews.push_back(temp2);
     }
     printf("%i chapters found\n",chapterPreviews.size()-1);
@@ -634,7 +670,7 @@ void StateLevelSelect::exploreChapter(CRstring filename)
 
     for (vector<string>::const_iterator file = exChapter->levels.begin(); file != exChapter->levels.end(); ++file)
     {
-        PreviewData temp = {exChapter->path + (*file),NULL,false};
+        PreviewData temp = {exChapter->path + (*file),"",NULL,false};
         levelPreviews.push_back(temp);
     }
     printf("Chapter has %i levels\n",levelPreviews.size());
@@ -649,7 +685,7 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
 {
     if (toState != lsIntermediate && toState != lsIntermediateLevel)
     {
-        title.setColour(WHITE);
+        titleText.setColour(WHITE);
         menu.setColour(BLACK);
         menu.setPosition(0,0);
         lastDraw = 0;
@@ -664,8 +700,8 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
             selection = Vector2di(0,0);
             gridOffset = 0;
         }
-        title.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
-        title.setAlignment(LEFT_JUSTIFIED);
+        titleText.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
+        titleText.setAlignment(LEFT_JUSTIFIED);
     }
     else if (toState == lsLevel)
     {
@@ -674,15 +710,15 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
             selection = Vector2di(0,0);
             gridOffset = 0;
         }
-        title.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
-        title.setAlignment(RIGHT_JUSTIFIED);
+        titleText.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
+        titleText.setAlignment(RIGHT_JUSTIFIED);
     }
     else if (toState == lsIntermediate || toState == lsIntermediateLevel)
     {
         overlay.render();
         SDL_BlitSurface(GFX::getVideoSurface(),NULL,previewDraw,NULL);
         intermediateSelection = 0;
-        title.setAlignment(CENTRED);
+        titleText.setAlignment(CENTRED);
     }
 
     state = toState;
@@ -739,7 +775,8 @@ void StateLevelSelect::doSelection()
 	}
 	else if ( state == lsLevel )
 	{
-		if (StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
+		if ((not exChapter || value <= exChapter->getProgress()) &&
+			StringUtility::stringToBool(SAVEGAME->getData("speedrun")))
 		{
 			switchState(lsIntermediateLevel);
 		}
@@ -847,11 +884,14 @@ int StateLevelSelect::loadLevelPreviews(void* data)
 
     while (not self->abortLevelLoading && iter != self->levelPreviews.end())
     {
-    	map<string,SDL_Surface*>::iterator cachedImage = self->previewCache.find( (*iter).filename );
-    	if ( cachedImage != self->previewCache.end() )
+    	// look for cached images by level filename
+    	map<string,pair<string,SDL_Surface*> > ::iterator cachedData = self->previewCache.find( (*iter).filename );
+
+    	if ( cachedData != self->previewCache.end() ) // found cached image
 		{
             SDL_mutexP(self->levelLock);
-            (*iter).surface = cachedImage->second;
+            (*iter).name = cachedData->second.first;
+            (*iter).surface = cachedData->second.second;
             (*iter).hasBeenLoaded = true;
             SDL_mutexV(self->levelLock);
 		}
@@ -868,32 +908,31 @@ int StateLevelSelect::loadLevelPreviews(void* data)
 			}
 			else
 				level = LEVEL_LOADER->loadLevelFromFile(iter->filename);
+
+			SDL_Surface* surf = NULL;
+			string levelName = "";
 			if (level)
 			{
+				levelName = level->name;
 				SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 				level->init();
 				level->update(); // update once to properly position units
 				level->render(temp); // render at full resolution
 				// scale down, then delete full resolution copy
-				SDL_Surface* surf = zoomSurface(temp,(float)self->size.x / GFX::getXResolution(), (float)self->size.y / GFX::getYResolution(), SMOOTHING_OFF);
+				surf = zoomSurface(temp,(float)self->size.x / GFX::getXResolution(), (float)self->size.y / GFX::getYResolution(), SMOOTHING_OFF);
 				SDL_FreeSurface(temp);
-				self->previewCache[iter->filename] = surf;
-				SDL_mutexP(self->levelLock);
-				// set results for drawing
-				(*iter).surface = surf;
-				(*iter).hasBeenLoaded = true;
-				SDL_mutexV(self->levelLock);
+				self->previewCache[iter->filename] = make_pair(levelName, surf);
 			}
 			else // error on load
 			{
-				SDL_mutexP(self->levelLock);
-				// set loaded to true, but keep surface == NULL indicating an error
-				(*iter).surface = NULL;
-				(*iter).hasBeenLoaded = true;
-				SDL_mutexV(self->levelLock);
 				if (LEVEL_LOADER->errorString[0] != 0)
 					printf("ERROR: %s\n",LEVEL_LOADER->errorString.c_str());
 			}
+			SDL_mutexP(self->levelLock);
+			(*iter).surface = surf;
+			(*iter).name = levelName;
+			(*iter).hasBeenLoaded = true;
+			SDL_mutexV(self->levelLock);
 			delete level;
 		}
         ++iter;
@@ -920,12 +959,14 @@ int StateLevelSelect::loadChapterPreviews(void* data)
 
     while (not self->abortChapterLoading && iter != self->chapterPreviews.end())
     {
-    	map<string,SDL_Surface*>::iterator cachedImage = self->previewCache.find( iter->filename );
+    	// look for cached images by chapter filename
+    	map<string,pair<string, SDL_Surface*> >::iterator cachedData = self->previewCache.find( iter->filename );
 
-    	if ( cachedImage != self->previewCache.end() )
+    	if ( cachedData != self->previewCache.end() ) // found cached image
 		{
 			SDL_mutexP(self->chapterLock);
-			(*iter).surface = cachedImage->second;
+			(*iter).name = cachedData->second.first;
+			(*iter).surface = cachedData->second.second;
 			(*iter).hasBeenLoaded = true;
 			SDL_mutexV(self->chapterLock);
 		}
@@ -942,7 +983,13 @@ int StateLevelSelect::loadChapterPreviews(void* data)
 				continue;
 			}
 
-			// loaded chapter fine
+
+			SDL_mutexP(self->chapterLock);
+			(*iter).name = chapter.name;
+			SDL_mutexV(self->chapterLock);
+
+
+			// loaded chapter file
 			if (chapter.imageFile[0] != 0) // we have an image file
 			{
 				SDL_Surface* img = SURFACE_CACHE->loadSurface(chapter.imageFile,chapter.path,true);
@@ -957,7 +1004,7 @@ int StateLevelSelect::loadChapterPreviews(void* data)
 						SURFACE_CACHE->removeSurface(chapter.imageFile,false);
 						SURFACE_CACHE->removeSurface(chapter.path + chapter.imageFile,false);
 					}
-					self->previewCache[iter->filename] = img;
+					self->previewCache[iter->filename] = make_pair((*iter).name, img);
 					SDL_mutexP(self->chapterLock);
 					(*iter).surface = img;
 					(*iter).hasBeenLoaded = true;
@@ -970,8 +1017,8 @@ int StateLevelSelect::loadChapterPreviews(void* data)
 			// render text instead
 			SDL_Surface* surf = SDL_CreateRGBSurface(SDL_SWSURFACE,self->size.x,self->size.y,GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 			SDL_FillRect(surf, NULL, SDL_MapRGB(surf->format,0,0,0));
-			self->imageText.print(surf,chapter.name);
-			self->previewCache[iter->filename] = surf;
+			self->imageText.print(surf,(*iter).name);
+			self->previewCache[iter->filename] = make_pair((*iter).name, surf);
 			SDL_mutexP(self->chapterLock);
 			(*iter).surface = surf;
 			(*iter).hasBeenLoaded = true;

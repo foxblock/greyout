@@ -1410,9 +1410,9 @@ void Level::pauseScreen()
             timeTrialText.print("BEST: ");
             timeTrialText.setAlignment(RIGHT_JUSTIFIED);
 			if (ENGINE->chapterTrial)
-				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).time));
+				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).bestSpeedrunTime));
 			else
-				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).time));
+				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).bestSpeedrunTime));
         }
     }
 

@@ -51,7 +51,7 @@ StateChapterTrial::StateChapterTrial()
     pauseItems.push_back("RESTART");
     pauseItems.push_back("EXIT");
 
-    int temp = SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).time;
+    int temp = SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).bestSpeedrunTime;
     if (temp >= 0)
 		newRecord = (ENGINE->chapterTrialTimer < temp);
 	else
@@ -142,7 +142,7 @@ void StateChapterTrial::render()
 		timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y + TIME_TRIAL_SPACING_Y * 2 + NAME_TEXT_SIZE * 3);
 		timeTrialText.print("BEST: ");
 		timeTrialText.setAlignment(RIGHT_JUSTIFIED);
-		timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).time));
+		timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).bestSpeedrunTime));
 
 		// render text and selection
 		Vector2di mousePos = input->getMouse();

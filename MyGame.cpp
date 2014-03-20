@@ -73,6 +73,9 @@ PENJIN_ERRORS MyGame::init()
     GFX::resetScreen();
     setFrameRate(FRAME_RATE);
     SAVEGAME->setFile(SAVE_FILE);
+    #ifdef _DEBUG
+    SAVEGAME->setEncryption(false);
+    #endif // _DEBUG
     settings = new Settings();
     restartCounter = StringUtility::stringToInt(SAVEGAME->getData("restarts"));
     activeChapter = SAVEGAME->getData("activechapter");

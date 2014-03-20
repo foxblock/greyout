@@ -12,6 +12,7 @@ Savegame::Savegame()
 {
     autoSave = true;
     filename = "";
+    encrypt = true;
 }
 
 Savegame::~Savegame()
@@ -93,6 +94,12 @@ bool Savegame::setFile(CRstring filename)
     return true;
 }
 
+void Savegame::setEncryption(CRbool useEncryption)
+{
+	encrypt = useEncryption;
+}
+
+
 bool Savegame::save()
 {
     string line;
@@ -104,20 +111,13 @@ bool Savegame::save()
         return false;
     }
     // write file version and encryption status
-    file << SAVE_VERSION << "\n" <<
-    #ifdef _DEBUG
-    "false"
-    #else
-    "true"
-    #endif // _DEBUG
-    << "\n";
+    file << SAVE_VERSION << "\n" << (encrypt ? "true" : "false") << endl;
 
     for (map<string,string>::const_iterator iter = data.begin(); iter != data.end(); ++iter)
     {
         line = iter->first + VALUE_STRING + iter->second;
-        #ifndef _DEBUG
-		line = crypt.encryptBuffer(line);
-        #endif // _DEBUG
+        if (encrypt)
+			line = crypt.encryptBuffer(line);
 
         file << line << "\n";
     }
@@ -234,7 +234,7 @@ Savegame::ChapterStats Savegame::getChapterStats(CRstring chapterFile)
     if (tokens.size() >= 2)
     {
         result.progress = StringUtility::stringToInt(tokens.front());
-        result.time = StringUtility::stringToInt(tokens[1]);
+        result.bestSpeedrunTime = StringUtility::stringToInt(tokens[1]);
     }
     chapterDataCache[chapterFile] = result;
 
@@ -247,14 +247,14 @@ bool Savegame::setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbo
 
     if (not overwrite)
     {
-        if ((newStats.time > stats.time && stats.time > 0) || newStats.time < 0)
-            newStats.time = stats.time;
+        if ((newStats.bestSpeedrunTime > stats.bestSpeedrunTime && stats.bestSpeedrunTime > 0) || newStats.bestSpeedrunTime < 0)
+            newStats.bestSpeedrunTime = stats.bestSpeedrunTime;
 		if (newStats.progress < stats.progress)
 			newStats.progress = stats.progress;
     }
     chapterDataCache[chapterFile] = newStats;
 	string temp = StringUtility::intToString(newStats.progress) + DELIMIT_STRING +
-		StringUtility::intToString(newStats.time);
+		StringUtility::intToString(newStats.bestSpeedrunTime);
     return writeData(chapterFile,temp,true);
 }
 
@@ -262,13 +262,13 @@ bool Savegame::setLevelStats(CRstring levelFile, const LevelStats& newStats, CRb
 {
     LevelStats stats = getLevelStats(levelFile);
 
-    if (not overwrite && stats.time >= 0)
+    if (not overwrite && stats.bestSpeedrunTime >= 0)
     {
-        if (newStats.time > stats.time)
+        if (newStats.bestSpeedrunTime > stats.bestSpeedrunTime)
             return false;
     }
     levelDataCache[levelFile] = newStats;
-    return writeData(levelFile,StringUtility::intToString(newStats.time),true);
+    return writeData(levelFile,StringUtility::intToString(newStats.bestSpeedrunTime),true);
 }
 
 Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile)
@@ -284,8 +284,15 @@ Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile)
 
     if (tokens.size() >= 1)
     {
-        result.time = StringUtility::stringToInt(tokens.front());
+        result.bestSpeedrunTime = StringUtility::stringToInt(tokens.front());
     }
+    if (tokens.size() >= 5)
+	{
+		result.totalDeaths = StringUtility::stringToInt(tokens[1]);
+		result.totalResets = StringUtility::stringToInt(tokens[2]);
+		result.timesCompleted = StringUtility::stringToInt(tokens[3]);
+		result.totalTimeOnLevel = StringUtility::stringToInt(tokens[4]);
+	}
     levelDataCache[levelFile] = result;
 
     return result;
