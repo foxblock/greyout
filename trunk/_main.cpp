@@ -2,11 +2,11 @@
 
 // DONE: Story
 // TODO: "Connected" level type
-// TODO: More levels, organic levels, more assets (trees, (DONE)gears)
+// TODO: More levels, organic levels, more assets ((DONE)trees, (DONE)gears)
 // TODO: Unit types (temporary platforms, (DONE)timed platforms, (DONE)keys, lasers)
+// DONE: Show chapter/level names for menu selection
 // DONE: Time-trial mode
 // DONE: Change buttons for menu
-// TODO: Show chapter/level names in selection
 // DONE: Set last chapter as active chapter for "Start game"
 // DONE: Randomize particle decay
 // DONE: Switch to 60fps
@@ -42,11 +42,13 @@
 // DONE: Debug function to advance game logic by single frames
 // TODO: Avoid converting back and forth of colour values in collision functions by saving collision colours in SDL uint (watch for bit depth!)
 // TODO: Add licensing info
+// TODO: Add statistic tracking (deaths/resets per level, time on level, times completed)
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)
 // TODO: Blocks that fall when stepped on (purely for the effect, should not affect gameplay much)
 // TODO: More levels with grey, it's what makes this game interesting - the link between two characters in two different worlds
+// TODO: More levels with a background image and overlaping coloured blocks (see level "Greyout")
 
 // Greyout colours:
 //            R   G   B      int

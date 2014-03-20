@@ -27,6 +27,8 @@ public:
 
     // set the savegame file, also tries to load progress if file is found
     virtual bool setFile(CRstring filename);
+    // enable/disable encryption for saving
+    virtual void setEncryption(CRbool useEncryption);
 
     // save progress to file
     virtual bool save();
@@ -47,7 +49,7 @@ public:
     struct ChapterStats
     {
     	int progress;
-    	int time;
+    	int bestSpeedrunTime;
     };
 
     // wrappers for getData and writeData
@@ -59,7 +61,11 @@ public:
 
     struct LevelStats
     {
-        int time;
+        int bestSpeedrunTime;
+        int totalDeaths;
+        int totalResets;
+        int timesCompleted;
+        int totalTimeOnLevel;
     };
 
     virtual bool setLevelStats(CRstring levelFile, const LevelStats& newStats, CRbool overwrite=false);
@@ -73,6 +79,7 @@ protected:
     map<string,LevelStats> levelDataCache;
     map<string,ChapterStats> chapterDataCache;
     string filename;
+    bool encrypt;
 
     Encryption crypt;
 private:
