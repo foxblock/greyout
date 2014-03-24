@@ -48,7 +48,14 @@ bool TextObject::load(list<PARAMETER_TYPE >& params)
 
     // calculate automatically if not passed in level file (often inaccurate!)
     if (size.x == -1 && size.y == -1)
-        size = currentText->getDimensions(line);
+	{
+		SDL_Surface *dummy = SDL_CreateRGBSurface(SDL_SWSURFACE,1,1,
+				GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+		// this also calculates the size of a Penjin::Text object
+		render(dummy);
+		size = currentText->getDimensions();
+		SDL_FreeSurface(dummy);
+	}
 
     return result;
 }
