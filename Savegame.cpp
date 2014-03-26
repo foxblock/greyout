@@ -247,14 +247,16 @@ bool Savegame::setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbo
 
     if (not overwrite)
     {
-        if ((newStats.bestSpeedrunTime > stats.bestSpeedrunTime && stats.bestSpeedrunTime > 0) || newStats.bestSpeedrunTime < 0)
-            newStats.bestSpeedrunTime = stats.bestSpeedrunTime;
+    	// preserve saved progress
 		if (newStats.progress < stats.progress)
 			newStats.progress = stats.progress;
+		// preserve saved speedrun time
+        if ((newStats.bestSpeedrunTime > stats.bestSpeedrunTime && stats.bestSpeedrunTime > 0) || newStats.bestSpeedrunTime < 0)
+            newStats.bestSpeedrunTime = stats.bestSpeedrunTime;
     }
     chapterDataCache[chapterFile] = newStats;
 	string temp = StringUtility::intToString(newStats.progress) + DELIMIT_STRING +
-		StringUtility::intToString(newStats.bestSpeedrunTime);
+			StringUtility::intToString(newStats.bestSpeedrunTime);
     return writeData(chapterFile,temp,true);
 }
 
@@ -262,13 +264,28 @@ bool Savegame::setLevelStats(CRstring levelFile, const LevelStats& newStats, CRb
 {
     LevelStats stats = getLevelStats(levelFile);
 
-    if (not overwrite && stats.bestSpeedrunTime >= 0)
+    if (not overwrite)
     {
-        if (newStats.bestSpeedrunTime > stats.bestSpeedrunTime)
-            return false;
+		// preserve saved speedrun time
+        if ((newStats.bestSpeedrunTime > stats.bestSpeedrunTime && stats.bestSpeedrunTime > 0) || newStats.bestSpeedrunTime < 0)
+            newStats.bestSpeedrunTime = stats.bestSpeedrunTime;
+		// increase counters
+		if (stats.totalDeaths > 0)
+			newStats.totalDeaths += stats.totalDeaths;
+		if (stats.totalResets > 0)
+			newStats.totalResets += stats.totalResets;
+		if (stats.timesCompleted > 0)
+			newStats.timesCompleted += stats.timesCompleted;
+		if (stats.totalTimeOnLevel > 0)
+			newStats.totalTimeOnLevel += stats.totalTimeOnLevel;
     }
     levelDataCache[levelFile] = newStats;
-    return writeData(levelFile,StringUtility::intToString(newStats.bestSpeedrunTime),true);
+    string temp = StringUtility:;intToString(newStats.bestSpeedrunTime) + DELIMIT_STRING +
+			StringUtility::intToString(newStats.totalDeaths) + DELIMIT_STRING +
+			StringUtility::intToString(newStats.totalResets) + DELIMIT_STRING +
+			StringUtility::intToString(newStats.timesCompleted) + DELIMIT_STRING +
+			StringUtility::intToString(newStats.totalTimeOnLevel);
+    return writeData(levelFile,temp,true);
 }
 
 Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile)
@@ -280,9 +297,9 @@ Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile)
     string value = getData(levelFile);
     vector<string> tokens;
     StringUtility::tokenize(value,tokens,DELIMIT_STRING);
-    LevelStats result = {-1};
+    LevelStats result = {-1,0,0,0,0};
 
-    if (tokens.size() >= 1)
+    if (tokens.size() >= 1) // for compatibility with old versions
     {
         result.bestSpeedrunTime = StringUtility::stringToInt(tokens.front());
     }
