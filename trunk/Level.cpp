@@ -1635,7 +1635,7 @@ void Level::win()
 {
     if ( eventTimer == 0 && eventState == fsNone )
     {
-        Savegame::LevelStats stats = {timeCounter};
+        Savegame::LevelStats stats = {timeCounter,0,0,0,0};
         newRecord = SAVEGAME->setLevelStats(levelFileName,stats);
         if (ENGINE->timeTrial)
         {
