@@ -118,7 +118,7 @@ public:
     ControlUnit* getFirstActivePlayer() const;
 
     void swapControl(const bool &cycleForward = true);
-    void lose();
+    void lose(CRbool playerReset = false);
     void win();
 
 	// Input is a vector of unit IDs, function will go through unit and player
@@ -269,6 +269,10 @@ protected:
 	FileLister musicLister;
 	bool showMusicList;
 #endif
+
+	int timeOnLevel;
+	int deathCount;
+	int resetCount;
 };
 
 #endif
