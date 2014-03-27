@@ -284,7 +284,7 @@ bool Savegame::setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbo
     return writeData(chapterFile,temp,true);
 }
 
-bool Savegame::setLevelStats(CRstring levelFile, const LevelStats& newStats, CRbool overwrite)
+bool Savegame::setLevelStats(CRstring levelFile, LevelStats newStats, CRbool overwrite)
 {
     LevelStats stats = getLevelStats(levelFile);
 
@@ -304,7 +304,7 @@ bool Savegame::setLevelStats(CRstring levelFile, const LevelStats& newStats, CRb
 			newStats.totalTimeOnLevel += stats.totalTimeOnLevel;
     }
     levelDataCache[levelFile] = newStats;
-    string temp = StringUtility:;intToString(newStats.bestSpeedrunTime) + DELIMIT_STRING +
+    string temp = StringUtility::intToString(newStats.bestSpeedrunTime) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.totalDeaths) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.totalResets) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.timesCompleted) + DELIMIT_STRING +

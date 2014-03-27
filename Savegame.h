@@ -92,7 +92,7 @@ public:
         int totalTimeOnLevel;
     };
 
-    virtual bool setLevelStats(CRstring levelFile, const LevelStats& newStats, CRbool overwrite=false);
+    virtual bool setLevelStats(CRstring levelFile, LevelStats newStats, CRbool overwrite=false);
     virtual LevelStats getLevelStats(CRstring levelFile);
 
     // set this to false to disable saving after data operation
