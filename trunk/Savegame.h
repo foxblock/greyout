@@ -88,6 +88,7 @@ public:
         int bestSpeedrunTime;
         int totalDeaths;
         int totalResets;
+        int timesAttempted;
         int timesCompleted;
         int totalTimeOnLevel;
     };

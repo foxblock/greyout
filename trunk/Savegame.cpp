@@ -298,6 +298,8 @@ bool Savegame::setLevelStats(CRstring levelFile, LevelStats newStats, CRbool ove
 			newStats.totalDeaths += stats.totalDeaths;
 		if (stats.totalResets > 0)
 			newStats.totalResets += stats.totalResets;
+		if (stats.timesAttempted > 0)
+			newStats.timesAttempted += stats.timesAttempted;
 		if (stats.timesCompleted > 0)
 			newStats.timesCompleted += stats.timesCompleted;
 		if (stats.totalTimeOnLevel > 0)
@@ -307,6 +309,7 @@ bool Savegame::setLevelStats(CRstring levelFile, LevelStats newStats, CRbool ove
     string temp = StringUtility::intToString(newStats.bestSpeedrunTime) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.totalDeaths) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.totalResets) + DELIMIT_STRING +
+			StringUtility::intToString(newStats.timesAttempted) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.timesCompleted) + DELIMIT_STRING +
 			StringUtility::intToString(newStats.totalTimeOnLevel);
     return writeData(levelFile,temp,true);
@@ -321,18 +324,31 @@ Savegame::LevelStats Savegame::getLevelStats(CRstring levelFile)
     string value = getData(levelFile);
     vector<string> tokens;
     StringUtility::tokenize(value,tokens,DELIMIT_STRING);
-    LevelStats result = {-1,0,0,0,0};
+    LevelStats result = {-1,0,0,0,0,0};
 
-    if (tokens.size() >= 1) // for compatibility with old versions
-    {
-        result.bestSpeedrunTime = StringUtility::stringToInt(tokens.front());
-    }
-    if (tokens.size() >= 5)
+	for (int I = 0; I < tokens.size(); ++I)
 	{
-		result.totalDeaths = StringUtility::stringToInt(tokens[1]);
-		result.totalResets = StringUtility::stringToInt(tokens[2]);
-		result.timesCompleted = StringUtility::stringToInt(tokens[3]);
-		result.totalTimeOnLevel = StringUtility::stringToInt(tokens[4]);
+		switch (I)
+		{
+		case 0:
+			result.bestSpeedrunTime = StringUtility::stringToInt(tokens.front());
+			break;
+		case 1:
+			result.totalDeaths = StringUtility::stringToInt(tokens[I]);
+			break;
+		case 2:
+			result.totalResets = StringUtility::stringToInt(tokens[I]);
+			break;
+		case 3:
+			result.timesAttempted = StringUtility::stringToInt(tokens[I]);
+			break;
+		case 4:
+			result.timesCompleted = StringUtility::stringToInt(tokens[I]);
+			break;
+		case 5:
+			result.totalTimeOnLevel = StringUtility::stringToInt(tokens[I]);
+			break;
+		}
 	}
     levelDataCache[levelFile] = result;
 

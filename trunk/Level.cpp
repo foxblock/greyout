@@ -178,6 +178,10 @@ Level::Level()
 
 	if (ENGINE->currentState != STATE_LEVELSELECT)
 		GFX::showCursor(false);
+
+	timeOnLevel = 0;
+	deathCount = 0;
+	resetCount = 0;
 }
 
 Level::~Level()
@@ -547,7 +551,7 @@ void Level::userInput()
         {
             (*iter)->explode();
         }
-        lose();
+        lose(true);
         input->resetKeys();
     }
 
@@ -606,6 +610,7 @@ void Level::userInput()
 void Level::update()
 {
     ++timeCounter;
+    ++timeOnLevel;
     if ( firstLoad && nameTimer > 0 )
 		--nameTimer;
 
@@ -1238,6 +1243,9 @@ void Level::pauseInput()
                 reset();
                 trialEnd = false;
                 pauseToggle();
+                resetCount = 0;
+                deathCount = 0;
+                timeOnLevel = 0;
                 break;
             case 1:
                 eventTimer = 60;
@@ -1282,7 +1290,7 @@ void Level::pauseInput()
                 {
                     (*iter)->explode();
                 }
-                lose();
+                lose(true);
 			}
             else if (pauseItems[pauseSelection] == "EXIT")
 			{
@@ -1290,6 +1298,8 @@ void Level::pauseInput()
             	eventState = fsMenu;
             	EFFECTS->fadeOut(30);
                 MUSIC_CACHE->playSound("sounds/menu_back.wav");
+				Savegame::LevelStats stats = {timeCounter,deathCount,resetCount,1,0,timeOnLevel};
+				SAVEGAME->setLevelStats(levelFileName,stats);
 			}
 			else if (pauseItems[pauseSelection] == "SETTINGS")
 			{
@@ -1646,12 +1656,16 @@ void Level::swapControl(const bool &cycleForward)
     }
 }
 
-void Level::lose()
+void Level::lose(CRbool playerReset)
 {
     if ( eventTimer == 0 && eventState == fsNone )
     {
         eventState = fsLose;
         eventTimer = 45;
+        if (playerReset)
+			++resetCount;
+		else
+			++deathCount;
     }
 }
 
@@ -1659,8 +1673,10 @@ void Level::win()
 {
     if ( eventTimer == 0 && eventState == fsNone )
     {
-        Savegame::LevelStats stats = {timeCounter,0,0,0,0};
-        newRecord = SAVEGAME->setLevelStats(levelFileName,stats);
+        Savegame::LevelStats stats = {timeCounter,deathCount,resetCount,1,1,timeOnLevel};
+        if (timeCounter < SAVEGAME->getLevelStats(levelFileName).bestSpeedrunTime)
+			newRecord = true;
+        SAVEGAME->setLevelStats(levelFileName,stats);
         if (ENGINE->timeTrial)
         {
             trialEnd = true;
@@ -1752,6 +1768,15 @@ string Level::debugInfo()
 		result += controlsString;
 	}
     result += "---\n";
+#ifdef _DEBUG_LEVEL_STATS
+    Savegame::LevelStats temp = SAVEGAME->getLevelStats(levelFileName);
+    result += "Time: " + StringUtility::intToString(timeOnLevel) + " (" + StringUtility::intToString(temp.totalTimeOnLevel) + ")\n";
+    result += "Deaths: " + StringUtility::intToString(deathCount) + " (" + StringUtility::intToString(temp.totalDeaths) + ")\n";
+    result += "Resets: " + StringUtility::intToString(resetCount) + " (" + StringUtility::intToString(temp.totalResets) + ")\n";
+    result += "Attemps: " + StringUtility::intToString(temp.timesAttempted) + "\n";
+    result += "Wins: " + StringUtility::intToString(temp.timesCompleted) + "\n";
+    result += "---\n";
+#endif
     return result;
 }
 #endif
