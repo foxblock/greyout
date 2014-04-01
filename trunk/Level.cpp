@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "Level.h"
@@ -168,7 +168,7 @@ Level::Level()
     overlay.setDimensions(GFX::getXResolution(),GFX::getYResolution());
     overlay.setPosition(0,0);
     overlay.setColour(BLACK);
-    overlay.setAlpha(100);
+    overlay.setAlpha(128);
 
     arrows.loadFrames(SURFACE_CACHE->loadSurface("images/general/arrows2.png"),4,1,0,0);
     arrows.setTransparentColour(MAGENTA);

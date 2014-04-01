@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "TitleMenu.h"
@@ -87,6 +87,11 @@ TitleMenu::TitleMenu()
         inverse(temp,rect);
         inverseBG.push_back(temp);
     }
+
+    overlay.setDimensions(GFX::getXResolution(),GFX::getYResolution());
+    overlay.setPosition(0,0);
+    overlay.setColour(BLACK);
+    overlay.setAlpha(128);
 }
 
 TitleMenu::~TitleMenu()
@@ -158,8 +163,10 @@ void TitleMenu::render()
 
     marker.render();
 
-    EFFECTS->render();
+    if (ENGINE->settings->isActive())
+		overlay.render();
 
+    EFFECTS->render();
 }
 
 void TitleMenu::setSelection(CRbool immediate)
