@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #ifndef TITLEMENU_H
@@ -28,6 +28,7 @@
 #include "BaseState.h"
 #include "PenjinTypes.h"
 #include "AnimatedSprite.h"
+#include "Rectangle.h"
 
 #if defined(_DEBUG) && !defined(PENJIN_CALC_FPS)
 #define PENJIN_CALC_FPS
@@ -63,6 +64,7 @@ class TitleMenu : public BaseState
         bool mouseInBounds;
         SDL_Rect invertRegion;
         Vector2di lastPos;
+        Rectangle overlay;
 
         int fadeTimer;
 };

@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #ifndef _SETTINGS_H_
@@ -93,14 +93,30 @@ public:
 	bool isActive() const {return active;}
 
 protected:
+	void renderCategories(SDL_Surface *surf);
+	void renderAudio(SDL_Surface *surf);
+	void renderGame(SDL_Surface *surf);
+	void renderVideo(SDL_Surface *surf);
+	void inputCategories(SimpleJoy *input);
+	void inputAudio(SimpleJoy *input);
+	void inputGame(SimpleJoy *input);
+	void inputVideo(SimpleJoy *input);
+
+	int category;
 	int sel;
 	Vector2di lastPos;
 	bool mouseInBounds;
 
+	Text headline;
 	Text menuText;
 	Text entriesText;
 	AnimatedSprite arrows;
-	vector<string> menuItems;
+	SDL_Rect rect;
+	SDL_Rect headlineRect;
+	vector<string> categoryItems;
+	vector<string> audioItems;
+	vector<string> gameItems;
+	vector<string> videoItems;
 	vector<string> patternStrings;
 	vector<string> particleStrings;
 
