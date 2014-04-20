@@ -42,9 +42,11 @@
 #ifdef _MEOW
 #define NAME_TEXT_SIZE 24
 #define NAME_RECT_HEIGHT 18
+#define HEADLINE_SIZE 36
 #else
 #define NAME_TEXT_SIZE 48
 #define NAME_RECT_HEIGHT 35
+#define HEADLINE_SIZE 72
 #endif
 
 #ifdef _MEOW
@@ -151,6 +153,16 @@ Level::Level()
     nameRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
     nameRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
     nameRect.setColour(BLACK);
+
+	headlineRect.x = 0;
+	headlineRect.y = HEADLINE_SIZE * 0.25f + 1;
+	headlineRect.w = GFX::getXResolution();
+	headlineRect.h = HEADLINE_SIZE * 0.75f;
+	headline.loadFont(GAME_FONT, HEADLINE_SIZE);
+	headline.setColour(WHITE);
+	headline.setAlignment(CENTRED);
+	headline.setUpBoundary(Vector2di((int)GFX::getXResolution(),HEADLINE_SIZE));
+	headline.setPosition(0,0);
 
     if (ENGINE->timeTrial || ENGINE->chapterTrial)
     {
@@ -1362,6 +1374,13 @@ void Level::pauseScreen()
 		else
 			musicLister.setMenuStart(0,0);
 		return;
+	}
+	else
+	{
+#endif
+	SDL_FillRect(GFX::getVideoSurface(), &headlineRect, 0);
+	headline.print("PAUSED");
+#ifdef _MUSIC
 	}
 #endif
 
