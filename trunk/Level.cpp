@@ -1304,6 +1304,7 @@ void Level::pauseInput()
 			else if (pauseItems[pauseSelection] == "SETTINGS")
 			{
 				ENGINE->settings->show();
+				input->resetKeys();
 			}
 			#ifdef _MUSIC
 			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
@@ -1931,9 +1932,14 @@ bool Level::adjustPosition( BaseUnit* const unit, const bool adjustCamera )
 			drawOffset.y -= getHeight() * boundsY;
         changed = true;
     }
-    if ((boundsX + boundsY != 0) && not changed && !unit->flags.hasFlag(BaseUnit::ufDisregardBoundaries))
+    // unit outside the level
+    if ((abs(boundsX) + abs(boundsY) != 0) && not changed && !unit->flags.hasFlag(BaseUnit::ufDisregardBoundaries))
     {
         unit->position = unit->startingPosition;
+        // add disregardBoundaries flag if startingPosition is outside level boundaries
+    	if (unit->position.x + unit->getWidth() < 0 || unit->position.x > getWidth() ||
+				unit->position.y + unit->getHeight() < 0 || unit->position.y > getHeight())
+			unit->flags.addFlag(BaseUnit::ufDisregardBoundaries);
         changed = true;
     }
     return changed;

@@ -109,7 +109,7 @@ public:
     // further elements if no wrapping is required
     // Order of the following elements is (if required): x, y, x+y (direction)
     // NOTE: This is more correct than the version above, but it's not actually
-    // used since it greatly increases complexity and is only visible is few
+    // used since it greatly increases complexity and is only visible in few
     // certain corner situations (literally)
     void boundsCheck( const BaseUnit* const unit, vector<Vector2df> &posVec ) const;
 

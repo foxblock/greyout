@@ -37,6 +37,8 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	particleLifetime(0,0),
 	nextParticleTime(0,0),
 	multiplier(0),
+	size(16,16),
+	centred(true),
 	active(true)
 {
     flags.addFlag(ufNoMapCollision);
@@ -54,6 +56,7 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
     stringToProp["delayscatter"] = epDelayScatter;
     stringToProp["active"] = epActive;
     stringToProp["multiplier"] = epMultiplier;
+    stringToProp["centred"] = epCentred;
 
     Random::randSeed();
 }
@@ -82,6 +85,7 @@ void ParticleEmitter::update()
 			for (int I = 0; I < multiplier; ++I)
 			{
 				Vector2df tempDir = emitDir;
+				Vector2df pos = position;
 				if (angleScatter != 0)
 				{
 					float tempAngle = Random::nextFloat(-angleScatter,angleScatter);
@@ -89,9 +93,14 @@ void ParticleEmitter::update()
 					tempDir.y = emitDir.x * sin(tempAngle) + emitDir.y * cos(tempAngle);
 				}
 				tempDir *= Random::nextFloat(emitPower.x,emitPower.y);
-				parent->addParticle(this,col,position,tempDir,Random::nextInt(particleLifetime.x,particleLifetime.y));
+				if (!centred)
+				{
+					pos.x = Random::nextFloat(pos.x, pos.x + size.x);
+					pos.y = Random::nextFloat(pos.y, pos.y + size.y);
+				}
+				parent->addParticle(this,col,pos,tempDir,Random::nextInt(particleLifetime.x,particleLifetime.y));
 			}
-			particleTimer = Random::nextInt(nextParticleTime.x,nextParticleTime.y);
+			particleTimer = max(Random::nextInt(nextParticleTime.x,nextParticleTime.y),1);
 		}
 		--particleTimer;
 	}
@@ -100,20 +109,36 @@ void ParticleEmitter::update()
 void ParticleEmitter::render(SDL_Surface* surf)
 {
 #ifdef _DEBUG
-    SDL_Rect temp;
-    temp.x = position.x - 8;
-    temp.y = position.y - 8;
-    temp.w = 16;
-    temp.h = 1;
-    SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
-    temp.y += 16;
-    SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
-    temp.w = 1;
-    temp.h = 16;
-    temp.y -= 16;
-    SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
-    temp.x += 16;
-    SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+	SDL_Rect temp;
+	if (centred)
+	{
+		temp.x = position.x;
+		temp.y = position.y - size.y / 2.0f;
+		temp.w = 1;
+		temp.h = size.y;
+		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+		temp.x = position.x - size.x / 2.0f;
+		temp.y = position.y;
+		temp.w = size.x;
+		temp.h = 1;
+		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+	}
+	else
+	{
+		temp.x = position.x;
+		temp.y = position.y;
+		temp.w = size.x;
+		temp.h = 1;
+		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+		temp.y += size.y;
+		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+		temp.w = 1;
+		temp.h = size.y;
+		temp.y -= size.y;
+		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+		temp.x += size.x;
+		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
+	}
 #else
     // Don't render anything
 #endif
@@ -125,19 +150,11 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 
     switch (stringToProp[value.first])
     {
-//    case BaseUnit::upSize:
-//    {
-//        vector<string> token;
-//        StringUtility::tokenize(value.second,token,DELIMIT_STRING);
-//        if (token.size() != 2)
-//        {
-//            parsed = false;
-//            break;
-//        }
-//        width = StringUtility::stringToInt(token[0]);
-//        height = StringUtility::stringToInt(token[1]);
-//        break;
-//    }
+	case BaseUnit::upSize:
+	{
+		size = StringUtility::stringToVec<Vector2di>(value.second);
+		break;
+	}
     case epActive:
     {
         active = StringUtility::stringToBool(value.second);
@@ -203,6 +220,11 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 	case epMultiplier:
 	{
 		multiplier = StringUtility::stringToInt(value.second);
+		break;
+	}
+	case epCentred:
+	{
+		centred = StringUtility::stringToBool(value.second);
 		break;
 	}
     default:

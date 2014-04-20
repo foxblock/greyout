@@ -33,8 +33,8 @@ public:
     ParticleEmitter(Level* newParent);
 	virtual ~ParticleEmitter();
 
-	int getWidth() const {return 16;}
-	int getHeight() const {return 16;}
+	int getWidth() const {return size.x;}
+	int getHeight() const {return size.y;}
 
     virtual void reset();
 
@@ -51,6 +51,8 @@ protected:
 	Vector2di particleLifetime;
 	Vector2di nextParticleTime;
 	int multiplier;
+	Vector2di size;
+	bool centred;
 
 	bool active;
 
@@ -65,6 +67,7 @@ protected:
 		epDelayScatter,
 		epActive,
 		epMultiplier,
+		epCentred,
 		epEOL
 	};
 private:
