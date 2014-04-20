@@ -683,12 +683,19 @@ void Settings::inputAudio(SimpleJoy* input)
 			sel = 0;
 		}
 	}
-	if (CANCEL_KEY)
+	if (input->isL())
 	{
 		if(sel == 0)
 			MUSIC_CACHE->setMusicVolume(0);
 		else if(sel == 1)
 			MUSIC_CACHE->setSoundVolume(0);
+	}
+	else if (input->isR())
+	{
+		if(sel == 0)
+			MUSIC_CACHE->setMusicVolume(MUSIC_CACHE->getMaxVolume());
+		else if(sel == 1)
+			MUSIC_CACHE->setSoundVolume(MUSIC_CACHE->getMaxVolume());
 	}
 	if (sel != oldSel)
 	{
@@ -804,7 +811,7 @@ void Settings::inputGame(SimpleJoy* input)
 	if (CANCEL_KEY || input->isRightClick())
 	{
 		input->resetMouseButtons();
-		input->resetB();
+		input->resetKeys();
 		category = -1;
 		sel = 0;
 	}
@@ -893,7 +900,7 @@ void Settings::inputVideo(SimpleJoy* input)
 	if (CANCEL_KEY || input->isRightClick())
 	{
 		input->resetMouseButtons();
-		input->resetB();
+		input->resetKeys();
 		category = -1;
 		sel = 0;
 	}

@@ -380,6 +380,7 @@ void StateLevelSelect::userInput()
         if (CANCEL_KEY || input->isRightClick()) // return to menu
         {
             abortLevelLoading = true;
+            abortChapterLoading = true;
             input->resetKeys();
             MUSIC_CACHE->playSound("sounds/menu_back.wav");
             fadeOut();
@@ -781,9 +782,10 @@ void StateLevelSelect::doSelection()
 		if (intermediateSelection == 1)
 			ENGINE->timeTrial = true;
 
-		abortLevelLoading = true;
 		if (not exChapter) // level from level folder
 		{
+			abortLevelLoading = true;
+			abortChapterLoading = true;
 			if ( fadeOut() ) return;
 			ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 		}
@@ -791,6 +793,8 @@ void StateLevelSelect::doSelection()
 		{
 			if (value <= exChapter->getProgress())
 			{
+				abortLevelLoading = true;
+				abortChapterLoading = true;
 				if ( fadeOut() ) return;
 				ENGINE->playChapter(exChapter->filename,value);
 			}
@@ -806,9 +810,10 @@ void StateLevelSelect::doSelection()
 		}
 		else
 		{
-			abortLevelLoading = true;
 			if (not exChapter) // level from level folder
 			{
+				abortLevelLoading = true;
+				abortChapterLoading = true;
 				if ( fadeOut() ) return;
 				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 			}
@@ -816,6 +821,8 @@ void StateLevelSelect::doSelection()
 			{
 				if (value <= exChapter->getProgress())
 				{
+					abortLevelLoading = true;
+					abortChapterLoading = true;
 					if ( fadeOut() ) return;
 					ENGINE->playChapter(exChapter->filename,value);
 				}
