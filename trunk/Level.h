@@ -247,6 +247,8 @@ protected:
     Text nameText;
     Rectangle nameRect;
     int nameTimer;
+    Text headline;
+    SDL_Rect headlineRect;
 
     // pause menu is also used for displaying time trial results
     SDL_Surface* pauseSurf;
