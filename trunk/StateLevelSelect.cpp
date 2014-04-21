@@ -126,6 +126,7 @@ StateLevelSelect::StateLevelSelect()
     titleText.setUpBoundary(Vector2di(GFX::getXResolution(),OFFSET_Y));
     nameText.loadFont(GAME_FONT,IMAGE_FONT_SIZE);
     nameText.setColour(BLACK);
+    nameText.setWrapping(false);
     menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
     menu.setColour(BLACK);
     menu.setPosition(0,0);
@@ -598,14 +599,26 @@ void StateLevelSelect::renderName(SDL_Surface *target, CRstring name)
 {
 	if (name[0] == 0)
 		return;
-	Vector2df pos = cursor.getPosition();
+	SDL_Surface *dummy = SDL_CreateRGBSurface(SDL_SWSURFACE,1,1,
+			GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+	// reset text object
+	nameText.print(dummy, name); // print once to let Penjin calculate the size of the text on screen
+	SDL_Rect rect = { cursor.getPosition().x,
+			cursor.getPosition().y,
+			nameText.getWidth() + NAME_SPACING * 2,
+			nameText.getHeight() + NAME_SPACING * 2 };
+
 	if (selection.y == gridOffset + PREVIEW_COUNT_Y -1) // last row on screen
-		pos.y -= nameText.getHeight() + NAME_SPACING*2;
+		rect.y -= nameText.getHeight() + NAME_SPACING*2;
 	else
-		pos.y += cursor.getDimensions().y;
-	nameText.setPosition(pos.x + NAME_SPACING*2, pos.y + NAME_SPACING); // seems to be centred well with double horizontal spacing
-	nameText.print(name); // print once to let Penjin calculate the size of the text on screen
-	SDL_Rect rect = {pos.x,pos.y,nameText.getWidth() + NAME_SPACING*2,nameText.getHeight() + NAME_SPACING*2};
+		rect.y += cursor.getDimensions().y;
+	// last two colums -> check whether text goes off screen and make right-aligned
+	if (selection.x >= PREVIEW_COUNT_X / 2.0f && rect.x + rect.w > GFX::getXResolution())
+	{
+		rect.x += cursor.getDimensions().x - rect.w;
+	}
+	nameText.setPosition(rect.x + NAME_SPACING*2, rect.y + NAME_SPACING); // seems to be centred well with double horizontal spacing
+
 	SDL_FillRect(target,&rect,SDL_MapRGB(target->format,255,128,0));
 	nameText.print(name);
 	return;
