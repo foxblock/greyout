@@ -187,18 +187,16 @@ void TitleMenu::setSelection(CRbool immediate)
 
 void TitleMenu::incSelection()
 {
-    ++selection;
-    if (selection >= MENU_ITEM_COUNT)
-        selection = 0;
+	if (selection < MENU_ITEM_COUNT - 1)
+		++selection;
     setSelection(false);
     MUSIC_CACHE->playSound("sounds/menu.wav");
 }
 
 void TitleMenu::decSelection()
 {
-    --selection;
-    if (selection < 0)
-        selection = MENU_ITEM_COUNT - 1;
+	if (selection > 0)
+		--selection;
     setSelection(false);
     MUSIC_CACHE->playSound("sounds/menu.wav");
 }
