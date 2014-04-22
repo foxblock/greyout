@@ -78,6 +78,16 @@ public:
 	int getParticleDensity();
 	void setParticleDensity(CRint newPd);
 
+	enum CameraBehaviour
+	{
+		cbStatic=0,
+		cbTrailing,
+		cbAhead,
+		cbEOL
+	};
+	int getCameraBehaviour();
+	void setCameraBehaviour(CRint newCb);
+
 	bool getDrawLinks();
 	void setDrawLinks(CRbool newLinks);
 
@@ -119,11 +129,13 @@ protected:
 	vector<string> videoItems;
 	vector<string> patternStrings;
 	vector<string> particleStrings;
+	vector<string> cameraStrings;
 
 	// Settings
 	// music and sound volume are stored in the MusicCache
 	int drawPattern;
 	int particleDensity;
+	int cameraBehaviour;
 	bool drawLinks;
 	bool drawFps;
 	bool writeFps;

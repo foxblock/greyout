@@ -28,8 +28,10 @@
 
 #include "BaseUnit.h"
 #include "Level.h"
+#include "Settings.h"
+#include "MyGame.h"
 
-#define MOVEMENT_VIEW_FACTOR 10.0f
+#define MOVEMENT_VIEW_FACTOR 50.0f
 
 Camera::Camera()
 {
@@ -68,7 +70,23 @@ void Camera::centerOnUnit(const BaseUnit* const unit, CRint time)
     if (not parent || not unit)
         return;
 
-    centerOnPos(unit->getPixel(diMIDDLE) + unit->velocity * MOVEMENT_VIEW_FACTOR,time);
+	int factor = 0;
+	int timeOverwrite = time;
+	switch (ENGINE->settings->getCameraBehaviour())
+	{
+	case Settings::cbStatic:
+		factor = 0;
+		timeOverwrite = 0;
+		break;
+	case Settings::cbTrailing:
+		factor = 10;
+		break;
+	case Settings::cbAhead:
+		factor = 50;
+		break;
+	}
+
+    centerOnPos(unit->getPixel(diMIDDLE) + unit->velocity * factor,timeOverwrite);
 }
 
 void Camera::centerOnPos(const Vector2df& pos, CRint time)
