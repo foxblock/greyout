@@ -91,6 +91,7 @@ Settings::Settings() :
 	audioItems.push_back("SOUND VOL:");
 	audioItems.push_back("RETURN");
 	gameItems.push_back("HINT LINKS:");
+	gameItems.push_back("CAMERA:");
 	gameItems.push_back("DRAW FPS:");
 	gameItems.push_back("WRITE FPS:");
 	gameItems.push_back("DEBUG:");
@@ -108,6 +109,10 @@ Settings::Settings() :
 	particleStrings.push_back("FEW");
 	particleStrings.push_back("MANY");
 	particleStrings.push_back("TOO MANY");
+
+	cameraStrings.push_back("STATIC");
+	cameraStrings.push_back("TRAILING");
+	cameraStrings.push_back("AHEAD");
 
 	arrows.loadFrames("images/general/arrows2.png", 4, 1);
 	arrows.setTransparentColour(MAGENTA);
@@ -195,6 +200,10 @@ void Settings::loadFromFile()
 		setParticleDensity(StringUtility::stringToInt(SAVEGAME->getData("particledensity")));
 	else
 		setParticleDensity(pdMany);
+	if(SAVEGAME->hasData("camerabehaviour"))
+		setCameraBehaviour(StringUtility::stringToInt(SAVEGAME->getData("camerabehaviour")));
+	else
+		setCameraBehaviour(cbTrailing);
 	if(SAVEGAME->hasData("drawlinks"))
 		setDrawLinks(StringUtility::stringToBool(SAVEGAME->getData("drawlinks")));
 	else
@@ -219,6 +228,7 @@ void Settings::saveToFile()
 	SAVEGAME->writeData("soundvolume", StringUtility::intToString(MUSIC_CACHE->getSoundVolume()), true);
 	SAVEGAME->writeData("drawpattern", StringUtility::intToString(drawPattern), true);
 	SAVEGAME->writeData("particledensity", StringUtility::intToString(particleDensity), true);
+	SAVEGAME->writeData("camerabehaviour", StringUtility::intToString(cameraBehaviour), true);
 	SAVEGAME->writeData("drawlinks", StringUtility::boolToString(drawLinks), true);
 	SAVEGAME->writeData("drawfps", StringUtility::boolToString(drawFps), true);
 	SAVEGAME->writeData("writefps", StringUtility::boolToString(writeFps), true);
@@ -268,6 +278,18 @@ void Settings::setParticleDensity(CRint newPd)
 	if(newPd >= 0 && newPd < pdEOL)
 		particleDensity = newPd;
 }
+
+int Settings::getCameraBehaviour()
+{
+	return cameraBehaviour;
+}
+
+void Settings::setCameraBehaviour(CRint newCb)
+{
+	if(newCb >= 0 && newCb < cbEOL)
+		cameraBehaviour = newCb;
+}
+
 
 bool Settings::getDrawLinks()
 {
@@ -433,7 +455,7 @@ void Settings::renderGame(SDL_Surface* surf)
 		}
 		menuText.print(gameItems[I]);
 
-		if (I < 4)
+		if (I == 0 || ((I > 1) && (I < 5)))
 		{
 			rect.w = SETTINGS_RECT_HEIGHT;
 			rect.x = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
@@ -448,9 +470,9 @@ void Settings::renderGame(SDL_Surface* surf)
 			bool temp;
 			if (I == 0)
 				temp = drawLinks;
-			else if (I == 1)
+			else if (I ==2)
 				temp = drawFps;
-			else if (I == 2)
+			else if (I == 3)
 				temp = writeFps;
 			else
 				temp = debugControls;
@@ -458,6 +480,36 @@ void Settings::renderGame(SDL_Surface* surf)
 				SDL_FillRect(surf, &rect, -1);
 			else if (I != sel && !temp)
 				SDL_FillRect(surf, &rect, 0);
+		}
+		else if (I == 1)
+		{
+			entriesText.setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
+									pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
+			if (I == sel)
+				entriesText.setColour(BLACK);
+			else
+				entriesText.setColour(WHITE);
+			int value, maxValue;
+			if(I == 1)
+			{
+				value = cameraBehaviour;
+				maxValue = cbEOL;
+				entriesText.print(cameraStrings[cameraBehaviour]);
+			}
+			if (I == sel && value > 0)
+			{
+				arrows.setCurrentFrame(3);
+				arrows.setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.925f - SETTINGS_MENU_OFFSET_X - arrows.getWidth() / 2,
+								   pos + (SETTINGS_RECT_HEIGHT - arrows.getHeight()) / 2);
+				arrows.render(surf);
+			}
+			if (I == sel && value < maxValue - 1)
+			{
+				arrows.setCurrentFrame(1);
+				arrows.setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.075f - SETTINGS_MENU_OFFSET_X - arrows.getWidth() / 2,
+								   pos + (SETTINGS_RECT_HEIGHT - arrows.getHeight()) / 2);
+				arrows.render(surf);
+			}
 		}
 
 		if (I == gameItems.size()-2)
@@ -753,10 +805,12 @@ void Settings::inputGame(SimpleJoy* input)
 		if (sel == 0)
 			drawLinks = !drawLinks;
 		else if (sel == 1)
-			drawFps = !drawFps;
+			setCameraBehaviour(cameraBehaviour - 1);
 		else if (sel == 2)
-			writeFps = !writeFps;
+			drawFps = !drawFps;
 		else if (sel == 3)
+			writeFps = !writeFps;
+		else if (sel == 4)
 			debugControls = !debugControls;
 		input->resetLeft();
 	}
@@ -765,10 +819,12 @@ void Settings::inputGame(SimpleJoy* input)
 		if (sel == 0)
 			drawLinks = !drawLinks;
 		else if (sel == 1)
-			drawFps = !drawFps;
+			setCameraBehaviour(cameraBehaviour + 1);
 		else if (sel == 2)
-			writeFps = !writeFps;
+			drawFps = !drawFps;
 		else if (sel == 3)
+			writeFps = !writeFps;
+		else if (sel == 4)
 			debugControls = !debugControls;
 		input->resetRight();
 	}
@@ -783,23 +839,32 @@ void Settings::inputGame(SimpleJoy* input)
 		}
 		else if (sel == 1)
 		{
-			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				drawFps = !drawFps;
+			if(mousePos.x > (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
+					mousePos.x < (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X)
+				setCameraBehaviour(cameraBehaviour - 1);
+			else if(mousePos.x > (int) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
+					mousePos.x < (int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X)
+				setCameraBehaviour(cameraBehaviour + 1);
 		}
 		else if (sel == 2)
 		{
 			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
 			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				writeFps = !writeFps;
+				drawFps = !drawFps;
 		}
 		else if (sel == 3)
 		{
 			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
 			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				debugControls = !debugControls;
+				writeFps = !writeFps;
 		}
 		else if (sel == 4)
+		{
+			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
+			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
+				debugControls = !debugControls;
+		}
+		else if (sel == 5)
 		{
 			category = -1;
 			sel = 0;

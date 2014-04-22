@@ -38,7 +38,7 @@
 // DONE: Fix animations when pushing
 // DONE: Fix not being able to push boxes from the other side of the screen
 // DONE: Fix menu selector speed
-// TODO: Test with notaz' improved SDL
+// DONE: Test with notaz' improved SDL
 // DONE: Add reset functions to PushableBox,BaseTrigger,etc. to always get back to default values
 // DONE: Experiment with vector::capacity on unit and especially particle vectors (also check vectors used in physics, whose size can be assumed)
 // DONE: implement rest of settings class (controls, mouse, arrows on lists and sliders)
@@ -60,7 +60,7 @@
 // TODO: Count-Down on speedrun (full chapter runs)
 // DONE: Local, (static) function in BaseUnit to load often used types (colour, target list, etc.)
 // DONE: Other format for colour declaration in level files: XXXrXXXgXXXb, also hex: YYYYYYx
-// TODO: Add setting for camera movement (smooth following, looking ahead)
+// DONE: Add setting for camera movement (smooth following, looking ahead)
 // DONE: Add debug output for colour under cursor
 // DONE: Colour mapping to surface format after loading from level file
 // DONE: Debug function to advance game logic by single frames
