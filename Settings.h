@@ -55,6 +55,19 @@ public:
 	void setMusicVolume(CRint newVol);
 	int getSoundVolume();
 	void setSoundVolume(CRint newVol);
+	int getMaxVolume();
+
+	bool getDrawLinks();
+	void setDrawLinks(CRbool newLinks);
+
+	bool getDrawFps();
+	void setDrawFps(CRbool newFps);
+
+	bool getWriteFps();
+	void setWriteFps(CRbool newFps);
+
+	bool getDebugControls();
+	void setDebugControls(CRbool newDebug);
 
 	enum DrawPattern
 	{
@@ -88,17 +101,8 @@ public:
 	int getCameraBehaviour();
 	void setCameraBehaviour(CRint newCb);
 
-	bool getDrawLinks();
-	void setDrawLinks(CRbool newLinks);
-
-	bool getDrawFps();
-	void setDrawFps(CRbool newFps);
-
-	bool getWriteFps();
-	void setWriteFps(CRbool newFps);
-
-	bool getDebugControls();
-	void setDebugControls(CRbool newDebug);
+	bool getFullscreen();
+	void setFullscreen(CRbool newFs);
 
 	bool isActive() const {return active;}
 
@@ -133,13 +137,13 @@ protected:
 
 	// Settings
 	// music and sound volume are stored in the MusicCache
-	int drawPattern;
-	int particleDensity;
-	int cameraBehaviour;
 	bool drawLinks;
+	int cameraBehaviour;
 	bool drawFps;
 	bool writeFps;
 	bool debugControls;
+	int drawPattern;
+	int particleDensity;
 
 	bool active;
 private:
