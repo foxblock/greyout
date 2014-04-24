@@ -98,6 +98,7 @@ Settings::Settings() :
 	gameItems.push_back("RETURN");
 	videoItems.push_back("RENDER WRAP:");
 	videoItems.push_back("PARTICLES:");
+	videoItems.push_back("FULLSCREEN");
 	videoItems.push_back("RETURN");
 
 	patternStrings.push_back("OFF");
@@ -187,52 +188,58 @@ void Settings::close()
 
 void Settings::loadFromFile()
 {
-	if(SAVEGAME->hasData("musicvolume"))
-		MUSIC_CACHE->setMusicVolume(StringUtility::stringToInt(SAVEGAME->getData("musicvolume")));
-	if(SAVEGAME->hasData("soundvolume"))
-		MUSIC_CACHE->setSoundVolume(StringUtility::stringToInt(SAVEGAME->getData("soundvolume")));
+	if (SAVEGAME->hasData("musicvolume"))
+		setMusicVolume(StringUtility::stringToInt(SAVEGAME->getData("musicvolume")));
+	if (SAVEGAME->hasData("soundvolume"))
+		setSoundVolume(StringUtility::stringToInt(SAVEGAME->getData("soundvolume")));
 
-	if(SAVEGAME->hasData("drawpattern"))
-		setDrawPattern(StringUtility::stringToInt(SAVEGAME->getData("drawpattern")));
-	else
-		setDrawPattern(dpShaded);
-	if(SAVEGAME->hasData("particledensity"))
-		setParticleDensity(StringUtility::stringToInt(SAVEGAME->getData("particledensity")));
-	else
-		setParticleDensity(pdMany);
-	if(SAVEGAME->hasData("camerabehaviour"))
-		setCameraBehaviour(StringUtility::stringToInt(SAVEGAME->getData("camerabehaviour")));
-	else
-		setCameraBehaviour(cbTrailing);
-	if(SAVEGAME->hasData("drawlinks"))
+	if (SAVEGAME->hasData("drawlinks"))
 		setDrawLinks(StringUtility::stringToBool(SAVEGAME->getData("drawlinks")));
 	else
 		setDrawLinks(true);
-	if(SAVEGAME->hasData("drawfps"))
+	if (SAVEGAME->hasData("camerabehaviour"))
+		setCameraBehaviour(StringUtility::stringToInt(SAVEGAME->getData("camerabehaviour")));
+	else
+		setCameraBehaviour(cbTrailing);
+	if (SAVEGAME->hasData("drawfps"))
 		setDrawFps(StringUtility::stringToBool(SAVEGAME->getData("drawfps")));
 	else
 		setDrawFps(false);
-	if(SAVEGAME->hasData("writefps"))
+	if (SAVEGAME->hasData("writefps"))
 		setWriteFps(StringUtility::stringToBool(SAVEGAME->getData("writefps")));
 	else
 		setWriteFps(false);
-	if(SAVEGAME->hasData("debugcontrols"))
+	if (SAVEGAME->hasData("debugcontrols"))
 		setDebugControls(StringUtility::stringToBool(SAVEGAME->getData("debugcontrols")));
 	else
 		setDebugControls(false);
+
+	if (SAVEGAME->hasData("drawpattern"))
+		setDrawPattern(StringUtility::stringToInt(SAVEGAME->getData("drawpattern")));
+	else
+		setDrawPattern(dpShaded);
+	if (SAVEGAME->hasData("particledensity"))
+		setParticleDensity(StringUtility::stringToInt(SAVEGAME->getData("particledensity")));
+	else
+		setParticleDensity(pdMany);
+	if (SAVEGAME->hasData("fullscreen"))
+		setParticleDensity(StringUtility::stringToBool(SAVEGAME->getData("fullscreen")));
+	else
+		setParticleDensity(GFX::getFullscreen());
 }
 
 void Settings::saveToFile()
 {
-	SAVEGAME->writeData("musicvolume", StringUtility::intToString(MUSIC_CACHE->getMusicVolume()), true);
-	SAVEGAME->writeData("soundvolume", StringUtility::intToString(MUSIC_CACHE->getSoundVolume()), true);
-	SAVEGAME->writeData("drawpattern", StringUtility::intToString(drawPattern), true);
-	SAVEGAME->writeData("particledensity", StringUtility::intToString(particleDensity), true);
-	SAVEGAME->writeData("camerabehaviour", StringUtility::intToString(cameraBehaviour), true);
-	SAVEGAME->writeData("drawlinks", StringUtility::boolToString(drawLinks), true);
-	SAVEGAME->writeData("drawfps", StringUtility::boolToString(drawFps), true);
-	SAVEGAME->writeData("writefps", StringUtility::boolToString(writeFps), true);
-	SAVEGAME->writeData("debugcontrols", StringUtility::boolToString(debugControls), true);
+	SAVEGAME->writeData("musicvolume", StringUtility::intToString(getMusicVolume()), true);
+	SAVEGAME->writeData("soundvolume", StringUtility::intToString(getSoundVolume()), true);
+	SAVEGAME->writeData("drawlinks", StringUtility::boolToString(getDrawLinks()), true);
+	SAVEGAME->writeData("camerabehaviour", StringUtility::intToString(getCameraBehaviour()), true);
+	SAVEGAME->writeData("drawfps", StringUtility::boolToString(getDrawFps()), true);
+	SAVEGAME->writeData("writefps", StringUtility::boolToString(getWriteFps()), true);
+	SAVEGAME->writeData("debugcontrols", StringUtility::boolToString(getDebugControls()), true);
+	SAVEGAME->writeData("drawpattern", StringUtility::intToString(getDrawPattern()), true);
+	SAVEGAME->writeData("particledensity", StringUtility::intToString(getParticleDensity()), true);
+	SAVEGAME->writeData("fullscreen", StringUtility::boolToString(getFullscreen()), true);
 }
 
 /// --- getters and setters ----------------------------------------------------
@@ -257,26 +264,19 @@ void Settings::setSoundVolume(CRint newVol)
 	MUSIC_CACHE->setSoundVolume(newVol);
 }
 
-int Settings::getDrawPattern()
+int Settings::getMaxVolume()
 {
-	return drawPattern;
+	MUSIC_CACHE->getMaxVolume();
 }
 
-void Settings::setDrawPattern(CRint newDp)
+bool Settings::getDrawLinks()
 {
-	if(newDp >= 0 && newDp < dpEOL)
-		drawPattern = newDp;
+	return drawLinks;
 }
 
-int Settings::getParticleDensity()
+void Settings::setDrawLinks(CRbool newLinks)
 {
-	return particleDensity;
-}
-
-void Settings::setParticleDensity(CRint newPd)
-{
-	if(newPd >= 0 && newPd < pdEOL)
-		particleDensity = newPd;
+	drawLinks = newLinks;
 }
 
 int Settings::getCameraBehaviour()
@@ -288,17 +288,6 @@ void Settings::setCameraBehaviour(CRint newCb)
 {
 	if(newCb >= 0 && newCb < cbEOL)
 		cameraBehaviour = newCb;
-}
-
-
-bool Settings::getDrawLinks()
-{
-	return drawLinks;
-}
-
-void Settings::setDrawLinks(CRbool newLinks)
-{
-	drawLinks = newLinks;
 }
 
 bool Settings::getDrawFps()
@@ -330,6 +319,40 @@ void Settings::setDebugControls(CRbool newDebug)
 {
 	debugControls = newDebug;
 }
+
+int Settings::getDrawPattern()
+{
+	return drawPattern;
+}
+
+void Settings::setDrawPattern(CRint newDp)
+{
+	if(newDp >= 0 && newDp < dpEOL)
+		drawPattern = newDp;
+}
+
+int Settings::getParticleDensity()
+{
+	return particleDensity;
+}
+
+void Settings::setParticleDensity(CRint newPd)
+{
+	if(newPd >= 0 && newPd < pdEOL)
+		particleDensity = newPd;
+}
+
+bool Settings::getFullscreen()
+{
+	return GFX::getFullscreen();
+}
+
+void Settings::setFullscreen(CRbool newFs)
+{
+	GFX::setFullscreen(newFs);
+	GFX::resetScreen();
+}
+
 
 
 ///--- PROTECTED ---------------------------------------------------------------
@@ -395,13 +418,13 @@ void Settings::renderAudio(SDL_Surface* surf)
 			int value;
 			if (I == 0)
 			{
-				value = MUSIC_CACHE->getMusicVolume();
+				value = getMusicVolume();
 			}
 			else
 			{
-				value = MUSIC_CACHE->getSoundVolume();
+				value = getSoundVolume();
 			}
-			rect.w = (float)SETTINGS_VOLUME_SLIDER_SIZE * (float)value / (float)MUSIC_CACHE->getMaxVolume();
+			rect.w = (float)SETTINGS_VOLUME_SLIDER_SIZE * (float)value / (float)getMaxVolume();
 			rect.x = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X;
 			if (I == sel)
 				SDL_FillRect(surf, &rect, 0);
@@ -414,7 +437,7 @@ void Settings::renderAudio(SDL_Surface* surf)
 								   pos + (SETTINGS_RECT_HEIGHT - arrows.getHeight()) / 2);
 				arrows.render(surf);
 			}
-			if (I == sel && value < MUSIC_CACHE->getMaxVolume())
+			if (I == sel && value < getMaxVolume())
 			{
 				arrows.setCurrentFrame(1);
 				arrows.setPosition((int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X,
@@ -469,13 +492,13 @@ void Settings::renderGame(SDL_Surface* surf)
 			rect.y += (SETTINGS_RECT_HEIGHT - SETTINGS_CHECK_HEIGHT) / 2;
 			bool temp;
 			if (I == 0)
-				temp = drawLinks;
+				temp = getDrawLinks();
 			else if (I ==2)
-				temp = drawFps;
+				temp = getDrawFps();
 			else if (I == 3)
-				temp = writeFps;
+				temp = getWriteFps();
 			else
-				temp = debugControls;
+				temp = getDebugControls();
 			if (I == sel && !temp)
 				SDL_FillRect(surf, &rect, -1);
 			else if (I != sel && !temp)
@@ -492,7 +515,7 @@ void Settings::renderGame(SDL_Surface* surf)
 			int value, maxValue;
 			if(I == 1)
 			{
-				value = cameraBehaviour;
+				value = getCameraBehaviour();
 				maxValue = cbEOL;
 				entriesText.print(cameraStrings[cameraBehaviour]);
 			}
@@ -555,13 +578,13 @@ void Settings::renderVideo(SDL_Surface* surf)
 			int value, maxValue;
 			if(I == 0)
 			{
-				value = drawPattern;
+				value = getDrawPattern();
 				maxValue = dpEOL;
 				entriesText.print(patternStrings[drawPattern]);
 			}
 			else
 			{
-				value = particleDensity;
+				value = getParticleDensity();
 				maxValue = pdEOL;
 				entriesText.print(particleStrings[particleDensity]);
 			}
@@ -579,6 +602,26 @@ void Settings::renderVideo(SDL_Surface* surf)
 								   pos + (SETTINGS_RECT_HEIGHT - arrows.getHeight()) / 2);
 				arrows.render(surf);
 			}
+		}
+		else if (I == 2)
+		{
+			rect.w = SETTINGS_RECT_HEIGHT;
+			rect.x = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
+			if (I == sel)
+				SDL_FillRect(surf, &rect, 0);
+			else
+				SDL_FillRect(surf, &rect, -1);
+			rect.w = SETTINGS_CHECK_HEIGHT;
+			rect.h = SETTINGS_CHECK_HEIGHT;
+			rect.x += (SETTINGS_RECT_HEIGHT - SETTINGS_CHECK_HEIGHT) / 2;
+			rect.y += (SETTINGS_RECT_HEIGHT - SETTINGS_CHECK_HEIGHT) / 2;
+			bool temp;
+			if (I == 2)
+				temp = getFullscreen();
+			if (I == sel && !temp)
+				SDL_FillRect(surf, &rect, -1);
+			else if (I != sel && !temp)
+				SDL_FillRect(surf, &rect, 0);
 		}
 
 		if (I == videoItems.size()-2)
@@ -698,33 +741,29 @@ void Settings::inputAudio(SimpleJoy* input)
 		if (sel == 0)
 		{
 			int vol = getMusicVolume();
-			setMusicVolume(min(vol + 2, MUSIC_CACHE->getMaxVolume()));
+			setMusicVolume(min(vol + 2, getMaxVolume()));
 		}
 		else if (sel == 1)
 		{
 			int vol = getSoundVolume();
-			setSoundVolume(min(vol + 2, MUSIC_CACHE->getMaxVolume()));
+			setSoundVolume(min(vol + 2, getMaxVolume()));
 		}
 	}
 
 	if (ACCEPT_KEY || (input->isLeftClick() && mouseInBounds))
 	{
-		if (sel == 0)
+		if (sel < 2)
 		{
 			if (input->isLeftClick())
 			{
 				float factor = (float)(mousePos.x - (GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X)) / (float)SETTINGS_VOLUME_SLIDER_SIZE;
 				if(factor >= 0.0f && factor <= 1.0f)
-					setMusicVolume((float)MUSIC_CACHE->getMaxVolume() * factor);
-			}
-		}
-		else if (sel == 1)
-		{
-			if (input->isLeftClick())
-			{
-				float factor = (float)(mousePos.x - (GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X)) / (float)SETTINGS_VOLUME_SLIDER_SIZE;
-				if(factor >= 0.0f && factor <= 1.0f)
-					setSoundVolume((float)MUSIC_CACHE->getMaxVolume() * factor);
+				{
+					if (sel == 0)
+						setMusicVolume((float)getMaxVolume() * factor);
+					else if (sel == 1)
+						setSoundVolume((float)getMaxVolume() * factor);
+				}
 			}
 		}
 		else if (sel == 2)
@@ -738,16 +777,16 @@ void Settings::inputAudio(SimpleJoy* input)
 	if (input->isL())
 	{
 		if(sel == 0)
-			MUSIC_CACHE->setMusicVolume(0);
+			setMusicVolume(0);
 		else if(sel == 1)
-			MUSIC_CACHE->setSoundVolume(0);
+			setSoundVolume(0);
 	}
 	else if (input->isR())
 	{
 		if(sel == 0)
-			MUSIC_CACHE->setMusicVolume(MUSIC_CACHE->getMaxVolume());
+			setMusicVolume(getMaxVolume());
 		else if(sel == 1)
-			MUSIC_CACHE->setSoundVolume(MUSIC_CACHE->getMaxVolume());
+			setSoundVolume(getMaxVolume());
 	}
 	if (sel != oldSel)
 	{
@@ -802,67 +841,81 @@ void Settings::inputGame(SimpleJoy* input)
 
 	if (input->isLeft())
 	{
-		if (sel == 0)
-			drawLinks = !drawLinks;
-		else if (sel == 1)
-			setCameraBehaviour(cameraBehaviour - 1);
-		else if (sel == 2)
-			drawFps = !drawFps;
-		else if (sel == 3)
-			writeFps = !writeFps;
-		else if (sel == 4)
-			debugControls = !debugControls;
+		switch (sel)
+		{
+		case 0:
+			setDrawLinks(!getDrawLinks());
+			break;
+		case 1:
+			setCameraBehaviour(getCameraBehaviour() - 1);
+			break;
+		case 2:
+			setDrawFps(!getDrawFps());
+			break;
+		case 3:
+			setWriteFps(!getWriteFps());
+			break;
+		case 4:
+			setDebugControls(!getDebugControls());
+			break;
+		}
 		input->resetLeft();
 	}
 	else if (input->isRight())
 	{
-		if (sel == 0)
-			drawLinks = !drawLinks;
-		else if (sel == 1)
-			setCameraBehaviour(cameraBehaviour + 1);
-		else if (sel == 2)
-			drawFps = !drawFps;
-		else if (sel == 3)
-			writeFps = !writeFps;
-		else if (sel == 4)
-			debugControls = !debugControls;
+		switch (sel)
+		{
+		case 0:
+			setDrawLinks(!getDrawLinks());
+			break;
+		case 1:
+			setCameraBehaviour(getCameraBehaviour() + 1);
+			break;
+		case 2:
+			setDrawFps(!getDrawFps());
+			break;
+		case 3:
+			setWriteFps(!getWriteFps());
+			break;
+		case 4:
+			setDebugControls(!getDebugControls());
+			break;
+		}
 		input->resetRight();
 	}
 
 	if (ACCEPT_KEY || (input->isLeftClick() && mouseInBounds))
 	{
-		if (sel == 0)
+		if (sel == 0 || ((sel > 1) && (sel < 5)))
 		{
 			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
 			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				drawLinks = !drawLinks;
+			{
+				switch (sel)
+				{
+				case 0:
+					setDrawLinks(!getDrawLinks());
+					break;
+				case 2:
+					setDrawFps(!getDrawFps());
+					break;
+				case 3:
+					setWriteFps(!getWriteFps());
+					break;
+				case 4:
+					setDebugControls(!getDebugControls());
+					break;
+				}
+			}
 		}
 		else if (sel == 1)
 		{
 			if(mousePos.x > (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
 					mousePos.x < (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X)
-				setCameraBehaviour(cameraBehaviour - 1);
+				setCameraBehaviour(getCameraBehaviour() - 1);
 			else if(mousePos.x > (int) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
 					mousePos.x < (int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X)
-				setCameraBehaviour(cameraBehaviour + 1);
-		}
-		else if (sel == 2)
-		{
-			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				drawFps = !drawFps;
-		}
-		else if (sel == 3)
-		{
-			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				writeFps = !writeFps;
-		}
-		else if (sel == 4)
-		{
-			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
-				debugControls = !debugControls;
+				setCameraBehaviour(getCameraBehaviour() + 1);
 		}
 		else if (sel == 5)
 		{
@@ -919,17 +972,21 @@ void Settings::inputVideo(SimpleJoy* input)
 	if(input->isLeft())
 	{
 		if (sel == 0)
-			setDrawPattern(drawPattern - 1);
+			setDrawPattern(getDrawPattern() - 1);
 		else if(sel == 1)
-			setParticleDensity(particleDensity - 1);
+			setParticleDensity(getParticleDensity() - 1);
+		else if (sel == 2)
+			setFullscreen(!getFullscreen());
 		input->resetLeft();
 	}
 	else if(input->isRight())
 	{
 		if (sel == 0)
-			setDrawPattern(drawPattern + 1);
+			setDrawPattern(getDrawPattern() + 1);
 		else if (sel == 1)
-			setParticleDensity(particleDensity + 1);
+			setParticleDensity(getParticleDensity() + 1);
+		else if (sel == 2)
+			setFullscreen(!getFullscreen());
 		input->resetRight();
 	}
 
@@ -939,21 +996,27 @@ void Settings::inputVideo(SimpleJoy* input)
 		{
 			if(mousePos.x > (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
 					mousePos.x < (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X)
-				setDrawPattern(drawPattern - 1);
+				setDrawPattern(getDrawPattern() - 1);
 			else if(mousePos.x > (int) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
 					mousePos.x < (int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X)
-				setDrawPattern(drawPattern + 1);
+				setDrawPattern(getDrawPattern() + 1);
 		}
 		else if (sel == 1)
 		{
 			if(mousePos.x > (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X &&
 					mousePos.x < (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.85f - SETTINGS_MENU_OFFSET_X)
-				setParticleDensity(particleDensity - 1);
+				setParticleDensity(getParticleDensity() - 1);
 			else if(mousePos.x > (int) GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE * 0.15f - SETTINGS_MENU_OFFSET_X &&
 					mousePos.x < (int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X)
-				setParticleDensity(particleDensity + 1);
+				setParticleDensity(getParticleDensity() + 1);
 		}
 		else if (sel == 2)
+		{
+			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
+			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
+				setFullscreen(!getFullscreen());
+		}
+		else if (sel == 3)
 		{
 			category = -1;
 			sel = 0;

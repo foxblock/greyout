@@ -67,6 +67,7 @@
 // TODO: Avoid converting back and forth of colour values in collision functions by saving collision colours in SDL uint and replicating GFX::getPixel code (watch for bit depth!)
 // DONE: Add licensing info
 // DONE: Add statistic tracking (deaths/resets per level, time on level, times completed)
+// TODO: Fix selection when going back in settings menu (will always be 0, add check for mouse)
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)
