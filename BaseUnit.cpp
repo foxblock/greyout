@@ -715,6 +715,8 @@ bool BaseUnit::processOrder(Order& next)
     if (!tokens.empty())
     {
     	pLoadTime( tokens.front(), ticks );
+    	if (ticks <= 0)
+			ticks = 1;
     }
 
     switch (next.key)
