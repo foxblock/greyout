@@ -772,6 +772,7 @@ void Settings::inputAudio(SimpleJoy* input)
 			input->resetB();
 			category = -1;
 			sel = 0;
+			lastPos = Vector2di(0,0);
 		}
 	}
 	if (input->isL())
@@ -802,6 +803,7 @@ void Settings::inputAudio(SimpleJoy* input)
 		input->resetMouseButtons();
 		category = -1;
 		sel = 0;
+		lastPos = Vector2di(0,0);
 	}
 }
 
@@ -921,6 +923,7 @@ void Settings::inputGame(SimpleJoy* input)
 		{
 			category = -1;
 			sel = 0;
+			lastPos = Vector2di(0,0);
 		}
 		input->resetMouseButtons();
 		input->resetB();
@@ -932,6 +935,7 @@ void Settings::inputGame(SimpleJoy* input)
 		input->resetKeys();
 		category = -1;
 		sel = 0;
+		lastPos = Vector2di(0,0);
 	}
 }
 
@@ -1020,6 +1024,7 @@ void Settings::inputVideo(SimpleJoy* input)
 		{
 			category = -1;
 			sel = 0;
+			lastPos = Vector2di(0,0);
 		}
 		input->resetMouseButtons();
 		input->resetB();
@@ -1031,6 +1036,7 @@ void Settings::inputVideo(SimpleJoy* input)
 		input->resetKeys();
 		category = -1;
 		sel = 0;
+		lastPos = Vector2di(0,0);
 	}
 }
 
