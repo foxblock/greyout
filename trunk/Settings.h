@@ -121,9 +121,9 @@ protected:
 	Vector2di lastPos;
 	bool mouseInBounds;
 
-	Text headline;
-	Text menuText;
-	Text entriesText;
+	Text *headline;
+	Text *menuText;
+	Text *entriesText;
 	AnimatedSprite arrows;
 	SDL_Rect rect;
 	SDL_Rect headlineRect;
