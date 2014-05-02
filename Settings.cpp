@@ -223,9 +223,9 @@ void Settings::loadFromFile()
 	else
 		setParticleDensity(pdMany);
 	if (SAVEGAME->hasData("fullscreen"))
-		setParticleDensity(StringUtility::stringToBool(SAVEGAME->getData("fullscreen")));
+		setFullscreen(StringUtility::stringToBool(SAVEGAME->getData("fullscreen")));
 	else
-		setParticleDensity(GFX::getFullscreen());
+		setFullscreen(GFX::getFullscreen());
 }
 
 void Settings::saveToFile()
