@@ -64,23 +64,27 @@ Settings::Settings() :
 	mouseInBounds(false),
 	lastPos(0, 0)
 {
+	loadFromFile();
 	headlineRect.x = 0;
 	headlineRect.y = SETTINGS_HEADLINE_SIZE * 0.25f + 1;
 	headlineRect.w = GFX::getXResolution();
 	headlineRect.h = SETTINGS_HEADLINE_SIZE * 0.75f;
-	headline.loadFont(GAME_FONT, SETTINGS_HEADLINE_SIZE);
-	headline.setColour(WHITE);
-	headline.setAlignment(CENTRED);
-	headline.setUpBoundary(Vector2di((int)GFX::getXResolution(),SETTINGS_HEADLINE_SIZE));
-	headline.setPosition(0,0);
-	menuText.loadFont(GAME_FONT, SETTINGS_TEXT_SIZE);
-	menuText.setColour(WHITE);
-	menuText.setAlignment(LEFT_JUSTIFIED);
-	menuText.setUpBoundary(Vector2di(GFX::getXResolution(), GFX::getYResolution()));
-	entriesText.loadFont(GAME_FONT, SETTINGS_TEXT_SIZE);
-	entriesText.setColour(WHITE);
-	entriesText.setAlignment(CENTRED);
-	entriesText.setUpBoundary(Vector2di((int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X, GFX::getYResolution()));
+	headline = new Text();
+	headline->loadFont(GAME_FONT, SETTINGS_HEADLINE_SIZE);
+	headline->setColour(WHITE);
+	headline->setAlignment(CENTRED);
+	headline->setUpBoundary(Vector2di((int)GFX::getXResolution(),SETTINGS_HEADLINE_SIZE));
+	headline->setPosition(0,0);
+	menuText = new Text();
+	menuText->loadFont(GAME_FONT, SETTINGS_TEXT_SIZE);
+	menuText->setColour(WHITE);
+	menuText->setAlignment(LEFT_JUSTIFIED);
+	menuText->setUpBoundary(Vector2di(GFX::getXResolution(), GFX::getYResolution()));
+	entriesText = new Text();
+	entriesText->loadFont(GAME_FONT, SETTINGS_TEXT_SIZE);
+	entriesText->setColour(WHITE);
+	entriesText->setAlignment(CENTRED);
+	entriesText->setUpBoundary(Vector2di((int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X, GFX::getYResolution()));
 
 	categoryItems.push_back("AUDIO");
 	categoryItems.push_back("GAME");
@@ -118,13 +122,14 @@ Settings::Settings() :
 	arrows.loadFrames("images/general/arrows2.png", 4, 1);
 	arrows.setTransparentColour(MAGENTA);
 	arrows.setRotation(0);
-
-	loadFromFile();
 }
 
 Settings::~Settings()
 {
 	saveToFile();
+	delete headline;
+	delete menuText;
+	delete entriesText;
 }
 
 
@@ -359,7 +364,7 @@ void Settings::setFullscreen(CRbool newFs)
 
 void Settings::renderCategories(SDL_Surface* surf)
 {
-	headline.print("SETTINGS");
+	headline->print("SETTINGS");
 	int pos = SETTINGS_MENU_OFFSET_Y;
 
 	for (int I = 0; I < categoryItems.size(); ++I)
@@ -368,18 +373,18 @@ void Settings::renderCategories(SDL_Surface* surf)
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = SETTINGS_RECT_HEIGHT;
-		menuText.setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
+		menuText->setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 		if (I == sel)
 		{
 			SDL_FillRect(surf, &rect, -1);
-			menuText.setColour(BLACK);
+			menuText->setColour(BLACK);
 		}
 		else
 		{
 			SDL_FillRect(surf, &rect, 0);
-			menuText.setColour(WHITE);
+			menuText->setColour(WHITE);
 		}
-		menuText.print(categoryItems[I]);
+		menuText->print(categoryItems[I]);
 
 		if (I == categoryItems.size()-2)
 			pos = SETTINGS_RETURN_Y_POS;
@@ -390,7 +395,7 @@ void Settings::renderCategories(SDL_Surface* surf)
 
 void Settings::renderAudio(SDL_Surface* surf)
 {
-	headline.print("AUDIO");
+	headline->print("AUDIO");
 	int pos = SETTINGS_MENU_OFFSET_Y;
 
 	// render text and selection
@@ -400,18 +405,18 @@ void Settings::renderAudio(SDL_Surface* surf)
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = SETTINGS_RECT_HEIGHT;
-		menuText.setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
+		menuText->setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 		if (I == sel)
 		{
 			SDL_FillRect(surf, &rect, -1);
-			menuText.setColour(BLACK);
+			menuText->setColour(BLACK);
 		}
 		else
 		{
 			SDL_FillRect(surf, &rect, 0);
-			menuText.setColour(WHITE);
+			menuText->setColour(WHITE);
 		}
-		menuText.print(audioItems[I]);
+		menuText->print(audioItems[I]);
 
 		if (I < 2)
 		{
@@ -455,7 +460,7 @@ void Settings::renderAudio(SDL_Surface* surf)
 
 void Settings::renderGame(SDL_Surface* surf)
 {
-	headline.print("GAME");
+	headline->print("GAME");
 	int pos = SETTINGS_MENU_OFFSET_Y;
 
 	// render text and selection
@@ -465,18 +470,18 @@ void Settings::renderGame(SDL_Surface* surf)
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = SETTINGS_RECT_HEIGHT;
-		menuText.setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
+		menuText->setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 		if (I == sel)
 		{
 			SDL_FillRect(surf, &rect, -1);
-			menuText.setColour(BLACK);
+			menuText->setColour(BLACK);
 		}
 		else
 		{
 			SDL_FillRect(surf, &rect, 0);
-			menuText.setColour(WHITE);
+			menuText->setColour(WHITE);
 		}
-		menuText.print(gameItems[I]);
+		menuText->print(gameItems[I]);
 
 		if (I == 0 || ((I > 1) && (I < 5)))
 		{
@@ -506,18 +511,18 @@ void Settings::renderGame(SDL_Surface* surf)
 		}
 		else if (I == 1)
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
+			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
 									pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 			if (I == sel)
-				entriesText.setColour(BLACK);
+				entriesText->setColour(BLACK);
 			else
-				entriesText.setColour(WHITE);
+				entriesText->setColour(WHITE);
 			int value, maxValue;
 			if(I == 1)
 			{
 				value = getCameraBehaviour();
 				maxValue = cbEOL;
-				entriesText.print(cameraStrings[cameraBehaviour]);
+				entriesText->print(cameraStrings[cameraBehaviour]);
 			}
 			if (I == sel && value > 0)
 			{
@@ -544,7 +549,7 @@ void Settings::renderGame(SDL_Surface* surf)
 
 void Settings::renderVideo(SDL_Surface* surf)
 {
-	headline.print("VIDEO");
+	headline->print("VIDEO");
 	int pos = SETTINGS_MENU_OFFSET_Y;
 
 	// render text and selection
@@ -554,39 +559,39 @@ void Settings::renderVideo(SDL_Surface* surf)
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = SETTINGS_RECT_HEIGHT;
-		menuText.setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
+		menuText->setPosition(SETTINGS_MENU_OFFSET_X, pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 		if (I == sel)
 		{
 			SDL_FillRect(surf, &rect, -1);
-			menuText.setColour(BLACK);
+			menuText->setColour(BLACK);
 		}
 		else
 		{
 			SDL_FillRect(surf, &rect, 0);
-			menuText.setColour(WHITE);
+			menuText->setColour(WHITE);
 		}
-		menuText.print(videoItems[I]);
+		menuText->print(videoItems[I]);
 
 		if (I < 2)
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
+			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
 									pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 			if (I == sel)
-				entriesText.setColour(BLACK);
+				entriesText->setColour(BLACK);
 			else
-				entriesText.setColour(WHITE);
+				entriesText->setColour(WHITE);
 			int value, maxValue;
 			if(I == 0)
 			{
 				value = getDrawPattern();
 				maxValue = dpEOL;
-				entriesText.print(patternStrings[drawPattern]);
+				entriesText->print(patternStrings[drawPattern]);
 			}
 			else
 			{
 				value = getParticleDensity();
 				maxValue = pdEOL;
-				entriesText.print(particleStrings[particleDensity]);
+				entriesText->print(particleStrings[particleDensity]);
 			}
 			if (I == sel && value > 0)
 			{
