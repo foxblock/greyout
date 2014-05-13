@@ -39,7 +39,7 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	multiplier(0),
 	size(16,16),
 	centred(true),
-	active(true)
+	enabled(true)
 {
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
@@ -54,7 +54,7 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
     stringToProp["powerscatter"] = epPowerScatter;
     stringToProp["lifetimescatter"] = epLifetimeScatter;
     stringToProp["delayscatter"] = epDelayScatter;
-    stringToProp["active"] = epActive;
+    stringToProp["enabled"] = epEnabled;
     stringToProp["multiplier"] = epMultiplier;
     stringToProp["centred"] = epCentred;
 
@@ -71,14 +71,14 @@ ParticleEmitter::~ParticleEmitter()
 
 void ParticleEmitter::reset()
 {
-	active = true;
+	enabled = true;
 	BaseUnit::reset();
 }
 
 void ParticleEmitter::update()
 {
 	BaseUnit::update();
-	if (active)
+	if (enabled)
 	{
 		if (particleTimer == 0)
 		{
@@ -155,9 +155,9 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		size = StringUtility::stringToVec<Vector2di>(value.second);
 		break;
 	}
-    case epActive:
+    case epEnabled:
     {
-        active = StringUtility::stringToBool(value.second);
+        enabled = StringUtility::stringToBool(value.second);
         break;
     }
     case epDirection:
