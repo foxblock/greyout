@@ -54,7 +54,7 @@ protected:
 	Vector2di size;
 	bool centred;
 
-	bool active;
+	bool enabled;
 
 	enum EmitterProps {
 		epDirection=BaseUnit::upEOL,
@@ -65,7 +65,7 @@ protected:
 		epPowerScatter,
 		epLifetimeScatter,
 		epDelayScatter,
-		epActive,
+		epEnabled,
 		epMultiplier,
 		epCentred,
 		epEOL

@@ -37,11 +37,14 @@ BaseTrigger::BaseTrigger( Level *newParent ) : BaseUnit( newParent )
 	stringToProp["autoreenable"] = bpAutoReEnable;
 	size.x = 32;
 	size.y = 32;
-	collisionColours.insert( Colour( BLACK ).getIntColour() );
-	collisionColours.insert( Colour( WHITE ).getIntColour() );
-	flags.addFlag( ufNoMapCollision );
-	flags.addFlag( ufNoGravity );
-	flags.addFlag( ufInvincible );
+	collisionColours.insert(Colour(BLACK).getIntColour());
+	collisionColours.insert(Colour(WHITE).getIntColour());
+	flags.addFlag(ufNoMapCollision);
+	flags.addFlag(ufNoGravity);
+	flags.addFlag(ufInvincible);
+	#ifndef _DEBUG
+	flags.addFlag(ufNoRender);
+	#endif // _DEBUG
 	unitCollisionMode = 0;
 	triggerCol = YELLOW;
 	enabled = true;
