@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #ifndef _PARTICLE_EMITTER_H
@@ -50,7 +50,7 @@ protected:
 	Vector2df emitPower;
 	Vector2di particleLifetime;
 	Vector2di nextParticleTime;
-	int multiplier;
+	vector<int> multiplier;
 	Vector2di size;
 	bool centred;
 
