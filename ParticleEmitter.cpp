@@ -44,6 +44,9 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
     flags.addFlag(ufNoMapCollision);
     flags.addFlag(ufNoGravity);
     flags.addFlag(ufInvincible);
+	#ifndef _DEBUG
+	flags.addFlag(ufNoRender);
+	#endif // _DEBUG
     unitCollisionMode = 0;
 
     stringToProp["direction"] = epDirection;
@@ -88,7 +91,7 @@ void ParticleEmitter::update()
 				Vector2df pos = position;
 				if (angleScatter != 0)
 				{
-					float tempAngle = Random::nextFloat(-angleScatter,angleScatter);
+					float tempAngle = Random::nextFloat(-angleScatter, angleScatter);
 					tempDir.x = emitDir.x * cos(tempAngle) - emitDir.y * sin(tempAngle);
 					tempDir.y = emitDir.x * sin(tempAngle) + emitDir.y * cos(tempAngle);
 				}
