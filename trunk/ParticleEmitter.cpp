@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "ParticleEmitter.h"
@@ -27,6 +27,7 @@
 #include "NumberUtility.h"
 #include "Random.h"
 #include "Level.h"
+#include "MyGame.h"
 
 ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	BaseUnit(newParent),
@@ -36,7 +37,6 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	emitPower(0,0),
 	particleLifetime(0,0),
 	nextParticleTime(0,0),
-	multiplier(0),
 	size(16,16),
 	centred(true),
 	enabled(true)
@@ -85,7 +85,8 @@ void ParticleEmitter::update()
 	{
 		if (particleTimer == 0)
 		{
-			for (int I = 0; I < multiplier; ++I)
+			int multi = multiplier.empty() ? 1 : multiplier[ENGINE->settings->getParticleDensity()];
+			for (int I = 0; I < multi; ++I)
 			{
 				Vector2df tempDir = emitDir;
 				Vector2df pos = position;
@@ -222,7 +223,18 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 	}
 	case epMultiplier:
 	{
-		multiplier = StringUtility::stringToInt(value.second);
+		multiplier.clear();
+		vector<string> tokens;
+		StringUtility::tokenize( value.second, tokens, DELIMIT_STRING );
+		for (vector<string>::const_iterator I = tokens.begin(); I != tokens.end(); ++I)
+		{
+			multiplier.push_back(StringUtility::stringToInt(*I));
+		}
+		int temp = multiplier.size();
+		for (int I = temp; I < Settings::pdEOL; ++I)
+		{
+			multiplier.push_back(multiplier[temp-1]);
+		}
 		break;
 	}
 	case epCentred:

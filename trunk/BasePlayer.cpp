@@ -157,9 +157,9 @@ void BasePlayer::update()
 				}
 				else
 				{
-					if (direction < 0)
+					if (velocity.x < 0.0f)
 						setSpriteState("runleft");
-					else
+					else if (velocity.x > 0.0f)
 						setSpriteState("runright");
 				}
 			}
