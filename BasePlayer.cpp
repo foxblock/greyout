@@ -1,7 +1,7 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
@@ -19,7 +19,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "BasePlayer.h"
@@ -29,7 +29,8 @@
 #define SPRITESHEET_W 8
 #define SPRITESHEET_H 9
 #define FRAMERATE DECI_SECONDS
-#define STAND_DELAY_MAX 2
+#define JUMP_TO_FALL_FRAMES 30
+#define WALK_TO_FALL_FRAMES 10
 
 BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
 {
@@ -37,7 +38,6 @@ BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
     isJumping = false;
     flags.addFlag(ufMissionObjective);
     fallCounter = 0;
-    standDelay = 0;
     activelyMoving = false;
 }
 
@@ -127,7 +127,6 @@ void BasePlayer::update()
     {
         if (currentState == "stand")
         {
-        	standDelay = 0;
             if (velocity.x < 0.0f)
                 setSpriteState("runleft");
             else if (velocity.x > 0.0f)
@@ -136,35 +135,35 @@ void BasePlayer::update()
     }
     else // air
     {
-    	if ( fallCounter > 0 )
+		if ( fallCounter > 0 )
 			--fallCounter;
-        if (currentState == "stand")
-        {
+		if (currentState == "stand")
+		{
 			if (fallCounter == 0)
 			{
-				if (velocity.y > 3.0f)
+				if (direction < 0)
+					setSpriteState("fallleft");
+				else
+					setSpriteState("fallright");
+			}
+			else
+			{
+				if (isJumping)
 				{
 					if (direction < 0)
-						setSpriteState("fallleft");
+						setSpriteState("flyleft");
 					else
-						setSpriteState("fallright");
+						setSpriteState("flyright");
 				}
-				else if (++standDelay < STAND_DELAY_MAX)
+				else
 				{
-					if (velocity.x < 0.0f)
+					if (direction < 0)
 						setSpriteState("runleft");
-					else if (velocity.x > 0.0f)
+					else
 						setSpriteState("runright");
 				}
 			}
-			else if (isJumping)
-			{
-				if (direction < 0)
-					setSpriteState("flyleft");
-				else
-					setSpriteState("flyright");
-			}
-        }
+		}
     }
 
     BaseUnit::update();
@@ -178,12 +177,20 @@ void BasePlayer::hitMap(const Vector2df& correctionOverride)
     BaseUnit::hitMap(correctionOverride);
 
     if (correctionOverride.y < 0.0f)
+	{
         isJumping = false;
+        fallCounter = 0;
+	}
     else if (correctionOverride.y > 0.0f)
     {
         acceleration[0].y = 0;
         acceleration[1].y = 0;
     }
+    else if (lastYCorrection != 0.0f && !isJumping)
+	{
+		fallCounter = WALK_TO_FALL_FRAMES;
+	}
+    lastYCorrection = correctionOverride.y;
 }
 
 
@@ -256,7 +263,7 @@ void BasePlayer::control(SimpleJoy* input)
             setSpriteState("jumpleft",true);
         else
             setSpriteState("jumpright",true);
-        fallCounter = 30;
+        fallCounter = JUMP_TO_FALL_FRAMES;
     }
     if (!(input->isB() || input->isY()))
 		canJump = true;
@@ -267,6 +274,7 @@ string BasePlayer::debugInfo()
 {
 	string result = BaseUnit::debugInfo();
 	result += StringUtility::boolToString(activelyMoving) + "\n";
+	result += StringUtility::intToString(fallCounter) + "\n";
 	return result;
 }
 #endif
