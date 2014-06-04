@@ -217,6 +217,8 @@ protected:
         okExplode,
         okRemove,
         okIncrement,
+        okParameter,
+        okSound,
         okEOL
     };
     // processes the next order to start
