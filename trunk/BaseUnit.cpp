@@ -78,6 +78,8 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToOrder["explode"] = okExplode;
     stringToOrder["remove"] = okRemove;
     stringToOrder["increment"] = okIncrement;
+    stringToOrder["parameter"] = okParameter;
+    stringToOrder["sound"] = okSound;
 
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
@@ -706,6 +708,7 @@ void BaseUnit::move()
 
 bool BaseUnit::processOrder(Order& next)
 {
+	// TODO: Save vector of parameters to avoid tokenizing on ever process
     bool parsed = true;
     bool badOrder = false;
 
@@ -788,16 +791,41 @@ bool BaseUnit::processOrder(Order& next)
         velocity = dest / (float)ticks; // set speed to pixels per framerate
         break;
     }
+    case okParameter:
+	{
+		PARAMETER_TYPE param;
+		int delimPos = tokens.front().find('=');
+		param.first = tokens.front().substr(0, delimPos);
+		param.second = tokens.front().substr(delimPos + 1);
+		if (not processParameter(param))
+		{
+			printf("WARNING: Unprocessed parameter \"%s\" on unit with id \"%s\" in Order #%i\n",
+					param.first.c_str(), id.c_str(), currentOrder + 1);
+		}
+		break;
+	}
+	case okSound:
+	{
+		MUSIC_CACHE->playSound(tokens.front(), parent->chapterPath, 0);
+		break;
+	}
     default:
+        printf("ERROR: Unknown order key (Order #%i) on unit id \"%s\"\n", currentOrder + 1, id.c_str());
+        if (currentOrder >= 0)
+            orderList.erase(orderList.begin() + currentOrder);
+        orderTimer = 1; // process next order in next cycle
+		orderRunning = true;
         return false;
     }
 
     if (badOrder)
     {
-        printf("ERROR: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
+        printf("ERROR: Bad order parameter \"%s\" in Order #%i on unit id \"%s\"\n",
+				next.value.c_str(), currentOrder + 1, id.c_str());
         if (currentOrder >= 0)
             orderList.erase(orderList.begin() + currentOrder);
         orderTimer = 1; // process next order in next cycle
+		orderRunning = true;
         return false;
     }
 
