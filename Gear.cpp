@@ -135,18 +135,6 @@ bool Gear::processOrder(Order& next)
 {
     bool parsed = true;
 
-    vector<string> tokens;
-    StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
-    int ticks = 1;
-    if (!tokens.empty())
-    {
-    	string time = tokens.front();
-    	if (time[time.length()-1] == 'f')
-			ticks = StringUtility::stringToInt(time.substr(0,time.length()-1));
-		else // This is kinda fucked up, because of the frame based movement
-			ticks = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
-    }
-
     switch (next.key)
     {
     case okIdle:
@@ -159,14 +147,15 @@ bool Gear::processOrder(Order& next)
     }
     case goRotation:
     {
-        if (tokens.size() < 2)
+        if (next.params.size() < 2)
         {
-            printf("ERROR: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
+        	string temp = StringUtility::combine(next.params, DELIMIT_STRING);
+            printf("ERROR: Bad order parameter \"%s\"in order #%i on unit id \"%s\"\n", temp.c_str(), currentOrder, id.c_str());
             orderList.erase(orderList.begin() + currentOrder);
             orderTimer = 1; // process next order in next cycle
             return false;
         }
-        speed = (StringUtility::stringToFloat(tokens[1]) - angle) / ticks;
+        speed = (StringUtility::stringToFloat(next.params[1]) - angle) / next.ticks;
         break;
     }
     default:
@@ -177,7 +166,7 @@ bool Gear::processOrder(Order& next)
         return BaseUnit::processOrder(next);
     else
     {
-        orderTimer = ticks;
+        orderTimer = next.ticks;
         orderRunning = true;
     }
     return parsed;

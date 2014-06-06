@@ -295,16 +295,25 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
     }
     case upOrder:
     {
-        vector<string> token;
-        StringUtility::tokenize(value.second,token,DELIMIT_STRING,2);
-        if (token.size() != 2)
+        vector<string> params;
+        StringUtility::tokenize(value.second, params, DELIMIT_STRING);
+        if (params.size() < 2)
         {
-            Order temp = {stringToOrder[token.front()],""};
+            Order temp;
+            temp.key = stringToOrder[params.front()];
+            temp.ticks = 1;
             orderList.push_back(temp);
         }
         else
         {
-            Order temp = {stringToOrder[token.front()],token.back()};
+            Order temp;
+            int ticks = 1;
+			pLoadTime( params[1], ticks );
+			if (ticks <= 0)
+				ticks = 1;
+            temp.key = stringToOrder[params.front()];
+            temp.ticks = ticks;
+            temp.params.insert(temp.params.begin(), params.begin()+1, params.end());
             orderList.push_back(temp);
         }
         break;
@@ -639,7 +648,10 @@ string BaseUnit::debugInfo()
     if (!orderList.empty())
     {
         if (currentOrder < orderList.size())
-            result += "O: " + StringUtility::intToString(orderList[currentOrder].key) + "," + orderList[currentOrder].value + "(" + StringUtility::intToString(currentOrder) + ")\n";
+		{
+			string temp = StringUtility::combine(orderList[currentOrder].params, DELIMIT_STRING);
+			result += "O: " + StringUtility::intToString(orderList[currentOrder].key) + "," + temp + "(" + StringUtility::intToString(currentOrder) + ")\n";
+		}
         else
             result += "O: finished\n";
     }
@@ -712,16 +724,6 @@ bool BaseUnit::processOrder(Order& next)
     bool parsed = true;
     bool badOrder = false;
 
-    vector<string> tokens;
-    StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
-    int ticks = 1;
-    if (!tokens.empty())
-    {
-    	pLoadTime( tokens.front(), ticks );
-    	if (ticks <= 0)
-			ticks = 1;
-    }
-
     switch (next.key)
     {
     case okIdle:
@@ -733,13 +735,13 @@ bool BaseUnit::processOrder(Order& next)
     }
     case okPosition:
     {
-        if (tokens.size() < 3)
+        if (next.params.size() < 3)
         {
             badOrder = true;
             break;
         }
-        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
-        velocity = (dest - position) / (float)ticks; // set speed to pixels per framerate
+        Vector2df dest = Vector2df(StringUtility::stringToFloat(next.params[1]),StringUtility::stringToFloat(next.params[2]));
+        velocity = (dest - position) / (float)next.ticks; // set speed to pixels per framerate
         break;
     }
     case okRepeat:
@@ -753,7 +755,7 @@ bool BaseUnit::processOrder(Order& next)
     }
     case okColour:
     {
-        if (tokens.size() < 2)
+        if (next.params.size() < 2)
         {
             badOrder = true;
             break;
@@ -763,11 +765,11 @@ bool BaseUnit::processOrder(Order& next)
         tempColour.z = col.blue;
 
 		Colour temp;
-		pLoadColour( tokens[1], temp );
+		pLoadColour( next.params[1], temp );
 
-        tempColourChange.x = (float)(temp.red - col.red) / (float)ticks;
-        tempColourChange.y = (float)(temp.green - col.green) / (float)ticks;
-        tempColourChange.z = (float)(temp.blue - col.blue) / (float)ticks;
+        tempColourChange.x = (float)(temp.red - col.red) / (float)next.ticks;
+        tempColourChange.y = (float)(temp.green - col.green) / (float)next.ticks;
+        tempColourChange.z = (float)(temp.blue - col.blue) / (float)next.ticks;
         break;
     }
     case okExplode:
@@ -782,21 +784,21 @@ bool BaseUnit::processOrder(Order& next)
     }
     case okIncrement:
     {
-        if (tokens.size() < 3)
+        if (next.params.size() < 3)
         {
             badOrder = true;
             break;
         }
-        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
-        velocity = dest / (float)ticks; // set speed to pixels per framerate
+        Vector2df dest = Vector2df(StringUtility::stringToFloat(next.params[1]),StringUtility::stringToFloat(next.params[2]));
+        velocity = dest / (float)next.ticks; // set speed to pixels per framerate
         break;
     }
     case okParameter:
 	{
 		PARAMETER_TYPE param;
-		int delimPos = tokens.front().find('=');
-		param.first = tokens.front().substr(0, delimPos);
-		param.second = tokens.front().substr(delimPos + 1);
+		int delimPos = next.params.front().find('=');
+		param.first = next.params.front().substr(0, delimPos);
+		param.second = next.params.front().substr(delimPos + 1);
 		if (not processParameter(param))
 		{
 			printf("WARNING: Unprocessed parameter \"%s\" on unit with id \"%s\" in Order #%i\n",
@@ -806,7 +808,7 @@ bool BaseUnit::processOrder(Order& next)
 	}
 	case okSound:
 	{
-		MUSIC_CACHE->playSound(tokens.front(), parent->chapterPath, 0);
+		MUSIC_CACHE->playSound(next.params.front(), parent->chapterPath, 0);
 		break;
 	}
     default:
@@ -820,8 +822,9 @@ bool BaseUnit::processOrder(Order& next)
 
     if (badOrder)
     {
+    	string temp = StringUtility::combine(next.params, DELIMIT_STRING);
         printf("ERROR: Bad order parameter \"%s\" in Order #%i on unit id \"%s\"\n",
-				next.value.c_str(), currentOrder + 1, id.c_str());
+				temp.c_str(), currentOrder + 1, id.c_str());
         if (currentOrder >= 0)
             orderList.erase(orderList.begin() + currentOrder);
         orderTimer = 1; // process next order in next cycle
@@ -829,7 +832,7 @@ bool BaseUnit::processOrder(Order& next)
         return false;
     }
 
-    orderTimer = ticks;
+    orderTimer = next.ticks;
     orderRunning = true;
     return parsed;
 }
@@ -857,14 +860,12 @@ bool BaseUnit::finishOrder(const Order& curr)
 {
     bool parsed = true;
 
-    vector<string> tokens;
-    StringUtility::tokenize(curr.value,tokens,DELIMIT_STRING);
-
     switch (curr.key)
     {
     case okPosition:
     {
-        Vector2df dest = Vector2df(StringUtility::stringToFloat(tokens[1]),StringUtility::stringToFloat(tokens[2]));
+        Vector2df dest = Vector2df(StringUtility::stringToFloat(curr.params[1]),
+				StringUtility::stringToFloat(curr.params[2]));
         position = dest;
         velocity = Vector2df(0,0);
         break;

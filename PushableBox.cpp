@@ -227,34 +227,23 @@ bool PushableBox::processOrder(Order& next)
 {
     bool parsed = true;
 
-    vector<string> tokens;
-    StringUtility::tokenize(next.value,tokens,DELIMIT_STRING);
-    int ticks = 1;
-    if (!tokens.empty())
-    {
-    	string time = tokens.front();
-    	if (time[time.length()-1] == 'f')
-			ticks = StringUtility::stringToInt(time.substr(0,time.length()-1));
-		else // This is kinda fucked up, because of the frame based movement
-			ticks = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
-    }
-
     switch (next.key)
     {
     case boSize:
     {
-        if (tokens.size() < 3)
+        if (next.params.size() < 3)
         {
-            printf("ERROR: Bad order parameter \"%s\" on unit id \"%s\"\n",next.value.c_str(),id.c_str());
+        	string temp = StringUtility::combine(next.params, DELIMIT_STRING);
+            printf("ERROR: Bad order parameter \"%s\"in order #%i on unit id \"%s\"\n", temp.c_str(), currentOrder, id.c_str());
             orderList.erase(orderList.begin() + currentOrder);
             orderTimer = 1; // process next order in next cycle
             return false;
         }
         Vector2di destSize;
-        destSize.x = StringUtility::stringToInt(tokens[1]);
-        destSize.y = StringUtility::stringToInt(tokens[2]);
-        sizeTimer.x =  (float)(destSize.x - rect.w) / (float)ticks;
-        sizeTimer.y = (float)(destSize.y - rect.h) / (float)ticks;
+        destSize.x = StringUtility::stringToInt(next.params[1]);
+        destSize.y = StringUtility::stringToInt(next.params[2]);
+        sizeTimer.x =  (float)(destSize.x - rect.w) / (float)next.ticks;
+        sizeTimer.y = (float)(destSize.y - rect.h) / (float)next.ticks;
         dynSize.x = rect.w;
         dynSize.y = rect.h;
         break;
@@ -267,7 +256,7 @@ bool PushableBox::processOrder(Order& next)
         return BaseUnit::processOrder(next);
     else
     {
-        orderTimer = ticks;
+        orderTimer = next.ticks;
         orderRunning = true;
     }
     return parsed;
