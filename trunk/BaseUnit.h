@@ -205,7 +205,8 @@ protected:
     struct Order
     {
         int key;
-        string value; // consists of several items, mostly time and something like position, speed, etc.
+        int ticks;
+        vector<string> params; // consists of several items, mostly time and something like position, speed, etc.
     };
     enum OrderKey
     {
