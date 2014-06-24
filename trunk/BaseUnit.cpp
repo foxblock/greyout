@@ -50,7 +50,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToFlag["alwaysontop"] = ufAlwaysOnTop;
 
     stringToProp["class"] = upClass;
-    stringToProp["state"] = upState;
+    stringToProp["startingstate"] = upStartingState;
     stringToProp["position"] = upPosition;
     stringToProp["velocity"] = upVelocity;
     stringToProp["flags"] = upFlags;
@@ -69,6 +69,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToProp["size"] = upSize;
     stringToProp["target"] = upTarget;
     stringToProp["collisionmode"] = upCollisionMode;
+    stringToProp["state"] = upState;
 
     stringToOrder["idle"] = okIdle;
     stringToOrder["position"] = okPosition;
@@ -80,6 +81,7 @@ BaseUnit::BaseUnit(Level* newParent)
     stringToOrder["increment"] = okIncrement;
     stringToOrder["parameter"] = okParameter;
     stringToOrder["sound"] = okSound;
+    stringToOrder["state"] = okState;
 
     currentSprite = NULL;
     position = Vector2df(0.0f,0.0f);
@@ -156,18 +158,29 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 
 	initOrders = true;
 
-    if (imageOverwrite[0] != 0 && className == "generic")
-    {
-        SDL_Surface* surf = getSurface(imageOverwrite);
-        AnimatedSprite* temp = new AnimatedSprite;
-        temp->loadFrames(surf,tiles.x,tiles.y,0,0);
-        temp->setFrameRate(framerate);
-        temp->setTransparentColour(transCol);
-        temp->setLooping(loops);
-        states["default"] = temp;
-        startingState = "default";
-        setSpriteState(startingState,true);
-    }
+	if (imageOverwrite[0] != 0)
+	{
+		SDL_Surface *surf = getSurface(imageOverwrite);
+		if (!stateParams.empty())
+		{
+			for (vector<State>::const_iterator I = stateParams.begin(); I != stateParams.end(); ++I)
+			{
+				loadState(surf, *I);
+			}
+			stateParams.clear();
+		}
+		else
+		{
+			AnimatedSprite* temp = new AnimatedSprite;
+			temp->loadFrames(surf,tiles.x,tiles.y,0,0);
+			temp->setFrameRate(framerate);
+			temp->setTransparentColour(transCol);
+			temp->setLooping(loops);
+			states["default"] = temp;
+			startingState = "default";
+		}
+		setSpriteState(startingState,true);
+	}
 
 #ifdef _DEBUG
     collisionColours.insert(Colour(GREEN).getIntColour()); // collision indicator pixels else messing things up
@@ -187,7 +200,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
         tag = value.second;
         break;
     }
-    case upState:
+    case upStartingState:
     {
         startingState = value.second;
         break;
@@ -330,6 +343,38 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             parsed = false;
         break;
     }
+    case upState:
+	{
+		vector<string> params;
+		StringUtility::tokenize(value.second, params, DELIMIT_STRING);
+		if (params.size() < 3)
+		{
+			parsed = false;
+		}
+		State temp;
+		temp.name = params[0];
+		temp.start = StringUtility::stringToInt(params[1]);
+		temp.length = StringUtility::stringToInt(params[2]);
+        if (params.size() > 5)
+		{
+			temp.fps = StringUtility::stringToInt(params[3]);
+			temp.loops = StringUtility::stringToInt(params[4]);
+			if (params[5] == "reverse" || StringUtility::stringToInt(params[5]) == pmReverse)
+				temp.mode = pmReverse;
+			else if (params[5] == "pulse" || StringUtility::stringToInt(params[5]) == pmPulse)
+				temp.mode = pmPulse;
+			else
+				temp.mode = pmNormal;
+		}
+		else
+		{
+			temp.fps = framerate;
+			temp.loops = loops;
+			temp.mode = pmNormal;
+		}
+		stateParams.push_back(temp);
+		break;
+	}
     default:
         parsed = false;
     }
@@ -701,6 +746,11 @@ bool BaseUnit::pLoadTime(CRstring input, int& output)
 	string time = input;
 	if (time[time.length()-1] == 'f')
 		output = StringUtility::stringToInt(time.substr(0,time.length()-1));
+	else if (time[time.length()-1] == 'r')
+	{
+		int temp = StringUtility::stringToInt(time.substr(0,time.length()-1));
+		output = Random::nextInt(0, temp);
+	}
 	else // This is kinda fucked up, because of the frame based movement
 		output = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
 	return true;
@@ -718,9 +768,21 @@ void BaseUnit::move()
 		position += velocity;
 }
 
+void BaseUnit::loadState(SDL_Surface* surf, State state)
+{
+    AnimatedSprite* temp = new AnimatedSprite;
+    temp->loadFrames(surf, tiles.x, tiles.y, state.start, state.length);
+    temp->setTransparentColour(transCol);
+    temp->setFrameRate(state.fps);
+    temp->setLooping(state.loops);
+    temp->setPlayMode(state.mode);
+    states[state.name] = temp;
+    // TODO: Test auf Duplikat
+}
+
+
 bool BaseUnit::processOrder(Order& next)
 {
-	// TODO: Save vector of parameters to avoid tokenizing on ever process
     bool parsed = true;
     bool badOrder = false;
 
@@ -809,6 +871,25 @@ bool BaseUnit::processOrder(Order& next)
 	case okSound:
 	{
 		MUSIC_CACHE->playSound(next.params.front(), parent->chapterPath, 0);
+		break;
+	}
+	case okState:
+	{
+		switch (next.params.size())
+		{
+		case 0:
+			printf("WARNING: Bad order parameter \"%s\" on unit with id \"%s\" in Order #%i\n",
+					StringUtility::combine(next.params).c_str(), id.c_str(), currentOrder + 1);
+			break;
+		case 1:
+			setSpriteState(next.params.front());
+			break;
+		case 2:
+			setSpriteState(next.params[0], StringUtility::stringToBool(next.params[1]));
+			break;
+		default:
+			setSpriteState(next.params[0], StringUtility::stringToBool(next.params[1]), next.params[2]);
+		}
 		break;
 	}
     default:

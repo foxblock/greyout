@@ -94,7 +94,7 @@ public:
     // sets to fallbackState if newState is not found, does not set anything if that is not found either
     // if reset is true the new sprite will be set to the first frame before returning
     // returns the new currentSprite
-    AnimatedSprite* setSpriteState(CRstring newState, CRbool reset=false, CRstring fallbackState="");
+    AnimatedSprite* setSpriteState(CRstring newState, CRbool reset=false, CRstring fallbackState="default");
 
     // called after a collision check with the map
     virtual void hitMap(const Vector2df& correctionOverride);
@@ -174,7 +174,7 @@ protected:
     {
         upUnknown=0,
         upClass,
-        upState,
+        upStartingState,
         upPosition,
         upVelocity,
         upFlags,
@@ -191,6 +191,7 @@ protected:
         upSize, // reserved for child classes (not implemented in BaseUnit)
         upTarget, // reserved
         upCollisionMode,
+        upState,
         upEOL // end of list value, starting point for child classes' lists
     };
     // converts a string from a level file to a propIdent usable in a switch statement
@@ -200,6 +201,18 @@ protected:
     // Store all the sprites in here along with an unique string for identifing
     // These sprites WILL get deleted on destruction of the unit
     map<string,AnimatedSprite*> states;
+    struct State
+    {
+    	string name;
+    	int start;
+    	int length;
+    	int fps;
+    	int loops;
+    	PlayMode mode;
+    };
+    vector<State> stateParams;
+
+	virtual void loadState(SDL_Surface *surf, State state);
 
     /// Order system
     struct Order
@@ -220,6 +233,7 @@ protected:
         okIncrement,
         okParameter,
         okSound,
+        okState,
         okEOL
     };
     // processes the next order to start
