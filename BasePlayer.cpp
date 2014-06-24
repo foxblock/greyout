@@ -26,9 +26,6 @@
 
 #include "Level.h"
 
-#define SPRITESHEET_W 8
-#define SPRITESHEET_H 9
-#define FRAMERATE DECI_SECONDS
 #define JUMP_TO_FALL_FRAMES 30
 #define WALK_TO_FALL_FRAMES 10
 
@@ -57,47 +54,6 @@ bool BasePlayer::load(list<PARAMETER_TYPE >& params)
     {
         imageOverwrite = "images/player/black_big.png";
     }
-    else // clear sprites loaded by BaseUnit
-    {
-        for (map<string,AnimatedSprite*>::iterator I = states.begin(); I != states.end(); ++I)
-        {
-            delete I->second;
-        }
-        states.clear();
-    }
-    SDL_Surface* surf = getSurface(imageOverwrite);
-    AnimatedSprite* temp;
-
-    loadFrames(surf,0,1,false,"stand");
-    temp = loadFrames(surf,1,3,false,"wave");
-    temp->setLooping(2);
-    temp->setPlayMode(pmPulse);
-    temp->setFrameRate(FIFTEEN_FRAMES);
-
-    temp = loadFrames(surf,32,7,true,"fallright");
-    temp->setPlayMode(pmReverse);
-    temp = loadFrames(surf,8,3,false,"turnright");
-    temp->setFrameRate(FIFTEEN_FRAMES);
-    temp = loadFrames(surf,48,7,true,"pushright");
-    temp->setFrameRate(CUSTOM);
-    temp->setTimerScaler(1000/7);
-    temp = loadFrames(surf,16,6,true,"runright");
-    temp->setPlayMode(pmPulse);
-    loadFrames(surf,64,2,false,"jumpright");
-    loadFrames(surf,65,1,false,"flyright");
-
-    temp = loadFrames(surf,40,7,true,"fallleft");
-    temp->setPlayMode(pmReverse);
-    temp = loadFrames(surf,11,3,false,"turnleft");
-    temp->setFrameRate(FIFTEEN_FRAMES);
-    temp = loadFrames(surf,56,7,true,"pushleft");
-    temp->setFrameRate(CUSTOM);
-    temp->setTimerScaler(1000/7);
-    temp->setPlayMode(pmReverse);
-    temp = loadFrames(surf,24,6,true,"runleft");
-    temp->setPlayMode(pmPulse);
-    loadFrames(surf,66,2,false,"jumpleft");
-    loadFrames(surf,67,1,false,"flyleft");
 
     if (startingState[0] == 0 || startingState == "default")
     {
@@ -278,17 +234,3 @@ string BasePlayer::debugInfo()
 	return result;
 }
 #endif
-
-
-///---private---
-
-AnimatedSprite* BasePlayer::loadFrames(SDL_Surface* const surf, CRint skip, CRint num, CRbool loop, CRstring state)
-{
-    AnimatedSprite* temp = new AnimatedSprite;
-    temp->loadFrames(surf,SPRITESHEET_W,SPRITESHEET_H,skip,num);
-    temp->setTransparentColour(MAGENTA);
-    temp->setFrameRate(FRAMERATE);
-    temp->setLooping(loop);
-    states[state] = temp;
-    return temp;
-}

@@ -56,8 +56,6 @@ class BasePlayer : public ControlUnit
         bool activelyMoving;
 
     protected:
-        AnimatedSprite* loadFrames(SDL_Surface* const surf, CRint skip, CRint num, CRbool loop, CRstring state);
-
         bool canJump;
         bool isJumping;
         int fallCounter;
