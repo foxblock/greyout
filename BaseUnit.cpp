@@ -315,17 +315,17 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
             Order temp;
             temp.key = stringToOrder[params.front()];
             temp.ticks = 1;
+            temp.randomTicks = -1;
             orderList.push_back(temp);
         }
         else
         {
             Order temp;
-            int ticks = 1;
-			pLoadTime( params[1], ticks );
-			if (ticks <= 0)
-				ticks = 1;
+			pLoadTime(params[1], temp.ticks);
+			if (temp.ticks <= 0)
+				temp.ticks = 1;
+            pIsRandomTime(params[1], temp.randomTicks);
             temp.key = stringToOrder[params.front()];
-            temp.ticks = ticks;
             temp.params.insert(temp.params.begin(), params.begin()+1, params.end());
             orderList.push_back(temp);
         }
@@ -695,7 +695,10 @@ string BaseUnit::debugInfo()
         if (currentOrder < orderList.size())
 		{
 			string temp = StringUtility::combine(orderList[currentOrder].params, DELIMIT_STRING);
-			result += "O: " + StringUtility::intToString(orderList[currentOrder].key) + "," + temp + "(" + StringUtility::intToString(currentOrder) + ")\n";
+			result += "O: " + StringUtility::intToString(orderList[currentOrder].key) +
+					"," + StringUtility::intToString(orderList[currentOrder].ticks) +
+					"," + StringUtility::intToString(orderList[currentOrder].randomTicks) +
+					"," + temp + "(" + StringUtility::intToString(currentOrder) + ")\n";
 		}
         else
             result += "O: finished\n";
@@ -743,16 +746,24 @@ bool BaseUnit::pLoadUintIDs(CRstring input, vector<string>& output)
 
 bool BaseUnit::pLoadTime(CRstring input, int& output)
 {
-	string time = input;
-	if (time[time.length()-1] == 'f')
-		output = StringUtility::stringToInt(time.substr(0,time.length()-1));
-	else if (time[time.length()-1] == 'r')
+	if (input[input.length()-1] == 'f')
+		output = StringUtility::stringToInt(input.substr(0,input.length()-1));
+	else if (input[input.length()-1] == 'r')
 	{
-		int temp = StringUtility::stringToInt(time.substr(0,time.length()-1));
+		int temp = StringUtility::stringToInt(input.substr(0,input.length()-1));
 		output = Random::nextInt(0, temp);
 	}
 	else // This is kinda fucked up, because of the frame based movement
-		output = round(StringUtility::stringToFloat(time) / 1000.0f * (float)FRAME_RATE);
+		output = round(StringUtility::stringToFloat(input) / 1000.0f * (float)FRAME_RATE);
+	return true;
+}
+
+bool BaseUnit::pIsRandomTime(CRstring input, int &output)
+{
+	if (input[input.length()-1] == 'r')
+		output = StringUtility::stringToInt(input.substr(0,input.length()-1));
+	else
+		output = 0;
 	return true;
 }
 
@@ -785,6 +796,9 @@ bool BaseUnit::processOrder(Order& next)
 {
     bool parsed = true;
     bool badOrder = false;
+
+    if (next.randomTicks > 0)
+		next.ticks = Random::nextInt(0, next.randomTicks);
 
     switch (next.key)
     {

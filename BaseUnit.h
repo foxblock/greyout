@@ -166,6 +166,7 @@ protected:
 	static bool pLoadColour( CRstring input, Colour &output );
 	static bool pLoadUintIDs( CRstring input, vector<string> &output );
 	static bool pLoadTime( CRstring input, int &output );
+	static bool pIsRandomTime(CRstring input, int &output);
 
     // basically just a lazy way of writing position += velocity
     virtual void move();
@@ -219,6 +220,7 @@ protected:
     {
         int key;
         int ticks;
+        int randomTicks;
         vector<string> params; // consists of several items, mostly time and something like position, speed, etc.
     };
     enum OrderKey
