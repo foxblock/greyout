@@ -279,7 +279,7 @@ bool MyGame::stateLoop()
 			frameAdvance = true;
 		}
 		#endif // _DEBUG
-		if (input->isKey("y"))
+		if (input->isKey("F5") || input->isKey("PRINT"))
 		{
 			time_t timeval;
 			struct tm *timestruct;
@@ -292,9 +292,9 @@ bool MyGame::stateLoop()
 					timestruct->tm_min, timestruct->tm_sec);
 			printf("Saving screenshot to %s...\n", file);
 			int result = IMG_SavePNG(file, GFX::getVideoSurface(), -1);
-			input->resetKeys();
 			if (result != 0)
 				printf("Error saving screenshot: %s\n", SDL_GetError());
+			input->resetKeys();
 		}
 
 

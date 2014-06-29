@@ -97,7 +97,7 @@ BaseUnit::BaseUnit(Level* newParent)
     imageOverwrite = "";
     tiles = Vector2di(1,1);
     framerate = 10;
-    loops = 1;
+    loops = 0;
     transCol = MAGENTA;
     col = WHITE;
     currentState = "";
