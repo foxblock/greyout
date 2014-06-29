@@ -127,6 +127,12 @@ StateLevelSelect::StateLevelSelect()
     nameText.loadFont(GAME_FONT,IMAGE_FONT_SIZE);
     nameText.setColour(BLACK);
     nameText.setWrapping(false);
+    #ifdef _DEBUG
+    debugText.loadFont(DEBUG_FONT,24);
+    debugText.setColour(GREEN);
+    debugText.setPosition(0,TITLE_FONT_SIZE);
+    debugText.setAlignment(LEFT_JUSTIFIED);
+    #endif // _DEBUG
     menu.setDimensions(GFX::getXResolution(),OFFSET_Y);
     menu.setColour(BLACK);
     menu.setPosition(0,0);
@@ -473,6 +479,14 @@ void StateLevelSelect::render()
             arrows.setPosition((GFX::getXResolution() - arrows.getWidth()) / 2, GFX::getYResolution() - arrows.getHeight() - 5);
             arrows.render();
         }
+
+        #ifdef _DEBUG
+        debugText.print(StringUtility::vecToString(selection) + ", " +
+				StringUtility::intToString(gridOffset) + " (" + StringUtility::intToString(gridOffsetLast) + ")\n" +
+				StringUtility::intToString(lastDraw) + ", " + StringUtility::boolToString(firstDraw, true) + "\n" +
+				StringUtility::vecToString(mousePos) + " (" + StringUtility::vecToString(lastPos) + "), " +
+				StringUtility::boolToString(mouseInBounds, true));
+        #endif // _DEBUG
     }
     else
     {

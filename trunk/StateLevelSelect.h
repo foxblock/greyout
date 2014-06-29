@@ -121,6 +121,9 @@ protected:
 	Text imageText; // fallback text when encountering chapter without image
 	Text titleText;
 	Text nameText;
+	#ifdef _DEBUG
+	Text debugText;
+	#endif // _DEBUG
 
 	// map<filename,pair<surface, hasbeenloaded>
 	// if hasBeenLoaded is true but surface is NULL an error occurred while loading
