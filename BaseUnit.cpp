@@ -751,7 +751,7 @@ bool BaseUnit::pLoadTime(CRstring input, int& output)
 	else if (input[input.length()-1] == 'r')
 	{
 		int temp = StringUtility::stringToInt(input.substr(0,input.length()-1));
-		output = Random::nextInt(0, temp);
+		output = Random::nextInt(1, temp);
 	}
 	else // This is kinda fucked up, because of the frame based movement
 		output = round(StringUtility::stringToFloat(input) / 1000.0f * (float)FRAME_RATE);
@@ -787,8 +787,9 @@ void BaseUnit::loadState(SDL_Surface* surf, State state)
     temp->setFrameRate(state.fps);
     temp->setLooping(state.loops);
     temp->setPlayMode(state.mode);
+    if (states.find(state.name) != states.end())
+		printf("Warning: State \"%s\" already present in unit with id %s, will be overridden.", state.name.c_str(), id.c_str());
     states[state.name] = temp;
-    // TODO: Test auf Duplikat
 }
 
 
@@ -798,7 +799,7 @@ bool BaseUnit::processOrder(Order& next)
     bool badOrder = false;
 
     if (next.randomTicks > 0)
-		next.ticks = Random::nextInt(0, next.randomTicks);
+		next.ticks = Random::nextInt(1, next.randomTicks);
 
     switch (next.key)
     {

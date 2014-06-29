@@ -32,6 +32,8 @@
 #include "Dialogue.h"
 
 #include "StringUtility.h"
+#include "IMG_savepng.h"
+#include <time.h>
 
 #include "version.h"
 
@@ -272,11 +274,28 @@ bool MyGame::stateLoop()
 		gameTimer->start();
 		input->update();
 		#ifdef _DEBUG
-		if ( input->isKey("f") )
+		if (input->isKey("f"))
 		{
 			frameAdvance = true;
 		}
 		#endif // _DEBUG
+		if (input->isKey("y"))
+		{
+			time_t timeval;
+			struct tm *timestruct;
+			time(&timeval);
+			timestruct = localtime(&timeval);
+			char file[256];
+			sprintf(file, "screenshots/shot_%02i%02i%02i_%02i%02i%02i.png",
+					timestruct->tm_year + 1900, timestruct->tm_mon + 1,
+					timestruct->tm_mday, timestruct->tm_hour,
+					timestruct->tm_min, timestruct->tm_sec);
+			printf("Saving screenshot to %s...\n", file);
+			int result = IMG_SavePNG(file, GFX::getVideoSurface(), -1);
+			input->resetKeys();
+			if (result != 0)
+				printf("Error saving screenshot: %s\n", SDL_GetError());
+		}
 
 
 		#ifdef PLATFORM_PC
