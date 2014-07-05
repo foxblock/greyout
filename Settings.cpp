@@ -271,7 +271,7 @@ void Settings::setSoundVolume(CRint newVol)
 
 int Settings::getMaxVolume()
 {
-	MUSIC_CACHE->getMaxVolume();
+	return MUSIC_CACHE->getMaxVolume();
 }
 
 bool Settings::getDrawLinks()
@@ -420,7 +420,7 @@ void Settings::renderAudio(SDL_Surface* surf)
 
 		if (I < 2)
 		{
-			int value;
+			int value = 0;
 			if (I == 0)
 			{
 				value = getMusicVolume();
