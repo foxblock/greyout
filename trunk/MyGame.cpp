@@ -34,6 +34,9 @@
 #include "StringUtility.h"
 #include "IMG_savepng.h"
 #include <time.h>
+#ifndef _WIN32
+#include <sys/stat.h>
+#endif // _WIN32
 
 #include "version.h"
 
@@ -105,6 +108,26 @@ PENJIN_ERRORS MyGame::init()
     settings = new Settings();
     restartCounter = StringUtility::stringToInt(SAVEGAME->getData("restarts"));
     activeChapter = SAVEGAME->getData("activechapter");
+    #ifndef _WIN32
+    int result = mkdir("screenshots", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    #else
+    int result = mkdir("screenshots");
+    #endif // _WIN32
+    if (result == 0)
+		printf("Screenshots folder created successfully.\n");
+	#ifdef _WIN32
+	else if (*_errno() == EEXIST)
+	#else
+	else if (result == EEXIST)
+	#endif // _WIN32
+		printf("Screenshots folder already exists.\n");
+    else
+		printf("Error creating screenshots folder, error code: %i\n",
+	#ifdef _WIN32
+		*_errno());
+	#else
+		result);
+	#endif
 
 #ifdef PENJIN_CALC_FPS
 	fpsDisplay = new Text();
@@ -281,22 +304,31 @@ bool MyGame::stateLoop()
 		#endif // _DEBUG
 		if (input->isKey("F5") || input->isKey("PRINT"))
 		{
-			time_t timeval;
-			struct tm *timestruct;
-			time(&timeval);
-			timestruct = localtime(&timeval);
-			char file[256];
-			sprintf(file, "screenshots/shot_%02i%02i%02i_%02i%02i%02i.png",
-					timestruct->tm_year + 1900, timestruct->tm_mon + 1,
-					timestruct->tm_mday, timestruct->tm_hour,
-					timestruct->tm_min, timestruct->tm_sec);
-			printf("Saving screenshot to %s...\n", file);
-			int result = IMG_SavePNG(file, GFX::getVideoSurface(), -1);
+			int result = takeScreenshot(settings->getScreenshotCompression());
 			if (result != 0)
 				printf("Error saving screenshot: %s\n", SDL_GetError());
 			input->resetKeys();
 		}
-
+		else if (input->isKey("F8"))
+		{
+			int result = startVideoCapture();
+			if (result == 0)
+				takeScreenshot(settings->getVideoCompression());
+			input->resetKeys();
+		}
+		else if (input->isKey("F9"))
+		{
+			stopVideoCapture();
+			input->resetKeys();
+		}
+		else if (videoCaptureRunning)
+		{
+			if (--videoTempCounter < 0)
+			{
+				takeScreenshot(settings->getVideoCompression());
+				videoTempCounter = settings->getVideoFrameskip();
+			}
+		}
 
 		#ifdef PLATFORM_PC
 			if (input->isQuit())
@@ -480,6 +512,82 @@ void MyGame::startChapterTrial()
 	chapterTrialPaused = false;
 	chapterTrialTimer = 0;
 }
+
+int MyGame::takeScreenshot(int compression)
+{
+	if (videoCaptureRunning)
+	{
+		char file[256];
+		sprintf(file, videoFile, videoCounter++);
+		return takeScreenshot(file, compression);
+	}
+	else
+	{
+		time_t timeval;
+		struct tm *timestruct;
+		time(&timeval);
+		timestruct = localtime(&timeval);
+		char file[256];
+		sprintf(file, "screenshots/shot_%02i%02i%02i_%02i%02i%02i.png",
+				timestruct->tm_year + 1900, timestruct->tm_mon + 1,
+				timestruct->tm_mday, timestruct->tm_hour,
+				timestruct->tm_min, timestruct->tm_sec);
+		printf("Saving screenshot to %s...\n", file);
+		return takeScreenshot(file, compression);
+	}
+}
+
+int MyGame::takeScreenshot(char *filename, int compression)
+{
+	return IMG_SavePNG(filename, GFX::getVideoSurface(), compression);
+}
+
+int MyGame::startVideoCapture()
+{
+	if (videoCaptureRunning)
+	{
+		printf("Video capture already running!");
+		return -1;
+	}
+	struct tm *timestruct;
+	time(&videoStart);
+	timestruct = localtime(&videoStart);
+	char *file = new char[256];
+	sprintf(file, "screenshots/video_%02i%02i%02i_%02i%02i%02i",
+			timestruct->tm_year + 1900, timestruct->tm_mon + 1,
+			timestruct->tm_mday, timestruct->tm_hour,
+			timestruct->tm_min, timestruct->tm_sec);
+	#ifndef _WIN32
+	int result = mkdir(file, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    #else
+	int result = mkdir(file);
+    #endif // _WIN32
+    if (result == 0)
+		printf("Video folder created successfully.\n");
+    else
+	{
+		printf("Error creating video folder, error code: %i\n", result);
+		return result;
+	}
+	printf("Starting video capture to folder %s\n", file);
+	sprintf(file, "%s/shot_%s.png", file, "%05i");
+	delete videoFile;
+	videoFile = file;
+	videoCounter = 0;
+	videoTempCounter = settings->getVideoFrameskip();
+	videoCaptureRunning = true;
+	return 0;
+
+}
+void MyGame::stopVideoCapture()
+{
+	videoCaptureRunning = false;
+	time_t videoEnd;
+	time(&videoEnd);
+	printf("Stopping video capture. %i frames in %i seconds recorded (%.2f fps).\n",
+			videoCounter, videoEnd - videoStart, (float)videoCounter / (float)(videoEnd - videoStart));
+}
+
 
 /// ---private---
 

@@ -104,6 +104,15 @@ public:
 	bool getFullscreen();
 	void setFullscreen(CRbool newFs);
 
+	int getScreenshotCompression();
+	void setScreenshotCompression(int newComp);
+
+	int getVideoCompression();
+	void setVideoCompression(int newComp);
+
+	int getVideoFrameskip();
+	void setVideoFrameskip(int newSkip);
+
 	bool isActive() const {return active;}
 
 protected:
@@ -144,6 +153,10 @@ protected:
 	bool debugControls;
 	int drawPattern;
 	int particleDensity;
+
+	int screenshotCompression;
+	int videoCompression;
+	int videoFrameskip;
 
 	bool active;
 private:
