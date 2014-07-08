@@ -37,6 +37,9 @@
 #ifndef _WIN32
 #include <sys/stat.h>
 #endif // _WIN32
+#ifndef EEXIST // Hard-coded fallback for Pandora compiler
+#define EEXIST 17
+#endif // EEXIST
 
 #include "version.h"
 
@@ -108,10 +111,10 @@ PENJIN_ERRORS MyGame::init()
     settings = new Settings();
     restartCounter = StringUtility::stringToInt(SAVEGAME->getData("restarts"));
     activeChapter = SAVEGAME->getData("activechapter");
-    #ifndef _WIN32
-    int result = mkdir("screenshots", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    #else
+    #ifdef _WIN32
     int result = mkdir("screenshots");
+    #else
+    int result = mkdir("screenshots", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     #endif // _WIN32
     if (result == 0)
 		printf("Screenshots folder created successfully.\n");
