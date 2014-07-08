@@ -69,6 +69,16 @@ class MyGame : public Engine
 
 		void startChapterTrial();
 
+		int takeScreenshot(int compression = -1);
+		int takeScreenshot(char *filename, int compression = -1);
+		int startVideoCapture();
+		void stopVideoCapture();
+		bool videoCaptureRunning;
+		char *videoFile;
+		int videoCounter;
+		int videoTempCounter;
+		time_t videoStart;
+
         string stateParameter; // this might be the current level filename or an error string
         Chapter* currentChapter;
         uint currentState;

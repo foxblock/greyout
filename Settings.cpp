@@ -231,6 +231,22 @@ void Settings::loadFromFile()
 		setFullscreen(StringUtility::stringToBool(SAVEGAME->getData("fullscreen")));
 	else
 		setFullscreen(GFX::getFullscreen());
+	if (SAVEGAME->hasData("particledensity"))
+		setParticleDensity(StringUtility::stringToInt(SAVEGAME->getData("particledensity")));
+	else
+		setParticleDensity(pdMany);
+	if (SAVEGAME->hasData("screenshotcompression"))
+		setScreenshotCompression(StringUtility::stringToInt(SAVEGAME->getData("screenshotcompression")));
+	else
+		setScreenshotCompression(-1);
+	if (SAVEGAME->hasData("videocompression"))
+		setVideoCompression(StringUtility::stringToInt(SAVEGAME->getData("videocompression")));
+	else
+		setVideoCompression(0);
+	if (SAVEGAME->hasData("videoframeskip"))
+		setVideoFrameskip(StringUtility::stringToInt(SAVEGAME->getData("videoframeskip")));
+	else
+		setVideoFrameskip(0);
 }
 
 void Settings::saveToFile()
@@ -245,6 +261,9 @@ void Settings::saveToFile()
 	SAVEGAME->writeData("drawpattern", StringUtility::intToString(getDrawPattern()), true);
 	SAVEGAME->writeData("particledensity", StringUtility::intToString(getParticleDensity()), true);
 	SAVEGAME->writeData("fullscreen", StringUtility::boolToString(getFullscreen()), true);
+	SAVEGAME->writeData("screenshotcompression", StringUtility::intToString(getScreenshotCompression()), true);
+	SAVEGAME->writeData("videocompression", StringUtility::intToString(getVideoCompression()), true);
+	SAVEGAME->writeData("videoframeskip", StringUtility::intToString(getVideoFrameskip()), true);
 }
 
 /// --- getters and setters ----------------------------------------------------
@@ -358,6 +377,45 @@ void Settings::setFullscreen(CRbool newFs)
 	GFX::resetScreen();
 }
 
+int Settings::getScreenshotCompression()
+{
+	return screenshotCompression;
+}
+
+void Settings::setScreenshotCompression(int newComp)
+{
+	if (newComp < -1)
+		newComp = -1;
+	else if (newComp > 9)
+		newComp = 9;
+	screenshotCompression = newComp;
+}
+
+int Settings::getVideoCompression()
+{
+	return videoCompression;
+}
+
+void Settings::setVideoCompression(int newComp)
+{
+	if (newComp < -1)
+		newComp = -1;
+	else if (newComp > 9)
+		newComp = 9;
+	videoCompression = newComp;
+}
+
+int Settings::getVideoFrameskip()
+{
+	return videoFrameskip;
+}
+
+void Settings::setVideoFrameskip(int newSkip)
+{
+	if (newSkip < 0)
+		newSkip = 0;
+	videoFrameskip = newSkip;
+}
 
 
 ///--- PROTECTED ---------------------------------------------------------------
@@ -732,26 +790,22 @@ void Settings::inputAudio(SimpleJoy* input)
 	{
 		if (sel == 0)
 		{
-			int vol = getMusicVolume();
-			setMusicVolume(max(vol - 2, 0));
+			setMusicVolume(max(getMusicVolume() - 2, 0));
 		}
 		else if (sel == 1)
 		{
-			int vol = getSoundVolume();
-			setSoundVolume(max(vol - 2, 0));
+			setSoundVolume(max(getSoundVolume() - 2, 0));
 		}
 	}
 	else if(input->isRight())
 	{
 		if (sel == 0)
 		{
-			int vol = getMusicVolume();
-			setMusicVolume(min(vol + 2, getMaxVolume()));
+			setMusicVolume(min(getMusicVolume() + 2, getMaxVolume()));
 		}
 		else if (sel == 1)
 		{
-			int vol = getSoundVolume();
-			setSoundVolume(min(vol + 2, getMaxVolume()));
+			setSoundVolume(min(getSoundVolume() + 2, getMaxVolume()));
 		}
 	}
 
@@ -761,13 +815,28 @@ void Settings::inputAudio(SimpleJoy* input)
 		{
 			if (input->isLeftClick())
 			{
-				float factor = (float)(mousePos.x - (GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X)) / (float)SETTINGS_VOLUME_SLIDER_SIZE;
+				float factor = (float)(mousePos.x - ((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X)) / (float)SETTINGS_VOLUME_SLIDER_SIZE;
+				float sliderFactor = arrows.getWidth() / (float)SETTINGS_VOLUME_SLIDER_SIZE;
 				if(factor >= 0.0f && factor <= 1.0f)
 				{
 					if (sel == 0)
 						setMusicVolume((float)getMaxVolume() * factor);
 					else if (sel == 1)
 						setSoundVolume((float)getMaxVolume() * factor);
+				}
+				else if (factor < 0.0f && factor > -sliderFactor)
+				{
+					if (sel == 0)
+						setMusicVolume(max(getMusicVolume() - 2, 0));
+					else if (sel == 1)
+						setSoundVolume(max(getSoundVolume() - 2, 0));
+				}
+				else if (factor > 1.0f && factor < 1.0f + sliderFactor)
+				{
+					if (sel == 0)
+						setMusicVolume(min(getMusicVolume() + 2, getMaxVolume()));
+					else if (sel == 1)
+						setSoundVolume(min(getSoundVolume() + 2, getMaxVolume()));
 				}
 			}
 		}
