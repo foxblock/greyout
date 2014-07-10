@@ -51,19 +51,24 @@ class TitleMenu : public BaseState
     protected:
 
     private:
-        void setSelection(CRbool immediate);
+        void updateSelection(CRbool immediate);
         void incSelection();
         void decSelection();
         void doSelection();
         void inverse(SDL_Surface* const surf, const SDL_Rect& rect);
 
-        AnimatedSprite bg;
-        vector<SDL_Surface*> inverseBG;
+        SDL_Surface *bg;
         AnimatedSprite marker;
+        AnimatedSprite title;
+        AnimatedSprite items;
         int selection;
         bool mouseInBounds;
         SDL_Rect invertRegion;
+        SDL_Rect bgRegion;
         Vector2di lastPos;
+        Vector2df bgPos;
+        Vector2df bgVel;
+        Vector2df sizeDiff;
         Rectangle overlay;
 
         int fadeTimer;

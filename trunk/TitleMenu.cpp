@@ -39,11 +39,13 @@
 
 #ifdef _MEOW
 #define MENU_OFFSET_Y 101
+#define MENU_OFFSET_TITLE_Y 18
 #define MENU_ITEM_HEIGHT 27
 #define MENU_ITEM_SPACING 0
 #define MARKER_SPEED 3
 #else
-#define MENU_OFFSET_Y 173
+#define MENU_OFFSET_Y 178
+#define MENU_OFFSET_TITLE_Y 40
 #define MENU_ITEM_HEIGHT 61
 #define MENU_ITEM_SPACING 0
 #define MARKER_SPEED 5
@@ -52,60 +54,60 @@
 
 TitleMenu::TitleMenu()
 {
-    selection = DEFAULT_SELECTION;
-    invertRegion.w = GFX::getXResolution();
-    invertRegion.h = MENU_ITEM_HEIGHT;
-    invertRegion.x = 0;
+	selection = DEFAULT_SELECTION;
+	invertRegion.w = GFX::getXResolution();
+	invertRegion.h = MENU_ITEM_HEIGHT;
+	invertRegion.x = 0;
+	invertRegion.y = 0;
+	bgRegion.w = GFX::getXResolution();
+	bgRegion.h = GFX::getYResolution();
+	bgRegion.x = 0;
+	bgRegion.y = 0;
 
-    #ifdef _MEOW
-    SDL_Surface* temp = SURFACE_CACHE->loadSurface("images/menu/title_320_240.png");
-    #else
-    SDL_Surface* temp = SURFACE_CACHE->loadSurface("images/menu/title_800_480.png");
-    #endif
-    bg.loadFrames(temp,temp->w / GFX::getXResolution(),temp->h / GFX::getYResolution(),0,0);
-    bg.disableTransparentColour();
-    bg.setPosition(0,0);
-    bg.setFrameRate(THIRTY_FRAMES);
-    #ifdef _MEOW
-    marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_marker_320_240.png"),1,1,0,0);
-    #else
-    marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_marker_800_480.png"),1,1,0,0);
-    #endif
-    marker.setX(0);
-    setSelection(true);
-    lastPos = Vector2di(0,0);
-    mouseInBounds = false;
-    fadeTimer = -1;
+#ifdef _MEOW
+	bg = SURFACE_CACHE->loadSurface("images/menu/title_320_240_bg.png");
+	SDL_Surface* temp2 = SURFACE_CACHE->loadSurface("images/menu/title_320_240_items.png");
+#else
+	bg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_bg.png");
+	SDL_Surface* temp2 = SURFACE_CACHE->loadSurface("images/menu/title_800_480_items.png");
+#endif
+#ifdef _MEOW
+	marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_320_240_marker.png"), 1, 2, 0, 0);
+#else
+	marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_800_480_marker.png"), 1, 2, 0, 0);
+#endif
+	title.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_800_480_header.png"), 1, 1, 0, 0);
+	title.setPosition((GFX::getXResolution() - title.getWidth()) / 2.0f, MENU_OFFSET_TITLE_Y);
+	items.loadFrames(temp2, 1, 1, 0, 0);
+	items.setPosition(0, MENU_OFFSET_Y - (items.getHeight() - (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * MENU_ITEM_COUNT + MENU_ITEM_SPACING) / 2.0f);
+	updateSelection(true);
+	lastPos = Vector2di(0, 0);
+	mouseInBounds = false;
+	fadeTimer = -1;
+	sizeDiff.x = bg->w - GFX::getXResolution();
+	sizeDiff.y = bg->h - GFX::getYResolution();
+	bgPos.x = sizeDiff.x;
+	bgPos.y = 0;
+	bgVel.x = -(sizeDiff.x) / 120.0f;
+	bgVel.y = (sizeDiff.y) / 120.0f;
 
-    // cache the inverted surfaces for faster drawing
-    for (int I = 0; I < bg.frameCount(); ++I)
-    {
-        SDL_Surface* temp = SDL_CreateRGBSurface(SDL_SWSURFACE,bg.getWidth(),bg.getHeight(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-        bg.setCurrentFrame(I);
-        bg.render(temp);
-        SDL_Rect rect = {0,0,bg.getWidth(),bg.getHeight()};
-        inverse(temp,rect);
-        inverseBG.push_back(temp);
-    }
-
-    overlay.setDimensions(GFX::getXResolution(),GFX::getYResolution());
-    overlay.setPosition(0,0);
-    overlay.setColour(BLACK);
-    overlay.setAlpha(128);
+	overlay.setDimensions(GFX::getXResolution(), GFX::getYResolution());
+	overlay.setPosition(0, 0);
+	overlay.setColour(BLACK);
+	overlay.setAlpha(128);
 }
 
 TitleMenu::~TitleMenu()
 {
-    for (vector<SDL_Surface*>::iterator surf = inverseBG.begin(); surf < inverseBG.end(); ++surf)
-        SDL_FreeSurface(*surf);
+	//W
 }
 
 void TitleMenu::init()
 {
-    input->resetKeys(); // avoid sticky keys when returning from level
-    EFFECTS->fadeIn(30);
+	input->resetKeys(); // avoid sticky keys when returning from level
+	EFFECTS->fadeIn(30);
 
-    MUSIC_CACHE->playMusic("music/title_menu.ogg");
+	MUSIC_CACHE->playMusic("music/title_menu.ogg");
 }
 
 void TitleMenu::userInput()
@@ -120,7 +122,7 @@ void TitleMenu::userInput()
 			int prevSel = selection;
 			selection = (input->getMouseY() - MENU_OFFSET_Y) / (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING);
 			mouseInBounds = true;
-			setSelection(false);
+			updateSelection(false);
 			lastPos = input->getMouse();
 			if (selection != prevSel)
 				MUSIC_CACHE->playSound("sounds/menu.wav");
@@ -129,76 +131,90 @@ void TitleMenu::userInput()
 			mouseInBounds = false;
 	}
 
-    if (input->isUp())
-        decSelection();
-    else if (input->isDown())
-        incSelection();
+	if (input->isUp())
+		decSelection();
+	else if (input->isDown())
+		incSelection();
 
-    if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+	if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
 		doSelection();
 
-    input->resetKeys();
+	input->resetKeys();
 }
 
 void TitleMenu::update()
 {
-    setSelection(false);
-    bg.update();
-    EFFECTS->update();
-    if ( fadeTimer > 0 )
+	updateSelection(false);
+	EFFECTS->update();
+	if ( fadeTimer > 0 )
 		--fadeTimer;
 	else if ( fadeTimer == 0 )
 	{
 		doSelection();
 	}
+	bgPos += bgVel;
+	if (bgPos.x <= 0 && bgPos.y >= sizeDiff.y)
+	{
+		bgPos.x = sizeDiff.x;
+		bgPos.y = 0;
+	}
+	bgRegion.x = bgPos.x;
+	bgRegion.y = bgPos.y;
 }
 
 void TitleMenu::render()
 {
-    GFX::clearScreen();
+	GFX::clearScreen();
 
-    bg.render();
+	SDL_BlitSurface(bg, &bgRegion, GFX::getVideoSurface(), NULL);
 
-    SDL_BlitSurface(inverseBG[bg.getCurrentFrame()],&invertRegion,GFX::getVideoSurface(),&invertRegion);
+	title.render();
+	items.render();
 
-    marker.render();
+	inverse(GFX::getVideoSurface(), invertRegion);
 
-    if (ENGINE->settings->isActive())
+	marker.setY(invertRegion.y - marker.getHeight());
+	marker.setCurrentFrame(0);
+	marker.render();
+	marker.setY(invertRegion.y + invertRegion.h);
+	marker.setCurrentFrame(1);
+	marker.render();
+
+	if (ENGINE->settings->isActive())
 		overlay.render();
 
-    EFFECTS->render();
+	EFFECTS->render();
 }
 
-void TitleMenu::setSelection(CRbool immediate)
+void TitleMenu::updateSelection(CRbool immediate)
 {
-    int destination = MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * selection;
+	int destination = MENU_OFFSET_Y + (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * selection;
 
-    if (immediate)
-    {
-        invertRegion.y = destination;
-    }
-    else
-    {
-        int diff = destination - invertRegion.y;
-        invertRegion.y = invertRegion.y + NumberUtility::closestToZero(MARKER_SPEED * NumberUtility::sign(diff),diff);
-    }
-    marker.setY(invertRegion.y - (marker.getHeight() - invertRegion.h) / 2);
+	if (immediate)
+	{
+		invertRegion.y = destination;
+	}
+	else
+	{
+		int diff = destination - invertRegion.y;
+		invertRegion.y = invertRegion.y + NumberUtility::closestToZero(MARKER_SPEED * NumberUtility::sign(diff), diff);
+	}
 }
 
 void TitleMenu::incSelection()
 {
 	if (selection < MENU_ITEM_COUNT - 1)
 		++selection;
-    setSelection(false);
-    MUSIC_CACHE->playSound("sounds/menu.wav");
+	updateSelection(false);
+	MUSIC_CACHE->playSound("sounds/menu.wav");
 }
 
 void TitleMenu::decSelection()
 {
 	if (selection > 0)
 		--selection;
-    setSelection(false);
-    MUSIC_CACHE->playSound("sounds/menu.wav");
+	updateSelection(false);
+	MUSIC_CACHE->playSound("sounds/menu.wav");
 }
 
 void TitleMenu::doSelection()
@@ -209,37 +225,69 @@ void TitleMenu::doSelection()
 		fadeTimer = 30;
 		return;
 	}
-    switch (selection)
-    {
-    case 0:
-        if (ENGINE->activeChapter[0] != 0)
-            ENGINE->playChapter(ENGINE->activeChapter);
-        else
-            ENGINE->playChapter(DEFAULT_CHAPTER);
-        break;
-    case 1:
-        setNextState(STATE_LEVELSELECT);
-        break;
-    case 2:
-    	ENGINE->settings->show();
-        break;
-    case 3:
-        nullifyState();
-        break;
-    default:
-        setNextState(STATE_LEVEL);
-    }
+	switch (selection)
+	{
+	case 0:
+		if (ENGINE->activeChapter[0] != 0)
+			ENGINE->playChapter(ENGINE->activeChapter);
+		else
+			ENGINE->playChapter(DEFAULT_CHAPTER);
+		break;
+	case 1:
+		setNextState(STATE_LEVELSELECT);
+		break;
+	case 2:
+		ENGINE->settings->show();
+		break;
+	case 3:
+		nullifyState();
+		break;
+	default:
+		setNextState(STATE_LEVEL);
+	}
 }
 
 void TitleMenu::inverse(SDL_Surface* const surf, const SDL_Rect& rect)
 {
-    Colour pixelCol;
-    for (int X=rect.x; X < rect.x + rect.w; ++X)
-    {
-        for (int Y=rect.y; Y < rect.y + rect.h; ++Y)
-        {
-            pixelCol = GFX::getPixel(surf,X,Y);
-            GFX::setPixel(surf,X,Y,Colour(WHITE) - pixelCol);
-        }
-    }
+	if (SDL_MUSTLOCK(surf))
+		SDL_LockSurface(surf);
+	int bpp = surf->format->BytesPerPixel;
+	for (int X = rect.x; X < rect.x + rect.w; ++X)
+	{
+		for (int Y = rect.y; Y < rect.y + rect.h; ++Y)
+		{
+			Uint8 *p = (Uint8 *)surf->pixels + Y * surf->pitch + X * bpp;
+			switch(bpp)
+			{
+			case 1:
+				*p = Uint8(-1) - *p;
+				break;
+			case 2:
+				*(Uint16 *)p = Uint16(-1) - *(Uint16 *)p;
+				break;
+			case 3:
+			{
+				Uint32 *pixel = (Uint32 *)p;
+				if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+				{
+					p[0] = -1 << 16 - (*pixel >> 16) & 0xff;
+					p[1] = -1 << 8 - (*pixel >> 8) & 0xff;
+					p[2] = -1 - *pixel & 0xff;
+				}
+				else
+				{
+					p[0] = -1 - *pixel & 0xff;
+					p[1] = -1 << 8 - (*pixel >> 8) & 0xff;
+					p[2] = -1 << 16 - (*pixel >> 16) & 0xff;
+				}
+				break;
+			}
+			case 4:
+				*(Uint32 *)p = Uint32(-1) - *(Uint32 *)p;
+				break;
+			}
+		}
+	}
+	if (SDL_MUSTLOCK(surf))
+		SDL_UnlockSurface(surf);
 }
