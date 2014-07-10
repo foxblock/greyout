@@ -64,6 +64,10 @@ MyGame::MyGame()
     restartCounter = 0;
     icon = NULL;
     settings = NULL;
+    videoCaptureRunning = false;
+    videoFile = NULL;
+    videoCounter = 0;
+    videoTempCounter = 0;
     #ifdef _DEBUG
     frameAdvance = false;
     #endif // _DEBUG
@@ -268,13 +272,11 @@ bool MyGame::stateLoop()
 		input->update();
 		if ( input->isKey("f") )
 			frameAdvance = false;
-	#ifdef PLATFORM_PC
 		if (input->isQuit())
 		{
 			state->nullifyState();
 			return false;
 		}
-	#endif
 	}
 	if ( frameAdvance )
 		input->resetSelect();
@@ -333,13 +335,11 @@ bool MyGame::stateLoop()
 			}
 		}
 
-		#ifdef PLATFORM_PC
-			if (input->isQuit())
-			{
-				state->nullifyState();
-				return false;
-			}
-		#endif
+		if (input->isQuit())
+		{
+			state->nullifyState();
+			return false;
+		}
 		//  Update timer and check if ticks have passed
 		if(state->getIsPaused())
 		{
