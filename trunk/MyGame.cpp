@@ -330,8 +330,13 @@ bool MyGame::stateLoop()
 		{
 			if (--videoTempCounter < 0)
 			{
-				takeScreenshot(settings->getVideoCompression());
+				int result = takeScreenshot(settings->getVideoCompression());
 				videoTempCounter = settings->getVideoFrameskip();
+				if (result != 0)
+				{
+					printf("Error saving screenshot: %s\n", SDL_GetError());
+					stopVideoCapture();
+				}
 			}
 		}
 
