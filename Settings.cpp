@@ -31,6 +31,7 @@
 #include "StringUtility.h"
 #include "SimpleJoy.h"
 #include "SurfaceCache.h"
+#include "IMG_savepng.h"
 
 #ifdef _MEOW
 #else
@@ -162,6 +163,7 @@ void Settings::render(SDL_Surface *screen)
 
 void Settings::userInput(SimpleJoy *input)
 {
+	int temp = category;
 	switch (category)
 	{
 	case 0:
@@ -177,6 +179,10 @@ void Settings::userInput(SimpleJoy *input)
 		inputCategories(input);
 		break;
 	}
+	// Changing a category resets the selection marker
+	// To prevent flickering this updates the selection once after a category change
+	if (temp != category)
+		userInput(input);
 }
 
 void Settings::show()
@@ -384,10 +390,10 @@ int Settings::getScreenshotCompression()
 
 void Settings::setScreenshotCompression(int newComp)
 {
-	if (newComp < -1)
-		newComp = -1;
-	else if (newComp > 9)
-		newComp = 9;
+	if (newComp < IMG_COMPRESS_OFF || newComp == IMG_COMPRESS_DEFAULT)
+		newComp = IMG_COMPRESS_DEFAULT;
+	else if (newComp > IMG_COMPRESS_MAX)
+		newComp = IMG_COMPRESS_MAX;
 	screenshotCompression = newComp;
 }
 
@@ -398,10 +404,10 @@ int Settings::getVideoCompression()
 
 void Settings::setVideoCompression(int newComp)
 {
-	if (newComp < -1)
-		newComp = -1;
-	else if (newComp > 9)
-		newComp = 9;
+	if (newComp < IMG_COMPRESS_OFF || newComp == IMG_COMPRESS_DEFAULT)
+		newComp = IMG_COMPRESS_DEFAULT;
+	else if (newComp > IMG_COMPRESS_MAX)
+		newComp = IMG_COMPRESS_MAX;
 	videoCompression = newComp;
 }
 
@@ -736,6 +742,7 @@ void Settings::inputCategories(SimpleJoy* input)
 			input->resetMouseButtons();
 			category = sel;
 			sel = 0;
+			lastPos = Vector2di(0,0);
 		}
 		else
 		{

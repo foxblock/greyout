@@ -592,7 +592,7 @@ void MyGame::stopVideoCapture()
 	videoCaptureRunning = false;
 	time_t videoEnd;
 	time(&videoEnd);
-	printf("Stopping video capture. %i frames in %i seconds recorded (%.2f fps).\n",
+	printf("Stopping video capture. recorded %i frames in %i seconds (%.2f fps).\n",
 			videoCounter, videoEnd - videoStart, (float)videoCounter / (float)(videoEnd - videoStart));
 }
 

@@ -69,6 +69,7 @@
 // DONE: Add statistic tracking (deaths/resets per level, time on level, times completed)
 // DONE: Fix selection when going back in settings menu (will always be 0, add check for mouse)
 // DONE: Make random time on orders random every time (currently set once, then never parsed again, THANKS optimised system!)
+// TODO: Cheats in the main menu (to unlock all levels), simple combinations of direction buttons then one to confirm
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)
