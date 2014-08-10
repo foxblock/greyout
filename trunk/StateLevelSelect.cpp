@@ -89,11 +89,9 @@ StateLevelSelect::StateLevelSelect()
     size.x = (GFX::getXResolution() - spacing.x * (PREVIEW_COUNT_X + 1)) / PREVIEW_COUNT_X;
     size.y = (float)size.x * ((float)GFX::getYResolution() / (float)GFX::getXResolution());
     spacing.y = (GFX::getYResolution() - OFFSET_Y - size.y * PREVIEW_COUNT_Y) / (PREVIEW_COUNT_Y + 1);
-    gridOffset = 0;
     gridOffsetLast = 0;
     lastDraw = 0;
     firstDraw = true;
-    selection = Vector2di(0, 0);
     intermediateSelection = 0;
     lastPos = Vector2di(-1, -1);
     mousePos = Vector2di(0, 0);
@@ -165,6 +163,11 @@ StateLevelSelect::StateLevelSelect()
 
     fadeTimer = -1;
     returnToMenu = false;
+
+	selection = saveChapterSel;
+	checkSelection(chapterPreviews, selection);
+	gridOffset = selection.y;
+	checkGridOffset(chapterPreviews, gridOffset);
 }
 
 StateLevelSelect::~StateLevelSelect()
@@ -380,6 +383,7 @@ void StateLevelSelect::userInput()
     {
         if (CANCEL_KEY || input->isRightClick()) // return to chapter selection
         {
+			saveLevelSel[saveChapterSel] = selection;
             abortLevelLoading = true;
             switchState(lsChapter);
             input->resetKeys();
@@ -387,6 +391,7 @@ void StateLevelSelect::userInput()
         }
         if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
+			saveLevelSel[saveChapterSel] = selection;
 			doSelection();
         }
     }
@@ -394,6 +399,7 @@ void StateLevelSelect::userInput()
     {
         if (CANCEL_KEY || input->isRightClick()) // return to menu
         {
+            saveChapterSel = selection;
             abortLevelLoading = true;
             abortChapterLoading = true;
             input->resetKeys();
@@ -404,6 +410,7 @@ void StateLevelSelect::userInput()
         }
         if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
         {
+            saveChapterSel = selection;
 			doSelection();
         }
     }
@@ -757,7 +764,6 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
     {
     	if (state == lsLevel)
 		{
-			saveLevelSel[saveChapterSel] = selection;
             selection = saveChapterSel;
             checkSelection(chapterPreviews, selection);
             gridOffset = selection.y;
@@ -770,7 +776,6 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
     {
     	if (state == lsIntermediate || state == lsChapter)
 		{
-			saveChapterSel = selection;
 			if (saveLevelSel.find(selection) != saveLevelSel.end())
 				selection = saveLevelSel[selection];
 			else
@@ -830,7 +835,6 @@ void StateLevelSelect::doSelection()
 		{
 			abortLevelLoading = true;
 			abortChapterLoading = true;
-			saveLevelSel[saveChapterSel] = selection;
 			if ( fadeOut() ) return;
 			ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 		}
@@ -840,7 +844,6 @@ void StateLevelSelect::doSelection()
 			{
 				abortLevelLoading = true;
 				abortChapterLoading = true;
-				saveLevelSel[saveChapterSel] = selection;
 				if ( fadeOut() ) return;
 				ENGINE->playChapter(exChapter->filename,value);
 			}
@@ -860,7 +863,6 @@ void StateLevelSelect::doSelection()
 			{
 				abortLevelLoading = true;
 				abortChapterLoading = true;
-				saveLevelSel[saveChapterSel] = selection;
 				if ( fadeOut() ) return;
 				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 			}
@@ -870,7 +872,6 @@ void StateLevelSelect::doSelection()
 				{
 					abortLevelLoading = true;
 					abortChapterLoading = true;
-					saveLevelSel[saveChapterSel] = selection;
 					if ( fadeOut() ) return;
 					ENGINE->playChapter(exChapter->filename,value);
 				}
