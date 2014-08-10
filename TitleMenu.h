@@ -61,7 +61,7 @@ class TitleMenu : public BaseState
         AnimatedSprite marker;
         AnimatedSprite title;
         AnimatedSprite items;
-        int selection;
+        static int selection;
         bool mouseInBounds;
         SDL_Rect invertRegion;
         SDL_Rect bgRegion;
