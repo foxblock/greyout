@@ -51,10 +51,10 @@
 #define MARKER_SPEED 5
 #endif
 
+int TitleMenu::selection = DEFAULT_SELECTION;
 
 TitleMenu::TitleMenu()
 {
-	selection = DEFAULT_SELECTION;
 	invertRegion.w = GFX::getXResolution();
 	invertRegion.h = MENU_ITEM_HEIGHT;
 	invertRegion.x = 0;

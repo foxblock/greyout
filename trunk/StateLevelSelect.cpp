@@ -63,8 +63,17 @@
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
 #define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
 
-map<string,pair<string, SDL_Surface*> > StateLevelSelect::previewCache;
+struct VecComp
+{
+	bool operator() (const Vector2di& lhs, const Vector2di& rhs) const
+	{
+		return (lhs.x + lhs.y * PREVIEW_COUNT_X < rhs.x + rhs.y * PREVIEW_COUNT_X);
+	}
+};
 
+map<string, pair<string, SDL_Surface*> > StateLevelSelect::previewCache;
+Vector2di StateLevelSelect::saveChapterSel = Vector2di(0,0);
+map<Vector2di, Vector2di, VecComp> StateLevelSelect::saveLevelSel;
 
 struct PreviewData
 {
@@ -73,7 +82,6 @@ struct PreviewData
     SDL_Surface* surface;
     bool hasBeenLoaded;
 };
-
 StateLevelSelect::StateLevelSelect()
 {
     // set up the grid
@@ -85,10 +93,10 @@ StateLevelSelect::StateLevelSelect()
     gridOffsetLast = 0;
     lastDraw = 0;
     firstDraw = true;
-    selection = Vector2di(0,0);
+    selection = Vector2di(0, 0);
     intermediateSelection = 0;
-    lastPos = Vector2di(-1,-1);
-    mousePos = Vector2di(0,0);
+    lastPos = Vector2di(-1, -1);
+    mousePos = Vector2di(0, 0);
     mouseInBounds = false;
 
     // graphic stuff
@@ -749,8 +757,11 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
     {
     	if (state == lsLevel)
 		{
-            selection = Vector2di(0,0);
-            gridOffset = 0;
+			saveLevelSel[saveChapterSel] = selection;
+            selection = saveChapterSel;
+            checkSelection(chapterPreviews, selection);
+            gridOffset = selection.y;
+            checkGridOffset(chapterPreviews, gridOffset);
         }
         titleText.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
         titleText.setAlignment(LEFT_JUSTIFIED);
@@ -759,8 +770,14 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
     {
     	if (state == lsIntermediate || state == lsChapter)
 		{
-            selection = Vector2di(0,0);
-            gridOffset = 0;
+			saveChapterSel = selection;
+			if (saveLevelSel.find(selection) != saveLevelSel.end())
+				selection = saveLevelSel[selection];
+			else
+				selection = Vector2di(0,0);
+            checkSelection(levelPreviews, selection);
+            gridOffset = selection.y;
+            checkGridOffset(levelPreviews, gridOffset);
         }
         titleText.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
         titleText.setAlignment(RIGHT_JUSTIFIED);
@@ -813,6 +830,7 @@ void StateLevelSelect::doSelection()
 		{
 			abortLevelLoading = true;
 			abortChapterLoading = true;
+			saveLevelSel[saveChapterSel] = selection;
 			if ( fadeOut() ) return;
 			ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 		}
@@ -822,6 +840,7 @@ void StateLevelSelect::doSelection()
 			{
 				abortLevelLoading = true;
 				abortChapterLoading = true;
+				saveLevelSel[saveChapterSel] = selection;
 				if ( fadeOut() ) return;
 				ENGINE->playChapter(exChapter->filename,value);
 			}
@@ -841,6 +860,7 @@ void StateLevelSelect::doSelection()
 			{
 				abortLevelLoading = true;
 				abortChapterLoading = true;
+				saveLevelSel[saveChapterSel] = selection;
 				if ( fadeOut() ) return;
 				ENGINE->playSingleLevel(levelPreviews[value].filename,STATE_LEVELSELECT);
 			}
@@ -850,6 +870,7 @@ void StateLevelSelect::doSelection()
 				{
 					abortLevelLoading = true;
 					abortChapterLoading = true;
+					saveLevelSel[saveChapterSel] = selection;
 					if ( fadeOut() ) return;
 					ENGINE->playChapter(exChapter->filename,value);
 				}

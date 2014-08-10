@@ -47,6 +47,7 @@ limits when more than 100 maps are present (depending on size of memory)
 **/
 
 struct PreviewData;
+struct VecComp;
 
 class StateLevelSelect : public BaseState
 {
@@ -99,7 +100,8 @@ protected:
 	// checks whether the passed selection is valid in the context of the
 	// currently displayed data (i.e. it does not go out of bounds)
 	void checkSelection( const vector<PreviewData> &data, Vector2di &sel );
-
+	// checks whether the current display/grid offset is in-bounds
+	// and makes sure the selection is visible on screen with the passed display offset
 	void checkGridOffset( const vector<PreviewData> &data, int &offset );
 
 	// Thread functions, which load SDL_Surfaces* from chapter or level
@@ -129,7 +131,7 @@ protected:
 	// if hasBeenLoaded is true but surface is NULL an error occurred while loading
 	vector<PreviewData> levelPreviews;
 	vector<PreviewData> chapterPreviews;
-	static map<string,pair<string,SDL_Surface*> > previewCache;
+	static map<string, pair<string, SDL_Surface*> > previewCache;
 
 	// mutex to prevent sharing violations between main and loading thread
 	SDL_mutex *levelLock;
@@ -145,6 +147,8 @@ protected:
 	Vector2di size;
 	Vector2di spacing;
 	Vector2di selection;
+	static Vector2di saveChapterSel;
+	static map<Vector2di, Vector2di, VecComp> saveLevelSel;
 	int intermediateSelection;
 	int gridOffset; // the topmost column to render (=offset)
 	int gridOffsetLast; // last grid offset (used to check for redraw)

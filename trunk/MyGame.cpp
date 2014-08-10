@@ -175,6 +175,9 @@ void MyGame::stateManagement()
             {
                 if (currentChapter->errorString[0] == 0) // no error -> we reached the end
                 {
+                	// Finish default chapter -> unlock speedrun mode!
+                	if (currentChapter->filename == DEFAULT_CHAPTER)
+						SAVEGAME->writeData("speedrun", "true", true);
                 	if (chapterTrial)
 					{
 						next = STATE_CHAPTERTRIAL;
