@@ -127,8 +127,10 @@ protected:
 
 	int category;
 	int sel;
+	static map<int,int> savePos;
 	Vector2di lastPos;
 	bool mouseInBounds;
+	bool usedMouse;
 
 	Text *headline;
 	Text *menuText;

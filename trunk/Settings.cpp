@@ -59,11 +59,15 @@
 #define SETTINGS_MENU_OFFSET_X 20
 #define SETTINGS_MENU_SPACING_EXTRA 10
 
+map<int,int> Settings::savePos;
+
 Settings::Settings() :
 	active(false),
+	category(-1),
 	sel(0),
+	lastPos(0, 0),
 	mouseInBounds(false),
-	lastPos(0, 0)
+	usedMouse(false)
 {
 	loadFromFile();
 	headlineRect.x = 0;
@@ -123,6 +127,9 @@ Settings::Settings() :
 	arrows.loadFrames("images/general/arrows2.png", 4, 1);
 	arrows.setTransparentColour(MAGENTA);
 	arrows.setRotation(0);
+
+	if (savePos.find(-1) != savePos.end())
+		sel = savePos[-1];
 }
 
 Settings::~Settings()
@@ -179,10 +186,22 @@ void Settings::userInput(SimpleJoy *input)
 		inputCategories(input);
 		break;
 	}
-	// Changing a category resets the selection marker
-	// To prevent flickering this updates the selection once after a category change
+	// Save current selection and restore saved selection
 	if (temp != category)
-		userInput(input);
+	{
+		savePos[temp] = sel;
+		if (savePos.find(category) != savePos.end())
+			sel = savePos[category];
+		else
+			sel = 0;
+		if (usedMouse)
+		{
+			usedMouse = false;
+			lastPos = Vector2di(0,0);
+			// prevent flickering (updates rendered selection to current position of mouse)
+			userInput(input);
+		}
+	}
 }
 
 void Settings::show()
@@ -193,6 +212,7 @@ void Settings::show()
 
 void Settings::close()
 {
+	savePos[category] = sel;
 	active = false;
 	MUSIC_CACHE->stopSounds();
 }
@@ -738,11 +758,11 @@ void Settings::inputCategories(SimpleJoy* input)
 	{
 		if (sel < 3)
 		{
+			if (input->isLeftClick())
+				usedMouse = true;
 			input->resetKeys();
 			input->resetMouseButtons();
 			category = sel;
-			sel = 0;
-			lastPos = Vector2di(0,0);
 		}
 		else
 		{
@@ -849,11 +869,11 @@ void Settings::inputAudio(SimpleJoy* input)
 		}
 		else if (sel == 2)
 		{
+			if (input->isLeftClick())
+				usedMouse = true;
 			input->resetMouseButtons();
 			input->resetB();
 			category = -1;
-			sel = 0;
-			lastPos = Vector2di(0,0);
 		}
 	}
 	if (input->isL())
@@ -880,11 +900,11 @@ void Settings::inputAudio(SimpleJoy* input)
 
 	if (CANCEL_KEY || input->isRightClick())
 	{
+		if (input->isRightClick())
+			usedMouse = true;
 		input->resetKeys();
 		input->resetMouseButtons();
 		category = -1;
-		sel = 0;
-		lastPos = Vector2di(0,0);
 	}
 }
 
@@ -1002,9 +1022,9 @@ void Settings::inputGame(SimpleJoy* input)
 		}
 		else if (sel == 5)
 		{
+			if (input->isLeftClick())
+				usedMouse = true;
 			category = -1;
-			sel = 0;
-			lastPos = Vector2di(0,0);
 		}
 		input->resetMouseButtons();
 		input->resetB();
@@ -1012,11 +1032,11 @@ void Settings::inputGame(SimpleJoy* input)
 
 	if (CANCEL_KEY || input->isRightClick())
 	{
+		if (input->isRightClick())
+			usedMouse = true;
 		input->resetMouseButtons();
 		input->resetKeys();
 		category = -1;
-		sel = 0;
-		lastPos = Vector2di(0,0);
 	}
 }
 
@@ -1104,8 +1124,8 @@ void Settings::inputVideo(SimpleJoy* input)
 		else if (sel == 3)
 		{
 			category = -1;
-			sel = 0;
-			lastPos = Vector2di(0,0);
+			if (input->isLeftClick())
+				usedMouse = true;
 		}
 		input->resetMouseButtons();
 		input->resetB();
@@ -1113,11 +1133,11 @@ void Settings::inputVideo(SimpleJoy* input)
 
 	if (CANCEL_KEY || input->isRightClick())
 	{
+		if (input->isRightClick())
+			usedMouse = true;
 		input->resetMouseButtons();
 		input->resetKeys();
 		category = -1;
-		sel = 0;
-		lastPos = Vector2di(0,0);
 	}
 }
 
