@@ -33,6 +33,7 @@
 #include "effects/Hollywood.h"
 #include "MusicCache.h"
 #include "Music.h"
+#include "globalControls.h"
 
 #define DEFAULT_SELECTION 0
 #define MENU_ITEM_COUNT 4
@@ -136,7 +137,7 @@ void TitleMenu::userInput()
 	else if (input->isDown())
 		incSelection();
 
-	if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+	if ( isAcceptKey(input) || ( input->isLeftClick() && mouseInBounds ) )
 		doSelection();
 
 	input->resetKeys();

@@ -26,6 +26,7 @@
 
 #include "Level.h"
 #include "ControlUnit.h"
+#include "MusicCache.h"
 
 #define SWITCH_TIMEOUT 30
 
@@ -251,6 +252,7 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
                         (this->*switchOff)(*I);
             }
             switchTimer = SWITCH_TIMEOUT;
+            MUSIC_CACHE->playSound("sounds/switch.wav",parent->chapterPath);
         }
         if (linkTimer == 0) // no links shown, player needs to stand still once to activate them
 		{

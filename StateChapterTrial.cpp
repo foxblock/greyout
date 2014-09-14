@@ -30,6 +30,7 @@
 #include "userStates.h"
 #include "MyGame.h"
 #include "Savegame.h"
+#include "globalControls.h"
 
 #ifdef _MEOW
 #define TIME_TRIAL_OFFSET_X 10
@@ -110,7 +111,7 @@ void StateChapterTrial::userInput()
 		++menuSelection;
 		input->resetDown();
 	}
-	if (ACCEPT_KEY || input->isLeftClick())
+	if (isAcceptKey(input) || input->isLeftClick())
 	{
 		switch (menuSelection)
 		{
