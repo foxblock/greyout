@@ -32,6 +32,7 @@
 #include "SimpleJoy.h"
 #include "SurfaceCache.h"
 #include "IMG_savepng.h"
+#include "globalControls.h"
 
 #ifdef _MEOW
 #else
@@ -754,7 +755,7 @@ void Settings::inputCategories(SimpleJoy* input)
 		input->resetDown();
 	}
 
-	if (ACCEPT_KEY || (input->isLeftClick() && mouseInBounds))
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
 		if (sel < 3)
 		{
@@ -771,7 +772,7 @@ void Settings::inputCategories(SimpleJoy* input)
 			close();
 		}
 	}
-	if (CANCEL_KEY || input->isRightClick())
+	if (isCancelKey(input) || input->isRightClick())
 	{
 		input->resetKeys();
 		input->resetMouseButtons();
@@ -836,7 +837,7 @@ void Settings::inputAudio(SimpleJoy* input)
 		}
 	}
 
-	if (ACCEPT_KEY || (input->isLeftClick() && mouseInBounds))
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
 		if (sel < 2)
 		{
@@ -898,7 +899,7 @@ void Settings::inputAudio(SimpleJoy* input)
 			MUSIC_CACHE->stopSounds();
 	}
 
-	if (CANCEL_KEY || input->isRightClick())
+	if (isCancelKey(input) || input->isRightClick())
 	{
 		if (input->isRightClick())
 			usedMouse = true;
@@ -987,12 +988,12 @@ void Settings::inputGame(SimpleJoy* input)
 		input->resetRight();
 	}
 
-	if (ACCEPT_KEY || (input->isLeftClick() && mouseInBounds))
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
 		if (sel == 0 || ((sel > 1) && (sel < 5)))
 		{
 			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
+			if(isAcceptKey(input) || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
 			{
 				switch (sel)
 				{
@@ -1030,7 +1031,7 @@ void Settings::inputGame(SimpleJoy* input)
 		input->resetB();
 	}
 
-	if (CANCEL_KEY || input->isRightClick())
+	if (isCancelKey(input) || input->isRightClick())
 	{
 		if (input->isRightClick())
 			usedMouse = true;
@@ -1095,7 +1096,7 @@ void Settings::inputVideo(SimpleJoy* input)
 		input->resetRight();
 	}
 
-	if (ACCEPT_KEY || (input->isLeftClick() && mouseInBounds))
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
 		if (sel == 0)
 		{
@@ -1118,7 +1119,7 @@ void Settings::inputVideo(SimpleJoy* input)
 		else if (sel == 2)
 		{
 			int temp = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
-			if(ACCEPT_KEY || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
+			if(isAcceptKey(input) || (mousePos.x >= temp && mousePos.x < temp + SETTINGS_RECT_HEIGHT))
 				setFullscreen(!getFullscreen());
 		}
 		else if (sel == 3)
@@ -1131,7 +1132,7 @@ void Settings::inputVideo(SimpleJoy* input)
 		input->resetB();
 	}
 
-	if (CANCEL_KEY || input->isRightClick())
+	if (isCancelKey(input) || input->isRightClick())
 	{
 		if (input->isRightClick())
 			usedMouse = true;

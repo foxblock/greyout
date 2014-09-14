@@ -36,6 +36,7 @@
 #include "gameDefines.h"
 #include "Savegame.h"
 #include "effects/Hollywood.h"
+#include "globalControls.h"
 
 #define PREVIEW_COUNT_X 4
 #define PREVIEW_COUNT_Y 3
@@ -365,11 +366,11 @@ void StateLevelSelect::userInput()
 			lastPos = mousePos;
 		}
 
-        if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+        if ( isAcceptKey(input) || ( input->isLeftClick() && mouseInBounds ) )
         {
 			doSelection();
         }
-        else if (CANCEL_KEY || input->isRightClick())
+        else if (isCancelKey(input) || input->isRightClick())
         {
         	if (state == lsIntermediate)
 				switchState(lsChapter);
@@ -381,7 +382,7 @@ void StateLevelSelect::userInput()
 
     if (state == lsLevel)
     {
-        if (CANCEL_KEY || input->isRightClick()) // return to chapter selection
+        if (isCancelKey(input) || input->isRightClick()) // return to chapter selection
         {
 			saveLevelSel[saveChapterSel] = selection;
             abortLevelLoading = true;
@@ -389,7 +390,7 @@ void StateLevelSelect::userInput()
             input->resetKeys();
             return;
         }
-        if ( ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+        if ( isAcceptKey(input) || ( input->isLeftClick() && mouseInBounds ) )
         {
 			saveLevelSel[saveChapterSel] = selection;
 			doSelection();
@@ -397,7 +398,7 @@ void StateLevelSelect::userInput()
     }
     else if (state == lsChapter)
     {
-        if (CANCEL_KEY || input->isRightClick()) // return to menu
+        if (isCancelKey(input) || input->isRightClick()) // return to menu
         {
             saveChapterSel = selection;
             abortLevelLoading = true;
@@ -408,7 +409,7 @@ void StateLevelSelect::userInput()
             returnToMenu = true;
             return;
         }
-        if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+        if (isAcceptKey(input) || ( input->isLeftClick() && mouseInBounds ) )
         {
             saveChapterSel = selection;
 			doSelection();

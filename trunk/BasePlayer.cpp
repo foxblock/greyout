@@ -160,6 +160,7 @@ void BasePlayer::control(SimpleJoy* input)
         if ((direction > 0 || velocity.x == 0.0f) && ((int)velocity.y == 0))
         {
             setSpriteState("turnleft",true);
+            states["runleft"]->rewind(); // reset running anim to match end of turn
         }
         if (velocity.x > 0.0f)
 		{
@@ -177,6 +178,7 @@ void BasePlayer::control(SimpleJoy* input)
         if ((direction < 0 || velocity.x == 0.0f) && ((int)velocity.y == 0))
         {
             setSpriteState("turnright",true);
+            states["runright"]->rewind(); // reset running anim to match end of turn
         }
         if (velocity.x < 0.0f)
 		{

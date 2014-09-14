@@ -38,6 +38,7 @@
 #include "MusicCache.h"
 #include "Dialogue.h"
 #include "Savegame.h"
+#include "globalControls.h"
 
 #ifdef _MEOW
 #define NAME_TEXT_SIZE 24
@@ -1219,12 +1220,12 @@ void Level::pauseInput()
         else if(input->isDown())
             musicLister.menuDown();
 
-		if (ACCEPT_KEY)
+		if (isAcceptKey(input))
 		{
 			string file = musicLister.enter();
 			MUSIC_CACHE->playMusic(file);
 		}
-		else if (CANCEL_KEY)
+		else if (isCancelKey(input))
 			showMusicList = false;
 
         if (input->isStart())
@@ -1247,7 +1248,7 @@ void Level::pauseInput()
             ++pauseSelection;
             input->resetDown();
         }
-        if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+        if (isAcceptKey(input) || ( input->isLeftClick() && mouseInBounds ) )
         {
             switch (pauseSelection)
             {
@@ -1289,7 +1290,7 @@ void Level::pauseInput()
             input->resetDown();
         }
 
-        if (ACCEPT_KEY || ( input->isLeftClick() && mouseInBounds ) )
+        if (isAcceptKey(input) || ( input->isLeftClick() && mouseInBounds ) )
         {
             if (pauseItems[pauseSelection] == "RETURN")
                 pauseToggle();
