@@ -223,7 +223,7 @@ void StateLevelSelect::clearChapterListing()
 
 void StateLevelSelect::userInput()
 {
-	if ( fadeTimer > 0 )
+	if ( fadeTimer >= 0 )
 		return;
 	mousePos = input->getMouse();
     if (state != lsIntermediate && state != lsIntermediateLevel) // grid navigation
@@ -809,19 +809,21 @@ void StateLevelSelect::doSelection()
 		switch (intermediateSelection)
 		{
 		case 0: // play
+			if (fadeTimer < 0)
+				MUSIC_CACHE->playSound("sounds/level_play.wav");
 			if ( fadeOut() ) return;
 			ENGINE->playChapter(chapterPreviews[value].filename);
-			MUSIC_CACHE->playSound("sounds/drip.wav");
 			break;
 		case 1: // explore
 			exploreChapter(chapterPreviews[value].filename);
 			switchState(lsLevel);
 			break;
 		case 2: // time attack (speedrun!)
+			if (fadeTimer < 0)
+				MUSIC_CACHE->playSound("sounds/level_play.wav");
 			if ( fadeOut() ) return;
 			ENGINE->startChapterTrial();
 			ENGINE->playChapter(chapterPreviews[value].filename,0);
-			MUSIC_CACHE->playSound("sounds/drip.wav");
 			break;
 		default: // nothing
 			break;
@@ -832,6 +834,8 @@ void StateLevelSelect::doSelection()
 		if (intermediateSelection == 1)
 			ENGINE->timeTrial = true;
 
+		if (fadeTimer < 0)
+			MUSIC_CACHE->playSound("sounds/level_play.wav");
 		if (not exChapter) // level from level folder
 		{
 			abortLevelLoading = true;
@@ -849,7 +853,6 @@ void StateLevelSelect::doSelection()
 				ENGINE->playChapter(exChapter->filename,value);
 			}
 		}
-		MUSIC_CACHE->playSound("sounds/drip.wav");
 	}
 	else if ( state == lsLevel )
 	{
@@ -860,6 +863,8 @@ void StateLevelSelect::doSelection()
 		}
 		else
 		{
+			if (fadeTimer < 0)
+				MUSIC_CACHE->playSound("sounds/level_play.wav");
 			if (not exChapter) // level from level folder
 			{
 				abortLevelLoading = true;
@@ -877,7 +882,6 @@ void StateLevelSelect::doSelection()
 					ENGINE->playChapter(exChapter->filename,value);
 				}
 			}
-			MUSIC_CACHE->playSound("sounds/drip.wav");
 		}
 	}
 	else

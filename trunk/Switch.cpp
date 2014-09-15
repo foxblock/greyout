@@ -243,6 +243,7 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
                 if (switchOn)
                     for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
                         (this->*switchOn)(*I);
+				MUSIC_CACHE->playSound("sounds/switch.wav",parent->chapterPath);
             }
             else
             {
@@ -250,9 +251,9 @@ void Switch::hitUnit(const UnitCollisionEntry& entry)
                 if (switchOff)
                     for (vector<BaseUnit*>::iterator I = targets.begin(); I != targets.end(); ++I)
                         (this->*switchOff)(*I);
+				MUSIC_CACHE->playSound("sounds/switch_off.wav",parent->chapterPath);
             }
             switchTimer = SWITCH_TIMEOUT;
-            MUSIC_CACHE->playSound("sounds/switch.wav",parent->chapterPath);
         }
         if (linkTimer == 0) // no links shown, player needs to stand still once to activate them
 		{
