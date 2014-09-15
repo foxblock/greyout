@@ -1,25 +1,25 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #ifndef SAVEGAME_H
@@ -41,72 +41,72 @@ Chapter progress is saved by the highest level reached
 class Savegame
 {
 private:
-    Savegame();
-    static Savegame *self;
+	Savegame();
+	static Savegame *self;
 public:
-    virtual ~Savegame();
-    static Savegame* getSavegame();
+	virtual ~Savegame();
+	static Savegame* getSavegame();
 
-    /// all writers return true on success and false otherwise
+	/// all writers return true on success and false otherwise
 
-    // set the savegame file, also tries to load progress if file is found
-    virtual bool setFile(CRstring filename);
-    // enable/disable encryption for saving
-    virtual void setEncryption(CRbool useEncryption);
+	// set the savegame file, also tries to load progress if file is found
+	virtual bool setFile(CRstring filename);
+	// enable/disable encryption for saving
+	virtual void setEncryption(CRbool useEncryption);
 
-    // save progress to file
-    virtual bool save();
-    // clear progress
-    virtual bool clear();
+	// save progress to file
+	virtual bool save();
+	// clear progress
+	virtual bool clear();
 
-    // generic data getter and setter, if overwrite is true the new value will be
-    // written without prior check of existance of the key
-    virtual string getData(CRstring key) const;
-    virtual bool writeData(CRstring key, CRstring value, CRbool overwrite=true);
-    virtual bool hasData(CRstring key) const;
+	// generic data getter and setter, if overwrite is true the new value will be
+	// written without prior check of existance of the key
+	virtual string getData(CRstring key) const;
+	virtual bool writeData(CRstring key, CRstring value, CRbool overwrite=true);
+	virtual bool hasData(CRstring key) const;
 
-    // temporary data will not be saved to disk and can be used without calling setFile
-    virtual string getTempData(CRstring key) const;
-    virtual bool writeTempData(CRstring key, CRstring value, CRbool overwrite=true);
-    virtual bool hasTempData(CRstring key) const;
+	// temporary data will not be saved to disk and can be used without calling setFile
+	virtual string getTempData(CRstring key) const;
+	virtual bool writeTempData(CRstring key, CRstring value, CRbool overwrite=true);
+	virtual bool hasTempData(CRstring key) const;
 
-    struct ChapterStats
-    {
-    	int progress;
-    	int bestSpeedrunTime;
-    };
+	struct ChapterStats
+	{
+		int progress;
+		int bestSpeedrunTime;
+	};
 
-    // wrappers for getData and writeData
-    // will check whether passed progress is greater than loaded if overwrite is false
-    virtual int getChapterProgress(CRstring chapterFile);
-    virtual bool setChapterProgress(CRstring chapterFile, CRint progress, CRbool overwrite=false);
-    virtual ChapterStats getChapterStats(CRstring chapterFile);
-    virtual bool setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbool overwrite=false);
+	// wrappers for getData and writeData
+	// will check whether passed progress is greater than loaded if overwrite is false
+	virtual int getChapterProgress(CRstring chapterFile);
+	virtual bool setChapterProgress(CRstring chapterFile, CRint progress, CRbool overwrite=false);
+	virtual ChapterStats getChapterStats(CRstring chapterFile);
+	virtual bool setChapterStats(CRstring chapterFile, ChapterStats newStats, CRbool overwrite=false);
 
-    struct LevelStats
-    {
-        int bestSpeedrunTime;
-        int totalDeaths;
-        int totalResets;
-        int timesAttempted;
-        int timesCompleted;
-        int totalTimeOnLevel;
-    };
+	struct LevelStats
+	{
+		int bestSpeedrunTime;
+		int totalDeaths;
+		int totalResets;
+		int timesAttempted;
+		int timesCompleted;
+		int totalTimeOnLevel;
+	};
 
-    virtual bool setLevelStats(CRstring levelFile, LevelStats newStats, CRbool overwrite=false);
-    virtual LevelStats getLevelStats(CRstring levelFile);
+	virtual bool setLevelStats(CRstring levelFile, LevelStats newStats, CRbool overwrite=false);
+	virtual LevelStats getLevelStats(CRstring levelFile);
 
-    // set this to false to disable saving after data operation
-    bool autoSave;
+	// set this to false to disable saving after data operation
+	bool autoSave;
 protected:
-    map<string,string> data;
-    map<string,string> tempData;
-    map<string,LevelStats> levelDataCache;
-    map<string,ChapterStats> chapterDataCache;
-    string filename;
-    bool encrypt;
+	map<string,string> data;
+	map<string,string> tempData;
+	map<string,LevelStats> levelDataCache;
+	map<string,ChapterStats> chapterDataCache;
+	string filename;
+	bool encrypt;
 
-    Encryption crypt;
+	Encryption crypt;
 private:
 
 };

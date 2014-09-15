@@ -5,18 +5,18 @@
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
 	Janek Schäfer (foxblock), foxblock_at_gmail_dot_com
@@ -41,27 +41,27 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	centred(true),
 	enabled(true)
 {
-    flags.addFlag(ufNoMapCollision);
-    flags.addFlag(ufNoGravity);
-    flags.addFlag(ufInvincible);
+	flags.addFlag(ufNoMapCollision);
+	flags.addFlag(ufNoGravity);
+	flags.addFlag(ufInvincible);
 	#ifndef _DEBUG
 	flags.addFlag(ufNoRender);
 	#endif // _DEBUG
-    unitCollisionMode = 0;
+	unitCollisionMode = 0;
 
-    stringToProp["direction"] = epDirection;
-    stringToProp["power"] = epPower;
-    stringToProp["lifetime"] = epLifetime;
-    stringToProp["delay"] = epDelay;
-    stringToProp["directionscatter"] = epDirectionScatter;
-    stringToProp["powerscatter"] = epPowerScatter;
-    stringToProp["lifetimescatter"] = epLifetimeScatter;
-    stringToProp["delayscatter"] = epDelayScatter;
-    stringToProp["enabled"] = epEnabled;
-    stringToProp["multiplier"] = epMultiplier;
-    stringToProp["centred"] = epCentred;
+	stringToProp["direction"] = epDirection;
+	stringToProp["power"] = epPower;
+	stringToProp["lifetime"] = epLifetime;
+	stringToProp["delay"] = epDelay;
+	stringToProp["directionscatter"] = epDirectionScatter;
+	stringToProp["powerscatter"] = epPowerScatter;
+	stringToProp["lifetimescatter"] = epLifetimeScatter;
+	stringToProp["delayscatter"] = epDelayScatter;
+	stringToProp["enabled"] = epEnabled;
+	stringToProp["multiplier"] = epMultiplier;
+	stringToProp["centred"] = epCentred;
 
-    Random::randSeed();
+	Random::randSeed();
 }
 
 ParticleEmitter::~ParticleEmitter()
@@ -144,7 +144,7 @@ void ParticleEmitter::render(SDL_Surface* surf)
 		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
 	}
 #else
-    // Don't render anything
+	// Don't render anything
 #endif
 }
 
@@ -152,32 +152,32 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 {
 	bool parsed = true;
 
-    switch (stringToProp[value.first])
-    {
+	switch (stringToProp[value.first])
+	{
 	case BaseUnit::upSize:
 	{
 		size = StringUtility::stringToVec<Vector2di>(value.second);
 		break;
 	}
-    case epEnabled:
-    {
-        enabled = StringUtility::stringToBool(value.second);
-        break;
-    }
-    case epDirection:
+	case epEnabled:
+	{
+		enabled = StringUtility::stringToBool(value.second);
+		break;
+	}
+	case epDirection:
 	{
 		emitDir = StringUtility::stringToVec<Vector2df>(value.second);
 		emitDir.normalise();
 		break;
 	}
-    case epPower:
+	case epPower:
 	{
 		float temp = StringUtility::stringToFloat(value.second);
 		emitPower.x = temp;
 		emitPower.y = temp;
 		break;
 	}
-    case epLifetime:
+	case epLifetime:
 	{
 		int temp = 0;
 		pLoadTime( value.second, temp );
@@ -185,7 +185,7 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		particleLifetime.y = temp;
 		break;
 	}
-    case epDelay:
+	case epDelay:
 	{
 		int temp = 0;
 		pLoadTime( value.second, temp );
@@ -193,12 +193,12 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		nextParticleTime.y = temp;
 		break;
 	}
-    case epDirectionScatter:
+	case epDirectionScatter:
 	{
 		angleScatter = NumberUtility::degToRad(StringUtility::stringToFloat(value.second));
 		break;
 	}
-    case epPowerScatter:
+	case epPowerScatter:
 	{
 		float temp = StringUtility::stringToFloat(value.second);
 		emitPower.x -= temp;
@@ -213,7 +213,7 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		particleLifetime.y += temp;
 		break;
 	}
-    case epDelayScatter:
+	case epDelayScatter:
 	{
 		int temp = 0;
 		pLoadTime( value.second, temp );
@@ -242,14 +242,14 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		centred = StringUtility::stringToBool(value.second);
 		break;
 	}
-    default:
-        parsed = false;
-    }
+	default:
+		parsed = false;
+	}
 
-    if (not parsed)
-        return BaseUnit::processParameter(value);
+	if (not parsed)
+		return BaseUnit::processParameter(value);
 
-    return parsed;
+	return parsed;
 }
 
 

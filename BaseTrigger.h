@@ -1,25 +1,25 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #ifndef BASE_TRIGGER_H
@@ -30,51 +30,51 @@
 class BaseTrigger : public BaseUnit
 {
 public:
-    BaseTrigger(Level* newParent);
-    virtual ~BaseTrigger();
+	BaseTrigger(Level* newParent);
+	virtual ~BaseTrigger();
 
-    virtual bool processParameter(const PARAMETER_TYPE& value);
+	virtual bool processParameter(const PARAMETER_TYPE& value);
 
-    virtual void reset();
+	virtual void reset();
 
-    virtual void update();
-    virtual void render(SDL_Surface* surf);
+	virtual void update();
+	virtual void render(SDL_Surface* surf);
 
-    virtual void hitUnit(const UnitCollisionEntry& entry);
-    virtual bool checkCollisionColour(const Colour& col) const;
+	virtual void hitUnit(const UnitCollisionEntry& entry);
+	virtual bool checkCollisionColour(const Colour& col) const;
 
-    int getWidth() const {return size.x;}
-    int getHeight() const {return size.y;}
+	int getWidth() const {return size.x;}
+	int getHeight() const {return size.y;}
 
-    #ifdef _DEBUG
-    virtual string debugInfo();
-    #endif
+	#ifdef _DEBUG
+	virtual string debugInfo();
+	#endif
 
-    bool enabled;
+	bool enabled;
 
 protected:
-    virtual void doTrigger(const UnitCollisionEntry& entry);
+	virtual void doTrigger(const UnitCollisionEntry& entry);
 
-    Vector2di size;
-    Colour triggerCol;
-    vector<BaseUnit*> targets;
-    vector<string> targetIDs;
-    vector<BaseUnit*> activators;
-    vector<string> activatorIDs;
-    PARAMETER_TYPE targetParam;
+	Vector2di size;
+	Colour triggerCol;
+	vector<BaseUnit*> targets;
+	vector<string> targetIDs;
+	vector<BaseUnit*> activators;
+	vector<string> activatorIDs;
+	PARAMETER_TYPE targetParam;
 
-    bool autoReEnable;
-    int enableTimer;
-    bool actionHitTarget; // if true action can be performed on the hitUnit entry if targets is empty
+	bool autoReEnable;
+	int enableTimer;
+	bool actionHitTarget; // if true action can be performed on the hitUnit entry if targets is empty
 
-    enum BaseTriggerProps
-    {
-        bpEnabled=BaseUnit::upEOL,
-        bpAction,
-        bpActivator,
-        bpAutoReEnable,
-        bpEOL
-    };
+	enum BaseTriggerProps
+	{
+		bpEnabled=BaseUnit::upEOL,
+		bpAction,
+		bpActivator,
+		bpAutoReEnable,
+		bpEOL
+	};
 private:
 
 };

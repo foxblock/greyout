@@ -1,25 +1,25 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "MyGame.h"
@@ -92,34 +92,34 @@
 
 int main(int argc, char** argv)
 {
-    Engine* game = NULL;
+	Engine* game = NULL;
 	ErrorHandler error;
 
 	//	Setup game engine
 	game = new MyGame;
 
-    if(game)
-    {
-        cout << error.getErrorString(game->argHandler(argc,argv));
-        cout << error.getErrorString(game->penjinInit());
+	if(game)
+	{
+		cout << error.getErrorString(game->argHandler(argc,argv));
+		cout << error.getErrorString(game->penjinInit());
 
 		GFX::showCursor(true);
 
-        while(game->stateLoop());	//	Perform main loop until shutdown
+		while(game->stateLoop());	//	Perform main loop until shutdown
 
-        cout << error.getErrorString(PENJIN_SHUTDOWN);
+		cout << error.getErrorString(PENJIN_SHUTDOWN);
 
 	//	Tidy up
-        delete game;
-        game = NULL;
-    }
-    else
-    {
-        cout << "CRITICAL ERROR: Failed to create game class!" << endl;
-        return 666;
-    }
+		delete game;
+		game = NULL;
+	}
+	else
+	{
+		cout << "CRITICAL ERROR: Failed to create game class!" << endl;
+		return 666;
+	}
 
-    cout << error.getErrorString(PENJIN_GOODBYE);
-    SDL_Quit();		//	Shut down SDL tidyly
+	cout << error.getErrorString(PENJIN_GOODBYE);
+	SDL_Quit();		//	Shut down SDL tidyly
 	return 0;	//	Normal program termination.
 }

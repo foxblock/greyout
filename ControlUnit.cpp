@@ -1,107 +1,107 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "ControlUnit.h"
 
 ControlUnit::ControlUnit(Level* newParent) : BaseUnit(newParent)
 {
-    takesControl = true;
-    isPlayer = true;
+	takesControl = true;
+	isPlayer = true;
 
-    stringToProp["control"] = cpControl;
+	stringToProp["control"] = cpControl;
 }
 
 ControlUnit::~ControlUnit()
 {
-    //
+	//
 }
 
 /// ---public---
 
 bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
 {
-    if (BaseUnit::processParameter(value))
-        return true;
+	if (BaseUnit::processParameter(value))
+		return true;
 
-    bool parsed = true;
+	bool parsed = true;
 
-    switch (stringToProp[value.first])
-    {
-    case cpControl:
-    {
-        takesControl = StringUtility::stringToBool(value.second);
-        break;
-    }
-    default:
-        parsed = false;
-    }
+	switch (stringToProp[value.first])
+	{
+	case cpControl:
+	{
+		takesControl = StringUtility::stringToBool(value.second);
+		break;
+	}
+	default:
+		parsed = false;
+	}
 
-    return parsed;
+	return parsed;
 }
 
 void ControlUnit::control(SimpleJoy* input)
 {
-    if (!input)
-    {
-        acceleration[0].x = 0;
-        acceleration[1].x = 0;
-        velocity.x = 0;
-        return;
-    }
+	if (!input)
+	{
+		acceleration[0].x = 0;
+		acceleration[1].x = 0;
+		velocity.x = 0;
+		return;
+	}
 
-    if (input->isLeft())
-    {
-        acceleration[0].x = -2;
-        acceleration[1].x = -16;
-    }
-    else if (input->isRight())
-    {
-        acceleration[0].x = 2;
-        acceleration[1].x = 16;
-    }
-    else
-    {
-        acceleration[0].x = 0;
-        acceleration[1].x = 0;
-        velocity.x = 0;
-    }
-    if (input->isUp())
-    {
-        acceleration[0].y = -2;
-        acceleration[1].y = -16;
-    }
-    else if (input->isDown())
-    {
-        acceleration[0].y = 2;
-        acceleration[1].y = 16;
-    }
-    else
-    {
-        acceleration[0].y = 0;
-        acceleration[1].y = 0;
-        velocity.y = 0;
-    }
+	if (input->isLeft())
+	{
+		acceleration[0].x = -2;
+		acceleration[1].x = -16;
+	}
+	else if (input->isRight())
+	{
+		acceleration[0].x = 2;
+		acceleration[1].x = 16;
+	}
+	else
+	{
+		acceleration[0].x = 0;
+		acceleration[1].x = 0;
+		velocity.x = 0;
+	}
+	if (input->isUp())
+	{
+		acceleration[0].y = -2;
+		acceleration[1].y = -16;
+	}
+	else if (input->isDown())
+	{
+		acceleration[0].y = 2;
+		acceleration[1].y = 16;
+	}
+	else
+	{
+		acceleration[0].y = 0;
+		acceleration[1].y = 0;
+		velocity.y = 0;
+	}
 }
 
 /// ---protected---
