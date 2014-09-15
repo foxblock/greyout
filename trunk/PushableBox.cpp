@@ -47,7 +47,7 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 		pushSound.loadSound("sounds/box.wav");
 	}
 	pushSound.setVolume(MUSIC_CACHE->getSoundVolume());
-	pushSound.setSimultaneousPlay(true);
+	//pushSound.setSimultaneousPlay(true);
 
 	stringToOrder["size"] = boSize;
 }
@@ -97,6 +97,7 @@ void PushableBox::reset()
 {
 	rect.w = 32;
 	rect.h = 32;
+	pushSound.stop();
 	BaseUnit::reset();
 }
 
@@ -130,7 +131,7 @@ Vector2df PushableBox::getPixel(const SimpleDirection& dir) const
 void PushableBox::update()
 {
 	if (isBeingPushed == false && pushSound.isPlaying())
-		pushSound.stop();
+		pushSound.pause();
 	isBeingPushed = false;
 	BaseUnit::update();
 }
@@ -179,7 +180,7 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
 				entry.unit->setSpriteState("pushright");
 			else
 				entry.unit->setSpriteState("pushleft");
-			if (!pushSound.isPlaying())
+			if (!pushSound.isPlaying() || pushSound.isPaused())
 				pushSound.play(-1);
 			isBeingPushed = true;
 		}
