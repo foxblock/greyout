@@ -130,9 +130,13 @@ Vector2df PushableBox::getPixel(const SimpleDirection& dir) const
 
 void PushableBox::update()
 {
+	if (velocity.x == 0)
+		isBeingPushed = false; // stop sound if box not actually moving
 	if (isBeingPushed == false && pushSound.isPlaying())
 		pushSound.pause();
-	isBeingPushed = false;
+	// stop sound on next frame if not being pushed 
+	// if box is being pushed hitUnit will be called and this set to true again before next update
+	isBeingPushed = false; 
 	BaseUnit::update();
 }
 
@@ -181,7 +185,10 @@ void PushableBox::hitUnit(const UnitCollisionEntry& entry)
 			else
 				entry.unit->setSpriteState("pushleft");
 			if (!pushSound.isPlaying() || pushSound.isPaused())
-				pushSound.play(-1);
+			{
+				pushSound.play();
+				pushSound.setVolume(MUSIC_CACHE->getSoundVolume());
+			}
 			isBeingPushed = true;
 		}
 	}

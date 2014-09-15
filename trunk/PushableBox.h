@@ -71,7 +71,7 @@ class PushableBox : public BaseUnit
 
 		Vector2df sizeTimer; // incremental step for size orders
 		Vector2df dynSize; // floating point size for size orders (to preserve accuracy)
-		bool isBeingPushed;
+		bool isBeingPushed; // only used for playing push sound
 		Sound pushSound;
 
 		enum BoxOrder
