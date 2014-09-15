@@ -5,18 +5,18 @@
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
 	Janek Schäfer (foxblock), foxblock_at_gmail_dot_com
@@ -46,52 +46,52 @@ sound at one time
 class MusicCache
 {
 private:
-    MusicCache();
-    static MusicCache *self;
+	MusicCache();
+	static MusicCache *self;
 public:
-    virtual ~MusicCache();
-    static MusicCache* getMusicCache();
+	virtual ~MusicCache();
+	static MusicCache* getMusicCache();
 
-    bool playMusic(CRstring filename, CRbool suppressOutput = false);
-    bool playMusic(CRstring filename, CRstring pathOverwrite);
-    void stopMusic();
-    void setMusicVolume(int newVol);
-    int getMusicVolume() const {return musicVolume;}
-    string getPlaying() const {return musicPlaying;}
+	bool playMusic(CRstring filename, CRbool suppressOutput = false);
+	bool playMusic(CRstring filename, CRstring pathOverwrite);
+	void stopMusic();
+	void setMusicVolume(int newVol);
+	int getMusicVolume() const {return musicVolume;}
+	string getPlaying() const {return musicPlaying;}
 
-    bool playSound(CRstring filename, CRint numLoops = 0, CRbool suppressOutput = false);
-    bool playSound(CRstring filename, CRstring pathOverwrite, CRint numLoops = 0);
-    void stopSounds();
-    void setSoundVolume(int newVol);
-    int getSoundVolume() const {return soundVolume;}
+	bool playSound(CRstring filename, CRint numLoops = 0, CRbool suppressOutput = false);
+	bool playSound(CRstring filename, CRstring pathOverwrite, CRint numLoops = 0);
+	void stopSounds();
+	void setSoundVolume(int newVol);
+	int getSoundVolume() const {return soundVolume;}
 
-    int getMaxVolume() const;
+	int getMaxVolume() const;
 
-    void clear(CRbool clearPlaying=true);
-    void clearMusic(CRbool clearPlaying=true);
-    void clearSounds(CRbool clearPlaying=true);
+	void clear(CRbool clearPlaying=true);
+	void clearMusic(CRbool clearPlaying=true);
+	void clearSounds(CRbool clearPlaying=true);
 
-    int sizeMusic() const {return music.size();}
-    int sizeSounds() const {return sounds.size();}
+	int sizeMusic() const {return music.size();}
+	int sizeSounds() const {return sounds.size();}
 
-    bool isLoaded(CRstring filename) const;
+	bool isLoaded(CRstring filename) const;
 
-    int fadeDuration;
+	int fadeDuration;
 protected:
-    void play(Music* const item, CRstring file);
-    void stop(Music* const item);
+	void play(Music* const item, CRstring file);
+	void stop(Music* const item);
 
-    // passed data is next music object
-    static int fadeMusic(void* data);
+	// passed data is next music object
+	static int fadeMusic(void* data);
 
-    std::map<string,Music*> music;
-    std::map<string,Sound*> sounds;
+	std::map<string,Music*> music;
+	std::map<string,Sound*> sounds;
 
-    string musicPlaying;
-    int soundVolume;
-    int musicVolume;
-    SDL_Thread* fadeThread;
-    string nextTrack;
+	string musicPlaying;
+	int soundVolume;
+	int musicVolume;
+	SDL_Thread* fadeThread;
+	string nextTrack;
 private:
 
 };

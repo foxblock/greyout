@@ -1,25 +1,25 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "Exit.h"
@@ -29,89 +29,89 @@
 
 Exit::Exit(Level* newParent) : BaseUnit(newParent)
 {
-    stringToProp["link"] = epLink;
+	stringToProp["link"] = epLink;
 
-    flags.addFlag(ufNoMapCollision);
-    flags.addFlag(ufNoGravity);
-    unitCollisionMode = 0;
+	flags.addFlag(ufNoMapCollision);
+	flags.addFlag(ufNoGravity);
+	unitCollisionMode = 0;
 
-    col = Colour(50,217,54);
-    collisionColours.insert(Colour(BLACK).getIntColour());
-    collisionColours.insert(Colour(WHITE).getIntColour());
+	col = Colour(50,217,54);
+	collisionColours.insert(Colour(BLACK).getIntColour());
+	collisionColours.insert(Colour(WHITE).getIntColour());
 
-    isExiting = false;
-    allExited = false;
+	isExiting = false;
+	allExited = false;
 
-    linkTimer = 0;
-    lastKeys = 0;
+	linkTimer = 0;
+	lastKeys = 0;
 }
 
 Exit::~Exit()
 {
-    targets.clear();
-    targetIDs.clear();
-    keys.clear();
+	targets.clear();
+	targetIDs.clear();
+	keys.clear();
 }
 
 ///---public---
 
 bool Exit::load(list<PARAMETER_TYPE >& params)
 {
-    bool result = BaseUnit::load(params);
+	bool result = BaseUnit::load(params);
 
-    if (imageOverwrite[0] == 0)
-    {
-        imageOverwrite = "images/units/exit.png";
-    }
-    else // clear sprites loaded by BaseUnit
-    {
-        for (map<string,AnimatedSprite*>::iterator I = states.begin(); I != states.end(); ++I)
-        {
-            delete I->second;
-        }
-        states.clear();
-    }
-    AnimatedSprite* temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),3,1,0,1);
-    temp->setTransparentColour(MAGENTA);
-    states["open"] = temp;
-    temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),3,1,1,1);
-    temp->setTransparentColour(MAGENTA);
-    states["closed"] = temp;
-    temp = new AnimatedSprite;
-    temp->loadFrames(getSurface(imageOverwrite),3,1,2,1);
-    temp->setTransparentColour(MAGENTA);
-    states["linked"] = temp;
+	if (imageOverwrite[0] == 0)
+	{
+		imageOverwrite = "images/units/exit.png";
+	}
+	else // clear sprites loaded by BaseUnit
+	{
+		for (map<string,AnimatedSprite*>::iterator I = states.begin(); I != states.end(); ++I)
+		{
+			delete I->second;
+		}
+		states.clear();
+	}
+	AnimatedSprite* temp = new AnimatedSprite;
+	temp->loadFrames(getSurface(imageOverwrite),3,1,0,1);
+	temp->setTransparentColour(MAGENTA);
+	states["open"] = temp;
+	temp = new AnimatedSprite;
+	temp->loadFrames(getSurface(imageOverwrite),3,1,1,1);
+	temp->setTransparentColour(MAGENTA);
+	states["closed"] = temp;
+	temp = new AnimatedSprite;
+	temp->loadFrames(getSurface(imageOverwrite),3,1,2,1);
+	temp->setTransparentColour(MAGENTA);
+	states["linked"] = temp;
 
 	if (startingState[0] == 0 && !targetIDs.empty())
 		startingState = "linked";
-    if (startingState[0] == 0 || startingState == "default")
-        startingState = "open";
-    setSpriteState(startingState,true);
+	if (startingState[0] == 0 || startingState == "default")
+		startingState = "open";
+	setSpriteState(startingState,true);
 
-    return result;
+	return result;
 }
 
 bool Exit::processParameter(const PARAMETER_TYPE& value)
 {
-    if (BaseUnit::processParameter(value))
-        return true;
+	if (BaseUnit::processParameter(value))
+		return true;
 
-    bool parsed = true;
+	bool parsed = true;
 
-    switch (stringToProp[value.first])
-    {
-    case epLink:
-    {
+	switch (stringToProp[value.first])
+	{
+	case epLink:
+	{
 		parsed = pLoadUintIDs( value.second, targetIDs );
-        break;
-    }
-    default:
-        parsed = false;
-    }
+		break;
+	}
+	default:
+		parsed = false;
+	}
 
-    return parsed;
+	return parsed;
 }
 
 void Exit::reset()
@@ -124,15 +124,15 @@ void Exit::reset()
 
 void Exit::hitUnit(const UnitCollisionEntry& entry)
 {
-    if (currentState != "closed") // open or linked
-    {
-        // standing still on the ground
-        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
-            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
-            entry.overlap.x > 10 && entry.overlap.y > 20)
-        {
-        	isExiting = true;
-        	if (allExited || targets.empty())
+	if (currentState != "closed") // open or linked
+	{
+		// standing still on the ground
+		if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
+			abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
+			entry.overlap.x > 10 && entry.overlap.y > 20)
+		{
+			isExiting = true;
+			if (allExited || targets.empty())
 			{
 				entry.unit->toBeRemoved = true;
 				parent->swapControl();
@@ -153,32 +153,32 @@ void Exit::hitUnit(const UnitCollisionEntry& entry)
 				linkTimer = 3;
 			}
 		}
-    }
-    else
+	}
+	else
 	{
-        if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
-            abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
-            entry.overlap.x > 10 && entry.overlap.y > 20 && ((ControlUnit*)entry.unit)->takesControl &&
+		if (entry.unit->isPlayer && (int)entry.unit->velocity.x == 0 &&
+			abs(entry.unit->velocity.y) < 3 && entry.unit->collisionInfo.correction.y != 0 &&
+			entry.overlap.x > 10 && entry.overlap.y > 20 && ((ControlUnit*)entry.unit)->takesControl &&
 			linkTimer == 0)
-        {
+		{
 			for (set<BaseUnit*>::iterator I = keys.begin(); I != keys.end(); ++I)
 				parent->addLink(this,*I);
 			linkTimer = 3;
-        }
+		}
 	}
-    if (linkTimer > 0 && entry.unit->isPlayer && ((ControlUnit*)entry.unit)->takesControl)
+	if (linkTimer > 0 && entry.unit->isPlayer && ((ControlUnit*)entry.unit)->takesControl)
 		linkTimer = 3;
 }
 
 void Exit::update()
 {
-    if (!targetIDs.empty())
-    {
-        targets.clear();
-        parent->getUnitsByID(targetIDs,targets);
-        targetIDs.clear();
-    }
-    isExiting = false;
+	if (!targetIDs.empty())
+	{
+		targets.clear();
+		parent->getUnitsByID(targetIDs,targets);
+		targetIDs.clear();
+	}
+	isExiting = false;
 	if (linkTimer > 0)
 	{
 		--linkTimer;
@@ -195,7 +195,7 @@ void Exit::update()
 		lastKeys = keys.size();
 	}
 
-    BaseUnit::update();
+	BaseUnit::update();
 }
 
 ///---protected---

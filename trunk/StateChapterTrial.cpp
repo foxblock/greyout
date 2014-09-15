@@ -1,25 +1,25 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "StateChapterTrial.h"
@@ -61,23 +61,23 @@ StateChapterTrial::StateChapterTrial()
 	timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y);
 
 	menuText.loadFont(GAME_FONT,NAME_TEXT_SIZE);
-    menuText.setColour(WHITE);
-    menuText.setAlignment(LEFT_JUSTIFIED);
-    menuText.setUpBoundary(Vector2di(GFX::getXResolution(),GFX::getYResolution()));
-    menuText.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
-    menuRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
-    menuRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
-    menuRect.setColour(BLACK);
+	menuText.setColour(WHITE);
+	menuText.setAlignment(LEFT_JUSTIFIED);
+	menuText.setUpBoundary(Vector2di(GFX::getXResolution(),GFX::getYResolution()));
+	menuText.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
+	menuRect.setDimensions(GFX::getXResolution(),NAME_RECT_HEIGHT);
+	menuRect.setPosition(0.0f,(GFX::getYResolution() - NAME_RECT_HEIGHT) / 2.0f);
+	menuRect.setColour(BLACK);
 
-    bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
-    bg.disableTransparentColour();
-    bg.setPosition(0,0);
+	bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
+	bg.disableTransparentColour();
+	bg.setPosition(0,0);
 
-    pauseItems.push_back("RESTART");
-    pauseItems.push_back("EXIT");
+	pauseItems.push_back("RESTART");
+	pauseItems.push_back("EXIT");
 
-    int temp = SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).bestSpeedrunTime;
-    if (temp >= 0)
+	int temp = SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).bestSpeedrunTime;
+	if (temp >= 0)
 		newRecord = (ENGINE->chapterTrialTimer < temp);
 	else
 		newRecord = true;
@@ -98,7 +98,7 @@ StateChapterTrial::~StateChapterTrial()
 
 void StateChapterTrial::userInput()
 {
-    if (timeDisplay < ENGINE->chapterTrialTimer)
+	if (timeDisplay < ENGINE->chapterTrialTimer)
 		return;
 
 	if (input->isUp() && menuSelection > 0)
@@ -133,7 +133,7 @@ void StateChapterTrial::userInput()
 
 void StateChapterTrial::update()
 {
-    bg.update();
+	bg.update();
 
 	if (timeDisplay < ENGINE->chapterTrialTimer)
 		timeDisplay += min(ENGINE->chapterTrialTimer - timeDisplay, ENGINE->chapterTrialTimer / END_TIMER_ANIMATION_STEP);
@@ -146,7 +146,7 @@ void StateChapterTrial::update()
 
 void StateChapterTrial::render()
 {
-    bg.render();
+	bg.render();
 
 	timeTrialText.setAlignment(CENTRED);
 	timeTrialText.setPosition(TIME_TRIAL_OFFSET_X,TIME_TRIAL_OFFSET_Y);

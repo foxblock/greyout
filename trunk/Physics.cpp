@@ -1,25 +1,25 @@
 /*
 	Greyout - a colourful platformer about love
 
-	Greyout is Copyright (c)2011-2014 Janek Sch‰fer
+	Greyout is Copyright (c)2011-2014 Janek Sch√§fer
 
 	This file is part of Greyout.
 
-    Greyout is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	Greyout is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
 	Greyout is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 	Please direct any feedback, questions or comments to
-	Janek Sch‰fer (foxblock), foxblock_at_gmail_dot_com
+	Janek Sch√§fer (foxblock), foxblock_at_gmail_dot_com
 */
 
 #include "Physics.h"
@@ -42,80 +42,80 @@ Physics* Physics::self = 0;
 
 Physics::Physics()
 {
-    gravity = DEFAULT_GRAVITY;
-    maximum = DEFAULT_MAXIMUM;
+	gravity = DEFAULT_GRAVITY;
+	maximum = DEFAULT_MAXIMUM;
 
-    checkPointsX.push_back(diTOPLEFT);
-    checkPointsX.push_back(diTOPRIGHT);
-    checkPointsX.push_back(diLEFT);
-    checkPointsX.push_back(diRIGHT);
+	checkPointsX.push_back(diTOPLEFT);
+	checkPointsX.push_back(diTOPRIGHT);
+	checkPointsX.push_back(diLEFT);
+	checkPointsX.push_back(diRIGHT);
 
-    checkPointsY.push_back(diTOP);
-    checkPointsY.push_back(diBOTTOMLEFT);
-    checkPointsY.push_back(diBOTTOM);
-    checkPointsY.push_back(diBOTTOMRIGHT);
-    checkPointsY.push_back(diTOPLEFT);
-    checkPointsY.push_back(diTOPRIGHT);
+	checkPointsY.push_back(diTOP);
+	checkPointsY.push_back(diBOTTOMLEFT);
+	checkPointsY.push_back(diBOTTOM);
+	checkPointsY.push_back(diBOTTOMRIGHT);
+	checkPointsY.push_back(diTOPLEFT);
+	checkPointsY.push_back(diTOPRIGHT);
 }
 
 Physics::~Physics()
 {
-    //
+	//
 }
 
 Physics* Physics::GetSingleton()
 {
-    if (not self)
-        self = new Physics();
-    return self;
+	if (not self)
+		self = new Physics();
+	return self;
 }
 
 void Physics::reset()
 {
-    gravity = DEFAULT_GRAVITY;
-    maximum = DEFAULT_MAXIMUM;
+	gravity = DEFAULT_GRAVITY;
+	maximum = DEFAULT_MAXIMUM;
 }
 
 void Physics::applyPhysics(BaseUnit* const unit) const
 {
-    // Acceleration
-    if (unit->acceleration[0].x > 0.0f)
-    {
-        unit->velocity.x += min(max(unit->acceleration[1].x - unit->velocity.x,0.0f),unit->acceleration[0].x);
-    }
-    else if (unit->acceleration[0].x < 0.0f)
-    {
-        unit->velocity.x += max(min(unit->acceleration[1].x - unit->velocity.x,0.0f),unit->acceleration[0].x);
-    }
-    if (unit->acceleration[0].y > 0.0f)
-    {
-        unit->velocity.y += min(max(unit->acceleration[1].y - unit->velocity.y,0.0f),unit->acceleration[0].y);
-    }
-    else if (unit->acceleration[0].y < 0.0f)
-    {
-        unit->velocity.y += max(min(unit->acceleration[1].y - unit->velocity.y,0.0f),unit->acceleration[0].y);
-    }
+	// Acceleration
+	if (unit->acceleration[0].x > 0.0f)
+	{
+		unit->velocity.x += min(max(unit->acceleration[1].x - unit->velocity.x,0.0f),unit->acceleration[0].x);
+	}
+	else if (unit->acceleration[0].x < 0.0f)
+	{
+		unit->velocity.x += max(min(unit->acceleration[1].x - unit->velocity.x,0.0f),unit->acceleration[0].x);
+	}
+	if (unit->acceleration[0].y > 0.0f)
+	{
+		unit->velocity.y += min(max(unit->acceleration[1].y - unit->velocity.y,0.0f),unit->acceleration[0].y);
+	}
+	else if (unit->acceleration[0].y < 0.0f)
+	{
+		unit->velocity.y += max(min(unit->acceleration[1].y - unit->velocity.y,0.0f),unit->acceleration[0].y);
+	}
 
-    // Reset acceleration
-    if (unit->velocity.x == unit->acceleration[1].x)
-    {
-        unit->acceleration[0].x = 0.0f;
-        unit->acceleration[1].x = 0.0f;
-    }
-    if (unit->velocity.y == unit->acceleration[1].y)
-    {
-        unit->acceleration[0].y = 0.0f;
-        unit->acceleration[1].y = 0.0f;
-    }
+	// Reset acceleration
+	if (unit->velocity.x == unit->acceleration[1].x)
+	{
+		unit->acceleration[0].x = 0.0f;
+		unit->acceleration[1].x = 0.0f;
+	}
+	if (unit->velocity.y == unit->acceleration[1].y)
+	{
+		unit->acceleration[0].y = 0.0f;
+		unit->acceleration[1].y = 0.0f;
+	}
 
-    // Gravity
-    if (not unit->flags.hasFlag(BaseUnit::ufNoGravity))
-    {
-        unit->velocity += gravity;
-    }
+	// Gravity
+	if (not unit->flags.hasFlag(BaseUnit::ufNoGravity))
+	{
+		unit->velocity += gravity;
+	}
 
-    // Check for max
-    if ( unit->velocity.x > maximum.x )
+	// Check for max
+	if ( unit->velocity.x > maximum.x )
 		unit->velocity.x = maximum.x;
 	else if ( unit->velocity.x < -maximum.x )
 		unit->velocity.x = -maximum.x;
@@ -132,198 +132,198 @@ correction, which is desired in platformers. (assuming gravity in y-direction)
 **/
 void Physics::unitMapCollision(const Level* const level, SDL_Surface* const colImage, BaseUnit* const unit, const Vector2df& mapOffset) const
 {
-    /// TODO: Implement step-size and check diBOTTOMLEFT and -RIGHT in x-direction, too
-    /// compare to y-correction values and step-size
-    /// TODO: Take the unit's velocity into account when returning correction value, so sub-pixel movements get corrected properly
+	/// TODO: Implement step-size and check diBOTTOMLEFT and -RIGHT in x-direction, too
+	/// compare to y-correction values and step-size
+	/// TODO: Take the unit's velocity into account when returning correction value, so sub-pixel movements get corrected properly
 
-    static vector<MapCollisionEntry> collisionDir;
-    collisionDir.clear();
-    Vector2df correction(0,0);
-    Vector2di pixelCorrection(0,0); // unit will be moved by this step until no collision occurs
-    Colour colColour; // the colour taken from the collision surface at the tested point
-    Vector2df pixel(0,0); // currently tested pixel
+	static vector<MapCollisionEntry> collisionDir;
+	collisionDir.clear();
+	Vector2df correction(0,0);
+	Vector2di pixelCorrection(0,0); // unit will be moved by this step until no collision occurs
+	Colour colColour; // the colour taken from the collision surface at the tested point
+	Vector2df pixel(0,0); // currently tested pixel
 
-    /// x-direction
-    // check which pixels are colliding
-    for (vector<SimpleDirection>::const_iterator dir = checkPointsX.begin(); dir != checkPointsX.end(); ++dir)
-    {
-        pixel = unit->getPixel((*dir));
-        pixel.x += unit->velocity.x;
-        pixel += unit->collisionInfo.positionCorrection;
-        pixel = level->transformCoordinate(pixel);
+	/// x-direction
+	// check which pixels are colliding
+	for (vector<SimpleDirection>::const_iterator dir = checkPointsX.begin(); dir != checkPointsX.end(); ++dir)
+	{
+		pixel = unit->getPixel((*dir));
+		pixel.x += unit->velocity.x;
+		pixel += unit->collisionInfo.positionCorrection;
+		pixel = level->transformCoordinate(pixel);
 
-        // out of bounds check
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
-            continue;
+		// out of bounds check
+		if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
+			continue;
 
-        colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+		colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
-        if (unit->checkCollisionColour(colColour))
-        {
-            // we have a collision
-            MapCollisionEntry entry;
-            entry.dir = (*dir);
-            entry.pos = pixel;
-            entry.col = colColour;
-            entry.correction = Vector2df(0,0);
-            collisionDir.push_back(entry);
-            int temp = dir->xDirection();
-            // only use direction if not set before or aiming in the same direction as velocity
-            if (pixelCorrection.x == 0 || NumberUtility::sign(unit->velocity.x) == temp)
-                pixelCorrection.x = temp * -1;
-        }
-    }
+		if (unit->checkCollisionColour(colColour))
+		{
+			// we have a collision
+			MapCollisionEntry entry;
+			entry.dir = (*dir);
+			entry.pos = pixel;
+			entry.col = colColour;
+			entry.correction = Vector2df(0,0);
+			collisionDir.push_back(entry);
+			int temp = dir->xDirection();
+			// only use direction if not set before or aiming in the same direction as velocity
+			if (pixelCorrection.x == 0 || NumberUtility::sign(unit->velocity.x) == temp)
+				pixelCorrection.x = temp * -1;
+		}
+	}
 
-    // move unit until the collision is solved (maximum by unit's velocity as we
-    // are assuming the unit was in a no-collision state before)
-    bool stillColliding = (!collisionDir.empty()); // don't check when there are no colliding pixels
-    int correctionX = 0; // total correction to solve collision in this direction
-    while (stillColliding && abs(correctionX) <= maximum.x)
-    {
-        correctionX += pixelCorrection.x;
+	// move unit until the collision is solved (maximum by unit's velocity as we
+	// are assuming the unit was in a no-collision state before)
+	bool stillColliding = (!collisionDir.empty()); // don't check when there are no colliding pixels
+	int correctionX = 0; // total correction to solve collision in this direction
+	while (stillColliding && abs(correctionX) <= maximum.x)
+	{
+		correctionX += pixelCorrection.x;
 
-        vector<MapCollisionEntry>::const_iterator entryPtr;
-        for (entryPtr = collisionDir.begin(); entryPtr != collisionDir.end(); ++entryPtr)
-        {
-            pixel = entryPtr->pos;
-            pixel.x += correctionX;
-            pixel = level->transformCoordinate(pixel);
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
-                continue;
+		vector<MapCollisionEntry>::const_iterator entryPtr;
+		for (entryPtr = collisionDir.begin(); entryPtr != collisionDir.end(); ++entryPtr)
+		{
+			pixel = entryPtr->pos;
+			pixel.x += correctionX;
+			pixel = level->transformCoordinate(pixel);
+			if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
+				continue;
 
-            colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
-            if (unit->checkCollisionColour(colColour))
-                break;
-        }
-        if (entryPtr == collisionDir.end()) // all pixel have been checked, so no new collision has been found
-            stillColliding = false;
-    }
+			colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+			if (unit->checkCollisionColour(colColour))
+				break;
+		}
+		if (entryPtr == collisionDir.end()) // all pixel have been checked, so no new collision has been found
+			stillColliding = false;
+	}
 
-    if (abs(correctionX) < maximum.x)
-        correction.x = correctionX;
-    unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
+	if (abs(correctionX) < maximum.x)
+		correction.x = correctionX;
+	unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
 
 
-    /// y-direction
-    pixelCorrection = Vector2di(0,0);
-    collisionDir.clear();
+	/// y-direction
+	pixelCorrection = Vector2di(0,0);
+	collisionDir.clear();
 
-    for (vector<SimpleDirection>::const_iterator dir = checkPointsY.begin(); dir != checkPointsY.end(); ++dir)
-    {
-        pixel = unit->getPixel((*dir));
-        pixel += unit->velocity;
-        pixel.x += correction.x;
-        pixel += unit->collisionInfo.positionCorrection;
-        pixel = level->transformCoordinate(pixel);
+	for (vector<SimpleDirection>::const_iterator dir = checkPointsY.begin(); dir != checkPointsY.end(); ++dir)
+	{
+		pixel = unit->getPixel((*dir));
+		pixel += unit->velocity;
+		pixel.x += correction.x;
+		pixel += unit->collisionInfo.positionCorrection;
+		pixel = level->transformCoordinate(pixel);
 
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
-            continue;
+		if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
+			continue;
 
-        colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+		colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
-        if (unit->checkCollisionColour(colColour))
-        {
-            // we have a collision
-            MapCollisionEntry entry;
-            entry.dir = (*dir);
-            entry.pos = pixel;
-            entry.col = colColour;
-            entry.correction = Vector2df(0,0);
-            collisionDir.push_back(entry);
-            int temp = dir->yDirection();
-            // only use direction if not set before or aiming in the same direction as velocity
-            if (pixelCorrection.y == 0 || NumberUtility::sign(unit->velocity.y) == temp)
-                pixelCorrection.y = temp * -1;
-        }
-    }
+		if (unit->checkCollisionColour(colColour))
+		{
+			// we have a collision
+			MapCollisionEntry entry;
+			entry.dir = (*dir);
+			entry.pos = pixel;
+			entry.col = colColour;
+			entry.correction = Vector2df(0,0);
+			collisionDir.push_back(entry);
+			int temp = dir->yDirection();
+			// only use direction if not set before or aiming in the same direction as velocity
+			if (pixelCorrection.y == 0 || NumberUtility::sign(unit->velocity.y) == temp)
+				pixelCorrection.y = temp * -1;
+		}
+	}
 
-    stillColliding = (!collisionDir.empty()); // don't check when there are no colliding pixels
-    int correctionY = 0; // total correction to solve collision in this direction
-    while (stillColliding && abs(correctionY) <= maximum.y)
-    {
-        correctionY += pixelCorrection.y;
+	stillColliding = (!collisionDir.empty()); // don't check when there are no colliding pixels
+	int correctionY = 0; // total correction to solve collision in this direction
+	while (stillColliding && abs(correctionY) <= maximum.y)
+	{
+		correctionY += pixelCorrection.y;
 
-        vector<MapCollisionEntry>::const_iterator entryPtr;
-        for (entryPtr = collisionDir.begin(); entryPtr != collisionDir.end(); ++entryPtr)
-        {
-            pixel = entryPtr->pos;
-            pixel.y += correctionY;
-            pixel = level->transformCoordinate(pixel);
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
-                continue;
+		vector<MapCollisionEntry>::const_iterator entryPtr;
+		for (entryPtr = collisionDir.begin(); entryPtr != collisionDir.end(); ++entryPtr)
+		{
+			pixel = entryPtr->pos;
+			pixel.y += correctionY;
+			pixel = level->transformCoordinate(pixel);
+			if (pixel.x < 0 || pixel.y < 0 || pixel.x >= colImage->w || pixel.y >= colImage->h)
+				continue;
 
-            colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
-            if (unit->checkCollisionColour(colColour))
-                break;
-        }
-        if (entryPtr == collisionDir.end()) // all pixel have been checked, so no new collision has been found
-            stillColliding = false;
-    }
+			colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+			if (unit->checkCollisionColour(colColour))
+				break;
+		}
+		if (entryPtr == collisionDir.end()) // all pixel have been checked, so no new collision has been found
+			stillColliding = false;
+	}
 
-    correction.y = correctionY;
-    unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
+	correction.y = correctionY;
+	unit->collisionInfo.pixels.insert(unit->collisionInfo.pixels.end(),collisionDir.begin(),collisionDir.end());
 
-    unit->collisionInfo.correction = correction;
+	unit->collisionInfo.correction = correction;
 
-    unit->hitMap(correction);
+	unit->hitMap(correction);
 }
 
 void Physics::particleMapCollision(const Level* const level, SDL_Surface* const colImage, BaseUnit* const particle) const
 {
-    Vector2df proPos = particle->position;
-    Vector2df correction(0,0);
-    Vector2di pixelCorrection(0,0);
-    pixelCorrection.x = NumberUtility::sign(particle->velocity.x) * -1;
-    pixelCorrection.y = NumberUtility::sign(particle->velocity.y) * -1;
+	Vector2df proPos = particle->position;
+	Vector2df correction(0,0);
+	Vector2di pixelCorrection(0,0);
+	pixelCorrection.x = NumberUtility::sign(particle->velocity.x) * -1;
+	pixelCorrection.y = NumberUtility::sign(particle->velocity.y) * -1;
 
-    // x
-    bool colliding = true;
-    Colour temp;
-    if (pixelCorrection.x != 0)
-    {
-        proPos.x += particle->velocity.x;
-        while (colliding && (abs(correction.x) < abs(particle->velocity.x)))
-        {
-            if (proPos.x + correction.x < 0 || proPos.y < 0 || proPos.x + correction.x >= colImage->w || proPos.y >= colImage->h)
-                break;
+	// x
+	bool colliding = true;
+	Colour temp;
+	if (pixelCorrection.x != 0)
+	{
+		proPos.x += particle->velocity.x;
+		while (colliding && (abs(correction.x) < abs(particle->velocity.x)))
+		{
+			if (proPos.x + correction.x < 0 || proPos.y < 0 || proPos.x + correction.x >= colImage->w || proPos.y >= colImage->h)
+				break;
 
-            temp = GFX::getPixel(colImage,proPos.x + correction.x, proPos.y);
+			temp = GFX::getPixel(colImage,proPos.x + correction.x, proPos.y);
 
-            if (particle->checkCollisionColour(temp)) // collision
-            {
-                correction.x += pixelCorrection.x;
-            }
-            else
-            {
-                colliding = false;
-            }
-        }
-        proPos.x -= particle->velocity.x;
-    }
-    // y
-    if (pixelCorrection.y != 0)
-    {
-        proPos.y += particle->velocity.y;
-        colliding = true;
-        while (colliding && (abs(correction.y) < abs(particle->velocity.y)))
-        {
-            if (proPos.x < 0 || proPos.y + correction.y < 0 || proPos.x >= colImage->w || proPos.y + correction.y >= colImage->h)
-                break;
+			if (particle->checkCollisionColour(temp)) // collision
+			{
+				correction.x += pixelCorrection.x;
+			}
+			else
+			{
+				colliding = false;
+			}
+		}
+		proPos.x -= particle->velocity.x;
+	}
+	// y
+	if (pixelCorrection.y != 0)
+	{
+		proPos.y += particle->velocity.y;
+		colliding = true;
+		while (colliding && (abs(correction.y) < abs(particle->velocity.y)))
+		{
+			if (proPos.x < 0 || proPos.y + correction.y < 0 || proPos.x >= colImage->w || proPos.y + correction.y >= colImage->h)
+				break;
 
-            temp = GFX::getPixel(colImage,proPos.x, proPos.y + correction.y);
+			temp = GFX::getPixel(colImage,proPos.x, proPos.y + correction.y);
 
-            if (particle->checkCollisionColour(temp)) // collision
-            {
-                correction.y += pixelCorrection.y;
-            }
-            else
-            {
-                colliding = false;
-            }
-        }
-    }
+			if (particle->checkCollisionColour(temp)) // collision
+			{
+				correction.y += pixelCorrection.y;
+			}
+			else
+			{
+				colliding = false;
+			}
+		}
+	}
 
-    particle->hitMap(correction);
+	particle->hitMap(correction);
 }
 
 
@@ -344,168 +344,168 @@ commented as the above function).
 /*
 void Physics::unitMapCollision(SDL_Surface* const colImage, BaseUnit* const unit, const Vector2df& mapOffset) const
 {
-    Vector2df correction(0,0);
-    Vector2di pixelCorrection(0,0); // unit will be moved in this steps until no collision occurs
+	Vector2df correction(0,0);
+	Vector2di pixelCorrection(0,0); // unit will be moved in this steps until no collision occurs
 
-    /// clear data of previous check
-    unit->collisionInfo.clear();
+	/// clear data of previous check
+	unit->collisionInfo.clear();
 
-    /// Determine colliding pixels
-    // diLEFT to diBOTTOMRIGHT
-    for (int dir = 1; dir <= 8; ++dir)
-    {
-        // current collision pixel
-        Vector2df pixel = unit->getPixel(dir) + unit->velocity;
-        // pixelCorrection for this pixel (e.g. diTOPLEFT would be corrected to the bottom-right)
-        Vector2df temp = SimpleDirection(dir).vectorDirection() * (-1.0f);
+	/// Determine colliding pixels
+	// diLEFT to diBOTTOMRIGHT
+	for (int dir = 1; dir <= 8; ++dir)
+	{
+		// current collision pixel
+		Vector2df pixel = unit->getPixel(dir) + unit->velocity;
+		// pixelCorrection for this pixel (e.g. diTOPLEFT would be corrected to the bottom-right)
+		Vector2df temp = SimpleDirection(dir).vectorDirection() * (-1.0f);
 
-        if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
-            continue;
+		if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
+			continue;
 
-        Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+		Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
 
-        if (unit->checkCollisionColour(colColour))
-        {
-            // we have a collision
-            CollisionEntry entry;
-            entry.dir = dir;
-            entry.pixel = pixel;
-            entry.col = colColour;
-            entry.correction = Vector2df(0,0);
-            unit->collisionInfo.entries.push_back(entry);
-            // only use direction if not set before or aiming in the same direction as velocity
-            if (temp.x != 0 && (pixelCorrection.x == 0 || NumberUtility::sign(unit->velocity.x)*-1 == temp.x))
-                pixelCorrection.x = temp.x;
-            if (temp.y != 0 && (pixelCorrection.y == 0 || NumberUtility::sign(unit->velocity.y)*-1 == temp.y))
-                pixelCorrection.y = temp.y;
-        }
-    }
+		if (unit->checkCollisionColour(colColour))
+		{
+			// we have a collision
+			CollisionEntry entry;
+			entry.dir = dir;
+			entry.pixel = pixel;
+			entry.col = colColour;
+			entry.correction = Vector2df(0,0);
+			unit->collisionInfo.entries.push_back(entry);
+			// only use direction if not set before or aiming in the same direction as velocity
+			if (temp.x != 0 && (pixelCorrection.x == 0 || NumberUtility::sign(unit->velocity.x)*-1 == temp.x))
+				pixelCorrection.x = temp.x;
+			if (temp.y != 0 && (pixelCorrection.y == 0 || NumberUtility::sign(unit->velocity.y)*-1 == temp.y))
+				pixelCorrection.y = temp.y;
+		}
+	}
 
-    /// Calculate correction by moving unit back pixel per pixel
-    Vector2df unitVel = unit->velocity;
-    bool stillColliding = true;
-    while (stillColliding)
-    {
-        // only correct current movement
-        if (unitVel.x ==  0)
-            pixelCorrection.x = 0;
-        if (unitVel.y == 0)
-            pixelCorrection.y = 0;
-        if (pixelCorrection.x == 0 && pixelCorrection.y == 0)
-        {
-            // usually this should not happen as it means there already has been
-            // an unsolved collision on the last iteration, but better check for
-            // it anyway to prevent an infinite loop
-            break;
-        }
-        unitVel += pixelCorrection;
+	/// Calculate correction by moving unit back pixel per pixel
+	Vector2df unitVel = unit->velocity;
+	bool stillColliding = true;
+	while (stillColliding)
+	{
+		// only correct current movement
+		if (unitVel.x ==  0)
+			pixelCorrection.x = 0;
+		if (unitVel.y == 0)
+			pixelCorrection.y = 0;
+		if (pixelCorrection.x == 0 && pixelCorrection.y == 0)
+		{
+			// usually this should not happen as it means there already has been
+			// an unsolved collision on the last iteration, but better check for
+			// it anyway to prevent an infinite loop
+			break;
+		}
+		unitVel += pixelCorrection;
 
-        vector<CollisionEntry>::const_iterator entryPtr;
-        for (entryPtr = unit->collisionInfo.entries.begin(); entryPtr != unit->collisionInfo.entries.end(); ++entryPtr)
-        {
-            Vector2df pixel = entryPtr->pixel + unitVel - unit->velocity; // unitVel - unitVelocity = pixelCorrection * iteration
-            if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
-                continue;
+		vector<CollisionEntry>::const_iterator entryPtr;
+		for (entryPtr = unit->collisionInfo.entries.begin(); entryPtr != unit->collisionInfo.entries.end(); ++entryPtr)
+		{
+			Vector2df pixel = entryPtr->pixel + unitVel - unit->velocity; // unitVel - unitVelocity = pixelCorrection * iteration
+			if (pixel.x < 0 || pixel.y < 0 || pixel.x > GFX::getXResolution() || pixel.y > GFX::getYResolution())
+				continue;
 
-            Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
-            // if unit is still colliding break here and go into next iteration
-            if (unit->checkCollisionColour(colColour))
-                break;
-        }
-        if (entryPtr == unit->collisionInfo.entries.end()) // all pixel have been checked, so no new collision has been found
-            stillColliding = false;
-    }
-    correction = unitVel - unit->velocity;
+			Colour colColour = GFX::getPixel(colImage,pixel.x,pixel.y);
+			// if unit is still colliding break here and go into next iteration
+			if (unit->checkCollisionColour(colColour))
+				break;
+		}
+		if (entryPtr == unit->collisionInfo.entries.end()) // all pixel have been checked, so no new collision has been found
+			stillColliding = false;
+	}
+	correction = unitVel - unit->velocity;
 
-    unit->collisionInfo.correction = correction;
+	unit->collisionInfo.correction = correction;
 
-    unit->hitMap();
+	unit->hitMap();
 }
 */
 
 
 void Physics::playerUnitCollision(const Level* const level, BaseUnit* const player, BaseUnit* const unit) const
 {
-    /// TODO: Optimize this and remove redundant stuff (aka this is a mess!)
-    Vector2df proPosPlayer(player->position + player->velocity);
-    Vector2df proPosUnit(unit->position + unit->velocity);
-    Vector2df playerSize(player->getSize());
-    Vector2df unitSize(unit->getSize());
-    float xPos = max(proPosPlayer.x, proPosUnit.x);
-    float yPos = max(proPosPlayer.y, proPosUnit.y);
-    float xPosMax = min(proPosPlayer.x + playerSize.x, proPosUnit.x + unitSize.x);
-    float yPosMax = min(proPosPlayer.y + playerSize.y, proPosUnit.y + unitSize.y);
-    if (xPosMax > xPos && yPosMax > yPos)
-    {
+	/// TODO: Optimize this and remove redundant stuff (aka this is a mess!)
+	Vector2df proPosPlayer(player->position + player->velocity);
+	Vector2df proPosUnit(unit->position + unit->velocity);
+	Vector2df playerSize(player->getSize());
+	Vector2df unitSize(unit->getSize());
+	float xPos = max(proPosPlayer.x, proPosUnit.x);
+	float yPos = max(proPosPlayer.y, proPosUnit.y);
+	float xPosMax = min(proPosPlayer.x + playerSize.x, proPosUnit.x + unitSize.x);
+	float yPosMax = min(proPosPlayer.y + playerSize.y, proPosUnit.y + unitSize.y);
+	if (xPosMax > xPos && yPosMax > yPos)
+	{
 		float diffX = xPosMax - xPos;
 		float diffY = yPosMax - yPos;
-        SimpleDirection dir;
-        if (player->position.x < unit->position.x)
-            dir = diLEFT;
-        else
-            dir = diRIGHT;
-        UnitCollisionEntry temp = {dir,Vector2df(diffX,diffY),player};
-        unit->collisionInfo.units.push_back(temp);
-        UnitCollisionEntry temp2 = {-dir,Vector2df(diffX,diffY),unit};
-        player->collisionInfo.units.push_back(temp2);
-        return;
-    }
+		SimpleDirection dir;
+		if (player->position.x < unit->position.x)
+			dir = diLEFT;
+		else
+			dir = diRIGHT;
+		UnitCollisionEntry temp = {dir,Vector2df(diffX,diffY),player};
+		unit->collisionInfo.units.push_back(temp);
+		UnitCollisionEntry temp2 = {-dir,Vector2df(diffX,diffY),unit};
+		player->collisionInfo.units.push_back(temp2);
+		return;
+	}
 
-    Vector2df pos2p = level->boundsCheck(player);
-    Vector2df pos2u = level->boundsCheck(unit);
-    if (pos2p != player->position || pos2u != unit->position)
-    {
-        proPosPlayer = pos2p + player->velocity;
-        proPosUnit = pos2u + unit->velocity;
-        xPos = max(proPosPlayer.x, proPosUnit.x);
-        yPos = max(proPosPlayer.y, proPosUnit.y);
-        xPosMax = min(proPosPlayer.x + playerSize.x, proPosUnit.x + unitSize.x);
-        yPosMax = min(proPosPlayer.y + playerSize.y, proPosUnit.y + unitSize.y);
-        if (xPosMax > xPos && yPosMax > yPos)
-        {
-            float diffX = xPosMax - xPos;
-            float diffY = yPosMax - yPos;
-            SimpleDirection dir;
-            if (pos2p.x < pos2u.x)
-                dir = diLEFT;
-            else
-                dir = diRIGHT;
-            UnitCollisionEntry temp = {dir,Vector2df(diffX,diffY),player};
-            unit->collisionInfo.units.push_back(temp);
-            UnitCollisionEntry temp2 = {-dir,Vector2df(diffX,diffY),unit};
-            player->collisionInfo.units.push_back(temp2);
-        }
-    }
+	Vector2df pos2p = level->boundsCheck(player);
+	Vector2df pos2u = level->boundsCheck(unit);
+	if (pos2p != player->position || pos2u != unit->position)
+	{
+		proPosPlayer = pos2p + player->velocity;
+		proPosUnit = pos2u + unit->velocity;
+		xPos = max(proPosPlayer.x, proPosUnit.x);
+		yPos = max(proPosPlayer.y, proPosUnit.y);
+		xPosMax = min(proPosPlayer.x + playerSize.x, proPosUnit.x + unitSize.x);
+		yPosMax = min(proPosPlayer.y + playerSize.y, proPosUnit.y + unitSize.y);
+		if (xPosMax > xPos && yPosMax > yPos)
+		{
+			float diffX = xPosMax - xPos;
+			float diffY = yPosMax - yPos;
+			SimpleDirection dir;
+			if (pos2p.x < pos2u.x)
+				dir = diLEFT;
+			else
+				dir = diRIGHT;
+			UnitCollisionEntry temp = {dir,Vector2df(diffX,diffY),player};
+			unit->collisionInfo.units.push_back(temp);
+			UnitCollisionEntry temp2 = {-dir,Vector2df(diffX,diffY),unit};
+			player->collisionInfo.units.push_back(temp2);
+		}
+	}
 }
 
 bool Physics::checkUnitCollision(const Level* const level, const BaseUnit* const unitA, const BaseUnit* const unitB) const
 {
-    SDL_Rect rectA = unitA->getRect();
-    SDL_Rect rectB = unitB->getRect();
-    if (rectCheck(rectA,rectB))
-        return true;
+	SDL_Rect rectA = unitA->getRect();
+	SDL_Rect rectB = unitB->getRect();
+	if (rectCheck(rectA,rectB))
+		return true;
 
-    // check warped position
-    Vector2df posA2 = level->boundsCheck(unitA);
-    Vector2df posB2 = level->boundsCheck(unitB);
-    if (posA2 != unitA->position || posB2 != unitB->position)
-    {
-        rectA.x = posA2.x;
-        rectA.y = posA2.y;
-        rectB.x = posB2.x;
-        rectB.y = posB2.y;
-        if (rectCheck(rectA,rectB))
-            return true;
-    }
-    return false;
+	// check warped position
+	Vector2df posA2 = level->boundsCheck(unitA);
+	Vector2df posB2 = level->boundsCheck(unitB);
+	if (posA2 != unitA->position || posB2 != unitB->position)
+	{
+		rectA.x = posA2.x;
+		rectA.y = posA2.y;
+		rectB.x = posB2.x;
+		rectB.y = posB2.y;
+		if (rectCheck(rectA,rectB))
+			return true;
+	}
+	return false;
 }
 
 ///
 
 bool Physics::rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const
 {
-    if (((rectB.x - rectA.x) < rectA.w && (rectA.x - rectB.x) < rectB.w) &&
-            ((rectB.y - rectA.y) < rectA.h && (rectA.y - rectB.y) < rectB.h))
-        return true;
-    return false;
+	if (((rectB.x - rectA.x) < rectA.w && (rectA.x - rectB.x) < rectB.w) &&
+			((rectB.y - rectA.y) < rectA.h && (rectA.y - rectB.y) < rectB.h))
+		return true;
+	return false;
 }
