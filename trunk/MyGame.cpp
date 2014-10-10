@@ -241,7 +241,14 @@ PENJIN_ERRORS MyGame::argHandler(int argc, char **argv)
 				//	Look for arguments
 				switch(argv[arg][1])
 				{
-					//	Set Fullscreen
+				//  Load CMF - Custom controls
+				case 'c':
+				case 'C':
+				{
+					customControlMap = argv[arg+1];
+					break;
+				}
+				//	Set Fullscreen
 				case 'f':
 				case 'F':
 				{
