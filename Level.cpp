@@ -1774,7 +1774,7 @@ string Level::debugInfo()
 		StringUtility::vecToString(cam.getDest()) + " | " +
 		StringUtility::vecToString(cam.getSpeed()) + "\n";
 	result += "Flags: " + StringUtility::intToString(flags.flags) + "\n";
-	if (input)
+	if (input && collisionLayer)
 	{
 		result += "Mouse: " + StringUtility::vecToString(input->getMouse());
 		Vector2di pos = input->getMouse() + drawOffset;

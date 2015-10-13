@@ -26,7 +26,7 @@
 #define SIMPLEFLAGS_H
 
 /**
-Combining several binary values in one for clarity
+Combining several binary values in one int container
 **/
 
 class SimpleFlags

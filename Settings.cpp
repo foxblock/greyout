@@ -102,8 +102,8 @@ Settings::Settings() :
 	audioItems.push_back("RETURN");
 	gameItems.push_back("HINT LINKS:");
 	gameItems.push_back("CAMERA:");
-	gameItems.push_back("DRAW FPS:");
-	gameItems.push_back("WRITE FPS:");
+	gameItems.push_back("SHOW FPS:");
+	gameItems.push_back("LOG FPS:");
 	gameItems.push_back("DEBUG:");
 	gameItems.push_back("RETURN");
 	videoItems.push_back("RENDER WRAP:");
