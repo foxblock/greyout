@@ -609,7 +609,7 @@ void MyGame::stopVideoCapture()
 
 /// ---private---
 
-BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
+BaseState* MyGame::createState(CRuint stateID, CRstring parameter)
 {
 	BaseState* nextState = NULL;
 	switch(stateID) // normal state check
@@ -672,6 +672,12 @@ BaseState* MyGame::createState(CRuint stateID,CRstring parameter)
 		printf("Chapter time trial result screen\n");
 #endif
 		nextState = new StateChapterTrial;
+		break;
+	case STATE_EDITOR:
+#ifdef _DEBUG
+		printf("Level Editor\n");
+#endif
+		nextState = new Editor();
 		break;
 	default:
 		printf("%s\n",ErrorHandler().getErrorString(PENJIN_UNDEFINED_STATE).c_str());

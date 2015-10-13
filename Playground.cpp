@@ -31,6 +31,8 @@
 #include "PixelParticle.h"
 #include "Link.h"
 
+#include "IMG_savepng.h"
+
 Playground::Playground()
 {
 #ifdef _DEBUG
@@ -167,6 +169,11 @@ void Playground::userInput()
 	if (!mouseDraw)
 		input->resetMouseButtons();
 #endif
+
+	if (input->isKey("F2"))
+	{
+		IMG_SavePNG("images/test.png", collisionLayer, IMG_COMPRESS_MAX);
+	}
 
 	for (vector<ControlUnit*>::iterator curr = players.begin(); curr != players.end(); ++curr)
 	{

@@ -36,5 +36,6 @@
 #include "Benchmark.h"
 #include "StateLevelSelect.h"
 #include "StateChapterTrial.h"
+#include "Editor.h"
 
 #endif // USERSTATELIST_H

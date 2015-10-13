@@ -37,7 +37,8 @@ enum STATE_MODES
 	STATE_NEXT, // special state indicating the switch to the next level in a chapter (not an actual state)
 	STATE_BENCHMARK,
 	STATE_LEVELSELECT,
-	STATE_CHAPTERTRIAL
+	STATE_CHAPTERTRIAL,
+	STATE_EDITOR
 };
 
 #endif	//	USERSTATES_H

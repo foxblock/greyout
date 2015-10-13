@@ -235,7 +235,8 @@ void TitleMenu::doSelection()
 			ENGINE->playChapter(DEFAULT_CHAPTER);
 		break;
 	case 1:
-		setNextState(STATE_LEVELSELECT);
+		//setNextState(STATE_LEVELSELECT);
+		setNextState(STATE_EDITOR);
 		break;
 	case 2:
 		ENGINE->settings->show();
