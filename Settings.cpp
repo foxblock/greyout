@@ -762,20 +762,17 @@ void Settings::inputCategories(SimpleJoy* input)
 			if (input->isLeftClick())
 				usedMouse = true;
 			input->resetKeys();
-			input->resetMouseButtons();
 			category = sel;
 		}
 		else
 		{
 			input->resetKeys();
-			input->resetMouseButtons();
 			close();
 		}
 	}
 	if (isCancelKey(input) || input->isRightClick())
 	{
 		input->resetKeys();
-		input->resetMouseButtons();
 		close();
 	}
 }
@@ -904,7 +901,6 @@ void Settings::inputAudio(SimpleJoy* input)
 		if (input->isRightClick())
 			usedMouse = true;
 		input->resetKeys();
-		input->resetMouseButtons();
 		category = -1;
 	}
 }
@@ -1035,7 +1031,6 @@ void Settings::inputGame(SimpleJoy* input)
 	{
 		if (input->isRightClick())
 			usedMouse = true;
-		input->resetMouseButtons();
 		input->resetKeys();
 		category = -1;
 	}
@@ -1136,7 +1131,6 @@ void Settings::inputVideo(SimpleJoy* input)
 	{
 		if (input->isRightClick())
 			usedMouse = true;
-		input->resetMouseButtons();
 		input->resetKeys();
 		category = -1;
 	}

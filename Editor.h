@@ -66,6 +66,20 @@ private:
 		,esTest
 	};
 
+	vector<string> startItems;
+	vector<string> settingsItems;
+
+	AnimatedSprite bg;
+	Vector2di lastPos;
+	bool mouseInBounds;
+	Text entriesText;
+	Text menuText;
+	SDL_Rect rect;
+	AnimatedSprite arrows;
+	int startSel;
+	int settingsSel;
+
+	string testString;
 };
 
 
