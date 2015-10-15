@@ -78,8 +78,13 @@ private:
 	AnimatedSprite arrows;
 	int startSel;
 	int settingsSel;
+	/// Draw
 	// Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	bool ownsImage;
+	Vector2df editorOffset;
+	Colour brushCol;
+	int brushSize;
+	SDL_Rect brushRect;
 };
 
 

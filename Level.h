@@ -81,8 +81,10 @@ public:
 	// updates units and also renders them (since the collisionLayer is used for display and collision testing)
 	virtual void update();
 	// renders area outside the level (tiling, scaling, etc.)
+	// calls render(GFX::getVideoSurface) to render everything inside the level area
 	virtual void render();
 	// renders players (not rendered in update) and blits collisionLayer onto the target surface
+	// renders overlay stuff (particles and links) directly on the screen surface
 	virtual void render(SDL_Surface* screen);
 	virtual void onPause();
 	virtual void onResume();

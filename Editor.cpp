@@ -68,12 +68,21 @@ Editor::Editor()
 	settingsItems.push_back("FILENAME:");
 	settingsItems.push_back("EDIT FLAGS");
 	settingsItems.push_back("GRAVITY:");
+	settingsItems.push_back("SAVE");
 	settingsItems.push_back("CONTINUE");
 
 	startSel = 0;
 	settingsSel = 0;
 	editorState = esStart;
 	lastState = esStart;
+	GFX::showCursor(true);
+
+	ownsImage = false;
+	editorOffset.x = 0.0f;
+	editorOffset.y = 0.0f;
+	brushCol.setColour(BLACK);
+	brushSize = 32;
+	brushRect = {0, 0, 0, 0};
 }
 
 Editor::~Editor()
@@ -188,15 +197,6 @@ void Editor::render()
 		return;
 	}
 
-	// draw the cursor
-	Vector2df pos = input->getMouse();
-	GFX::setPixel(pos,RED);
-	GFX::setPixel(pos+Vector2df(1,1),RED);
-	GFX::setPixel(pos+Vector2df(-1,1),RED);
-	GFX::setPixel(pos+Vector2df(1,-1),RED);
-	GFX::setPixel(pos+Vector2df(-1,-1),RED);
-	//GFX::renderPixelBuffer();
-
 #ifdef _DEBUG
 	debugText.setPosition(10,10);
 	debugText.print(debugString);
@@ -267,17 +267,20 @@ void Editor::inputStart()
 	{
 		switch (startSel)
 		{
-		case 0:
+		case 0: // New level
 			editorState = esSettings;
 			ownsImage = true;
 			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
 					GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 			SDL_FillRect(levelImage, NULL, -1);
-			collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->w,levelImage->h,
-					GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
-			SDL_BlitSurface(levelImage, NULL, collisionLayer, NULL);
+			editorOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
+			editorOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2.0f;
 			break;
-		case 1:
+		case 1: // Open level
+			break;
+		case 2: // New chapter
+			break;
+		case 3: // Open chapter
 			break;
 		default:
 			break;
@@ -312,8 +315,8 @@ void Editor::inputSettings()
 				settingsSel = I;
 				mouseInBounds = true;
 			}
-			if (I == settingsItems.size()-2)
-				pos = EDITOR_RETURN_Y_POS;
+			if (I == settingsItems.size()-3)
+				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 			else
 				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
@@ -355,13 +358,29 @@ void Editor::inputSettings()
 //		}
 		switch (settingsSel)
 		{
-		case 0:
+		case 0: // Name
 			input->pollKeyboardInput(&name, KEYBOARD_MASK_ASCII);
 			break;
-		case 1:
+		case 1: // Filename
+			break;
+		case 2: // Flags
+			break;
+		case 3: // Gravity
+			break;
+		case 4: // Save
+			if (name[0] != 0)
+			{
+                char filename[256] = "images/levels/";
+                strcat(filename, name.c_str());
+                strcat(filename, ".png");
+				IMG_SavePNG(filename, levelImage, IMG_COMPRESS_DEFAULT);
+			}
+			break;
+		case 5: // Continue
+			editorState = esDraw;
+			GFX::showCursor(false);
 			break;
 		default:
-			editorState = esDraw;
 			break;
 		}
 		input->resetMouseButtons();
@@ -376,7 +395,51 @@ void Editor::inputSettings()
 
 void Editor::inputDraw()
 {
+	if (input->isLeft())
+		editorOffset.x -= 2.0f;
+	else if (input->isRight())
+		editorOffset.x += 2.0f;
+	if (input->isUp())
+		editorOffset.y -= 2.0f;
+	else if (input->isDown())
+		editorOffset.y += 2.0f;
+	if (input->isKey("c"))
+	{
+		if (brushCol == BLACK)
+			brushCol.setColour(WHITE);
+		else if (brushCol == WHITE)
+			brushCol.setColour(RED);
+		else if (brushCol == RED)
+			brushCol.setColour(147, 149, 152);
+		else
+			brushCol.setColour(BLACK);
+		input->resetKeys();
+	}
+	if (input->isKey("m"))
+	{
+		++brushSize;
+		input->resetKeys();
+	}
+	if (input->isKey("n"))
+	{
+		brushSize -= (brushSize > 1) ? 1 : 0;
+		input->resetKeys();
+	}
+	if (input->isLeftClick())
+	{
+		brushRect.x = input->getMouseX() + editorOffset.x - brushSize / 2.0f;
+		brushRect.y = input->getMouseY() + editorOffset.y - brushSize / 2.0f;
+		brushRect.w = brushSize;
+		brushRect.h = brushSize;
+		SDL_FillRect(levelImage, &brushRect, brushCol.getSDL_Uint32Colour(GFX::getVideoSurface()));
+	}
 
+	if (isCancelKey(input))
+	{
+		editorState = esSettings;
+		GFX::showCursor(true);
+		input->resetKeys();
+	}
 }
 
 void Editor::inputUnits()
@@ -469,8 +532,8 @@ void Editor::renderSettings()
 			entriesText.print(name);
 		}
 
-		if (I == settingsItems.size()-2)
-			pos = EDITOR_RETURN_Y_POS;
+		if (I == settingsItems.size()-3)
+			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 		else
 			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
@@ -478,7 +541,50 @@ void Editor::renderSettings()
 
 void Editor::renderDraw()
 {
-	Level::render(GFX::getVideoSurface());
+	SDL_Surface *screen = GFX::getVideoSurface();
+	GFX::clearScreen();
+
+	SDL_Rect src;
+	SDL_Rect dst;
+	dst.x = max(-editorOffset.x, 0.0f);
+	dst.y = max(-editorOffset.y, 0.0f);
+	src.x = max(editorOffset.x, 0.0f);
+	src.y = max(editorOffset.y, 0.0f);
+	src.w = min((int)GFX::getXResolution(), getWidth() - src.x);
+	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
+	SDL_BlitSurface(levelImage, &src, screen, &dst);
+
+	Vector2di pos = input->getMouse();
+	pos.x -= brushSize / 2.0f;
+	pos.y -= brushSize / 2.0f;
+	if (pos.y >= 0)
+	{
+		for (int I = max(-pos.x, 0); I < brushSize && pos.x + I < GFX::getXResolution(); ++I)
+		{
+			GFX::setPixel(screen, pos.x + I, pos.y, Colour(WHITE) - GFX::getPixel(screen, pos.x + I, pos.y));
+		}
+	}
+	if (pos.y + brushSize - 1 < GFX::getYResolution())
+	{
+		for (int I = max(-pos.x, 0); I < brushSize && pos.x + I < GFX::getXResolution(); ++I)
+		{
+			GFX::setPixel(screen, pos.x + I, pos.y + brushSize - 1, Colour(WHITE) - GFX::getPixel(screen, pos.x + I, pos.y + brushSize - 1));
+		}
+	}
+	if (pos.x >= 0)
+	{
+		for (int I = max(-pos.y, 1); I < brushSize - 1 && pos.y + I < GFX::getYResolution(); ++I)
+		{
+			GFX::setPixel(screen, pos.x, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x , pos.y + I));
+		}
+	}
+	if (pos.x + brushSize - 1 < GFX::getXResolution())
+	{
+		for (int I = max(-pos.y, 1); I < brushSize - 1 && pos.y + I < GFX::getYResolution(); ++I)
+		{
+			GFX::setPixel(screen, pos.x + brushSize - 1, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x + brushSize - 1, pos.y + I));
+		}
+	}
 }
 
 void Editor::renderUnits()

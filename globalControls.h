@@ -7,7 +7,7 @@ static bool isAcceptKey(SimpleJoy *input)
 {
 	return (
 		(input->isB() != SimpleJoy::sjRELEASED)
-		#ifdef PLATFORM_PC
+		#if defined(PLATFORM_PC) || defined(PLATFORM_PANDORA)
 		&& !input->isPollingKeyboard() || (input->isKey("RETURN") != SimpleJoy::sjRELEASED)
 		#endif
 		);
@@ -17,7 +17,7 @@ static bool isCancelKey(SimpleJoy *input)
 {
 	return (
 		(input->isX() != SimpleJoy::sjRELEASED)
-		#ifdef PLATFORM_PC
+		#if defined(PLATFORM_PC) || defined(PLATFORM_PANDORA)
 		&& !input->isPollingKeyboard() || (input->isKey("ESCAPE") != SimpleJoy::sjRELEASED)
 		#endif
 		);
