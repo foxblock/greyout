@@ -35,7 +35,7 @@ public:
 
 	void userInput();
 	void update();
-	void render(SDL_Surface* screen);
+	void render();
 
 #ifdef _DEBUG
 	string debugInfo();
@@ -48,11 +48,11 @@ private:
 	void inputUnits();
 	void inputTest();
 
-	void renderStart(SDL_Surface *screen);
-	void renderSettings(SDL_Surface *screen);
-	void renderDraw(SDL_Surface *screen);
-	void renderUnits(SDL_Surface *screen);
-	void renderTest(SDL_Surface *screen);
+	void renderStart();
+	void renderSettings();
+	void renderDraw();
+	void renderUnits();
+	void renderTest();
 
 	int editorState;
 	int lastState; // jump to out of test play
@@ -78,8 +78,8 @@ private:
 	AnimatedSprite arrows;
 	int startSel;
 	int settingsSel;
-
-	string testString;
+	// Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
+	bool ownsImage;
 };
 
 

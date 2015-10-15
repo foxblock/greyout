@@ -78,10 +78,11 @@ public:
 	// framework related
 	virtual void init();
 	virtual void userInput();
+	// updates units and also renders them (since the collisionLayer is used for display and collision testing)
 	virtual void update();
-	// draws everything
+	// renders area outside the level (tiling, scaling, etc.)
 	virtual void render();
-	// draws level data onto passed surface and passed surface onto collisionLayer
+	// renders players (not rendered in update) and blits collisionLayer onto the target surface
 	virtual void render(SDL_Surface* screen);
 	virtual void onPause();
 	virtual void onResume();

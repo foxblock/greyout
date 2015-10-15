@@ -42,6 +42,9 @@
 #define EDITOR_MENU_OFFSET_X 20
 #define EDITOR_MENU_SPACING_EXTRA 10
 
+#define EDITOR_DEFAULT_WIDTH 400
+#define EDITOR_DEFAULT_HEIGHT 240
+
 Editor::Editor()
 {
 	bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
@@ -62,9 +65,10 @@ Editor::Editor()
 	startItems.push_back("NEW CHAPTER");
 	startItems.push_back("LOAD CHAPTER");
 	settingsItems.push_back("NAME:");
-	settingsItems.push_back("FLAGS:");
-	settingsItems.push_back("SIZE:");
+	settingsItems.push_back("FILENAME:");
+	settingsItems.push_back("EDIT FLAGS");
 	settingsItems.push_back("GRAVITY:");
+	settingsItems.push_back("CONTINUE");
 
 	startSel = 0;
 	settingsSel = 0;
@@ -74,7 +78,8 @@ Editor::Editor()
 
 Editor::~Editor()
 {
-
+	if (ownsImage)
+		SDL_FreeSurface(levelImage);
 }
 
 ///---public---
@@ -160,28 +165,42 @@ void Editor::update()
 	}
 }
 
-void Editor::render(SDL_Surface* screen)
+void Editor::render()
 {
 	switch (editorState)
 	{
 	case esStart:
-		renderStart(screen);
+		renderStart();
 		break;
 	case esSettings:
-		renderSettings(screen);
+		renderSettings();
 		break;
 	case esDraw:
-		renderDraw(screen);
+		renderDraw();
 		break;
 	case esUnits:
-		renderUnits(screen);
+		renderUnits();
 		break;
 	case esTest:
-		renderTest(screen);
+		renderTest();
 		break;
 	default:
 		return;
 	}
+
+	// draw the cursor
+	Vector2df pos = input->getMouse();
+	GFX::setPixel(pos,RED);
+	GFX::setPixel(pos+Vector2df(1,1),RED);
+	GFX::setPixel(pos+Vector2df(-1,1),RED);
+	GFX::setPixel(pos+Vector2df(1,-1),RED);
+	GFX::setPixel(pos+Vector2df(-1,-1),RED);
+	//GFX::renderPixelBuffer();
+
+#ifdef _DEBUG
+	debugText.setPosition(10,10);
+	debugText.print(debugString);
+#endif
 }
 
 #ifdef _DEBUG
@@ -250,8 +269,13 @@ void Editor::inputStart()
 		{
 		case 0:
 			editorState = esSettings;
-			testString = "";
-			input->pollKeyboardInput(&testString, KEYBOARD_MASK_ASCII);
+			ownsImage = true;
+			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
+					GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			SDL_FillRect(levelImage, NULL, -1);
+			collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE,levelImage->w,levelImage->h,
+					GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+			SDL_BlitSurface(levelImage, NULL, collisionLayer, NULL);
 			break;
 		case 1:
 			break;
@@ -269,6 +293,13 @@ void Editor::inputStart()
 
 void Editor::inputSettings()
 {
+	if (input->isPollingKeyboard())
+	{
+		if (isAcceptKey(input) || isCancelKey(input))
+			input->stopKeyboardInput();
+		return;
+	}
+
 	Vector2di mousePos = input->getMouse();
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
 	mouseInBounds = false;
@@ -281,7 +312,10 @@ void Editor::inputSettings()
 				settingsSel = I;
 				mouseInBounds = true;
 			}
-			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+			if (I == settingsItems.size()-2)
+				pos = EDITOR_RETURN_Y_POS;
+			else
+				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
 		lastPos = mousePos;
 	}
@@ -319,10 +353,21 @@ void Editor::inputSettings()
 //					mousePos.x < (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X)
 //				setDrawPattern(getDrawPattern() + 1);
 //		}
+		switch (settingsSel)
+		{
+		case 0:
+			input->pollKeyboardInput(&name, KEYBOARD_MASK_ASCII);
+			break;
+		case 1:
+			break;
+		default:
+			editorState = esDraw;
+			break;
+		}
 		input->resetMouseButtons();
 		input->resetB();
 	}
-	else if (isCancelKey(input) && !input->isPollingKeyboard())
+	else if (isCancelKey(input))
 	{
 		input->resetKeys();
 		setNextState(STATE_MAIN);
@@ -347,8 +392,9 @@ void Editor::inputTest()
 		Level::userInput();
 }
 
-void Editor::renderStart(SDL_Surface* screen)
+void Editor::renderStart()
 {
+	SDL_Surface *screen = GFX::getVideoSurface();
 	bg.render(screen);
 
 	int pos = (GFX::getYResolution() - startItems.size() * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) + EDITOR_MENU_SPACING) / 2;
@@ -375,8 +421,9 @@ void Editor::renderStart(SDL_Surface* screen)
 	}
 }
 
-void Editor::renderSettings(SDL_Surface* screen)
+void Editor::renderSettings()
 {
+	SDL_Surface *screen = GFX::getVideoSurface();
 	bg.render(screen);
 
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
@@ -390,8 +437,19 @@ void Editor::renderSettings(SDL_Surface* screen)
 		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 		if (I == settingsSel)
 		{
-			SDL_FillRect(screen, &rect, -1);
-			menuText.setColour(BLACK);
+			if (input->isPollingKeyboard())
+			{
+				SDL_FillRect(screen, &rect, 0);
+				rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X;
+				rect.w = EDITOR_ENTRY_SIZE;
+				SDL_FillRect(screen, &rect, -1);
+				menuText.setColour(WHITE);
+			}
+			else
+			{
+				SDL_FillRect(screen, &rect, -1);
+				menuText.setColour(BLACK);
+			}
 		}
 		else
 		{
@@ -400,7 +458,7 @@ void Editor::renderSettings(SDL_Surface* screen)
 		}
 		menuText.print(settingsItems[I]);
 
-		if (I < settingsItems.size())
+		if (I == 0)
 		{
 			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X,
 									pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
@@ -408,25 +466,28 @@ void Editor::renderSettings(SDL_Surface* screen)
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			entriesText.print(testString);
+			entriesText.print(name);
 		}
 
-		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		if (I == settingsItems.size()-2)
+			pos = EDITOR_RETURN_Y_POS;
+		else
+			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
 }
 
-void Editor::renderDraw(SDL_Surface* screen)
+void Editor::renderDraw()
+{
+	Level::render(GFX::getVideoSurface());
+}
+
+void Editor::renderUnits()
 {
 
 }
 
-void Editor::renderUnits(SDL_Surface* screen)
+void Editor::renderTest()
 {
-
-}
-
-void Editor::renderTest(SDL_Surface* screen)
-{
-	Level::render(screen);
+	Level::render(GFX::getVideoSurface());
 }
 
