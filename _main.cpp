@@ -90,6 +90,22 @@
 // LBlue:   178 193 255 11715071
 // B+O Mix: 216 206 212 14208724
 
+// Compiler options:
+// All targets: -DPENJIN_NO_CENTRE_SCALING -DPENJIN_DONT_REMOVE_TRANSPARENCY_ON_SET -DPENJIN_CALC_FPS -DPENJIN_SDL -DPENJIN_SDL_INPUT -DPENJIN_CACHE_ROTATIONS
+// +Windows: -D_WIN32 -DPLATFORM_PC -DPENJIN_FILE_LISTER_LINUX_PATHS
+// +Linux: -DPLATFORM_PC -D_LINUX
+// +Pandora: -DPLATFORM_PANDORA -DPENJIN_PANDORA_TOUCHSCREEN_FIX
+// +Debug: -DLTC_NO_ASM -D_DEBUG -D_DEBUG_LEVEL_STATS -D_MUSIC
+
+// Link with:
+// Windows: `sdl-config --libs` -lmingw32 -lSDLmain
+// Linux: `sdl-config --libs`
+// Pandora: -static-libstdc++ -lfreetype -lvorbisidec -lmad -lts
+// +All targets: -lpng -lz -lSDL_image -lSDL_mixer -lSDL_ttf -lSDL_gfx -lSDL
+
+// Needs Penjin (full source code, will be statically compiled and linked - https://github.com/foxblock/penjin),
+// SDL, SDL_image, SDL_mixer, SDL_ttf, SDL_gfx (only headers and libs for linking), minGW (on Windows)
+
 int main(int argc, char** argv)
 {
 	Engine* game = NULL;
