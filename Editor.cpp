@@ -455,11 +455,64 @@ void Editor::inputDraw()
 	{
 		if (input->isLeftClick())
 		{
-			brushRect.x = input->getMouseX() + editorOffset.x - brushSize / 2.0f;
-			brushRect.y = input->getMouseY() + editorOffset.y - brushSize / 2.0f;
+			brushRect.x = input->getMouseX() + editorOffset.x - brushSize / 2;
+			brushRect.y = input->getMouseY() + editorOffset.y - brushSize / 2;
 			brushRect.w = brushSize;
 			brushRect.h = brushSize;
 			SDL_FillRect(levelImage, &brushRect, brushCol.getSDL_Uint32Colour(GFX::getVideoSurface()));
+			Sint16 polX[6];
+			Sint16 polY[6];
+			if (input->getMouseX() < lastPos.x)
+			{
+				polX[0] = lastPos.x + editorOffset.x - brushSize / 2;
+				polY[0] = lastPos.y + editorOffset.y - brushSize / 2;
+				polX[2] = input->getMouseX() + editorOffset.x + brushSize / 2;
+				polY[2] = input->getMouseY() + editorOffset.y - brushSize / 2;
+				polX[3] = input->getMouseX() + editorOffset.x + brushSize / 2;
+				polY[3] = input->getMouseY() + editorOffset.y + brushSize / 2;
+				polX[5] = lastPos.x + editorOffset.x - brushSize / 2;
+				polY[5] = lastPos.y + editorOffset.y + brushSize / 2;
+				if (input->getMouseY() < lastPos.y)
+				{
+					polX[1] = lastPos.x + editorOffset.x + brushSize / 2;
+					polY[1] = lastPos.y + editorOffset.y - brushSize / 2;
+					polX[4] = input->getMouseX() + editorOffset.x - brushSize / 2;
+					polY[4] = input->getMouseY() + editorOffset.y + brushSize / 2;
+				}
+				else
+				{
+					polX[1] = input->getMouseX() + editorOffset.x - brushSize / 2;
+					polY[1] = input->getMouseY() + editorOffset.y - brushSize / 2;
+					polX[4] = lastPos.x + editorOffset.x + brushSize / 2;
+					polY[4] = lastPos.y + editorOffset.y + brushSize / 2;
+				}
+			}
+			else
+			{
+                polX[0] = lastPos.x + editorOffset.x + brushSize / 2;
+                polY[0] = lastPos.y + editorOffset.y + brushSize / 2;
+                polX[2] = input->getMouseX() + editorOffset.x - brushSize / 2;
+                polY[2] = input->getMouseY() + editorOffset.y + brushSize / 2;
+                polX[3] = input->getMouseX() + editorOffset.x - brushSize / 2;
+                polY[3] = input->getMouseY() + editorOffset.y - brushSize / 2;
+                polX[5] = lastPos.x + editorOffset.x + brushSize / 2;
+                polY[5] = lastPos.y + editorOffset.y - brushSize / 2;
+                if (input->getMouseY() < lastPos.y)
+				{
+					polX[1] = input->getMouseX() + editorOffset.x + brushSize / 2;
+					polY[1] = input->getMouseY() + editorOffset.y + brushSize / 2;
+					polX[4] = lastPos.x + editorOffset.x - brushSize / 2;
+					polY[4] = lastPos.y + editorOffset.y - brushSize / 2;
+				}
+				else
+				{
+					polX[1] = lastPos.x + editorOffset.x - brushSize / 2;
+					polY[1] = lastPos.y + editorOffset.y + brushSize / 2;
+					polX[4] = input->getMouseX() + editorOffset.x + brushSize / 2;
+					polY[4] = input->getMouseY() + editorOffset.y - brushSize / 2;
+				}
+			}
+			filledPolygonColor(levelImage, polX, polY, 6, (Uint32)(brushCol.red << 24) + (Uint32)(brushCol.green << 16) + (Uint32)(brushCol.blue << 8) + (Uint32)255);
 		}
 	}
 	else if (drawTool == dtCrop)
@@ -531,8 +584,8 @@ void Editor::inputDraw()
 			GFX::showCursor(false);
 			input->resetKeys();
 		}
-		lastPos = input->getMouse();
 	}
+	lastPos = input->getMouse();
 
 	if (isCancelKey(input))
 	{
