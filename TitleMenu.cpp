@@ -235,11 +235,11 @@ void TitleMenu::doSelection()
 			ENGINE->playChapter(DEFAULT_CHAPTER);
 		break;
 	case 1:
-		//setNextState(STATE_LEVELSELECT);
-		setNextState(STATE_EDITOR);
+		setNextState(STATE_LEVELSELECT);
 		break;
 	case 2:
-		ENGINE->settings->show();
+		//ENGINE->settings->show();
+		setNextState(STATE_EDITOR);
 		break;
 	case 3:
 		nullifyState();

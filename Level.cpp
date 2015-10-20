@@ -116,6 +116,7 @@ Level::Level()
 	collisionLayer = NULL;
 	levelFileName = "";
 	chapterPath = "";
+	imageFileName = "";
 	errorString = "";
 	drawOffset = Vector2df(0,0);
 	idCounter = 0;
@@ -300,6 +301,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 			levelImage = NULL;
 		if (levelImage)
 		{
+			imageFileName = value.second;
 			if (levelImage->w < GFX::getXResolution())
 				drawOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
 			if (levelImage->h < GFX::getYResolution())

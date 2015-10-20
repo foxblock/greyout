@@ -56,7 +56,7 @@ private:
 
 	int editorState;
 	int lastState; // jump to out of test play
-	enum EditorState
+	enum _EditorState
 	{
 		 esNone = 0
 		,esStart
@@ -69,6 +69,7 @@ private:
 	vector<string> startItems;
 	vector<string> settingsItems;
 
+	/// Startup + Settings
 	AnimatedSprite bg;
 	Vector2di lastPos;
 	bool mouseInBounds;
@@ -79,12 +80,21 @@ private:
 	int startSel;
 	int settingsSel;
 	/// Draw
-	// Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
-	bool ownsImage;
-	Vector2df editorOffset;
+	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	Colour brushCol;
 	int brushSize;
 	SDL_Rect brushRect;
+	Vector2di editorOffset;
+	Vector2di cropSize;
+	Vector2di cropOffset;
+	SimpleDirection cropEdge; // Currently selected edge or side to crop
+	int drawTool;
+	enum _DrawTool
+	{
+		 dtNone=0
+		,dtBrush
+		,dtCrop
+	};
 };
 
 

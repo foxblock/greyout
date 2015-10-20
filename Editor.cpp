@@ -30,6 +30,7 @@
 #include "SurfaceCache.h"
 
 #include "IMG_savepng.h"
+#include <SDL/SDL_gfxPrimitives.h>
 
 #define EDITOR_HEADLINE_SIZE 72
 #define EDITOR_TEXT_SIZE 48
@@ -44,6 +45,11 @@
 
 #define EDITOR_DEFAULT_WIDTH 400
 #define EDITOR_DEFAULT_HEIGHT 240
+#define EDITOR_MIN_WIDTH 32
+#define EDITOR_MIN_HEIGHT 32
+#define EDITOR_CROP_RECT_HALFHEIGHT 10
+#define EDITOR_CROP_RECT_WIDTH 5
+#define EDITOR_CROP_COLOUR 0xCCCCCCFF
 
 Editor::Editor()
 {
@@ -77,12 +83,18 @@ Editor::Editor()
 	lastState = esStart;
 	GFX::showCursor(true);
 
+	editorOffset.x = 0;
+	editorOffset.y = 0;
 	ownsImage = false;
-	editorOffset.x = 0.0f;
-	editorOffset.y = 0.0f;
 	brushCol.setColour(BLACK);
 	brushSize = 32;
 	brushRect = {0, 0, 0, 0};
+	cropSize.x = 0;
+	cropSize.y = 0;
+	cropOffset.x = 0;
+	cropOffset.y = 0;
+	cropEdge = diNONE;
+	drawTool = dtBrush;
 }
 
 Editor::~Editor()
@@ -273,8 +285,8 @@ void Editor::inputStart()
 			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
 					GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 			SDL_FillRect(levelImage, NULL, -1);
-			editorOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
-			editorOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2.0f;
+			editorOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2;
+			editorOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2;
 			break;
 		case 1: // Open level
 			break;
@@ -303,14 +315,13 @@ void Editor::inputSettings()
 		return;
 	}
 
-	Vector2di mousePos = input->getMouse();
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
 	mouseInBounds = false;
-	if (mousePos != lastPos || input->isLeftClick() || input->isRightClick())
+	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
 	{
 		for (int I = 0; I < settingsItems.size(); ++I)
 		{
-			if (mousePos.y >= pos && mousePos.y <= pos + EDITOR_RECT_HEIGHT)
+			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
 			{
 				settingsSel = I;
 				mouseInBounds = true;
@@ -320,7 +331,7 @@ void Editor::inputSettings()
 			else
 				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
-		lastPos = mousePos;
+		lastPos = input->getMouse();
 	}
 
 	if (input->isUp() && settingsSel > 0)
@@ -378,7 +389,7 @@ void Editor::inputSettings()
 			break;
 		case 5: // Continue
 			editorState = esDraw;
-			GFX::showCursor(false);
+			GFX::showCursor(drawTool != dtBrush);
 			break;
 		default:
 			break;
@@ -396,14 +407,15 @@ void Editor::inputSettings()
 void Editor::inputDraw()
 {
 	if (input->isLeft())
-		editorOffset.x -= 2.0f;
+		editorOffset.x -= 2;
 	else if (input->isRight())
-		editorOffset.x += 2.0f;
+		editorOffset.x += 2;
 	if (input->isUp())
-		editorOffset.y -= 2.0f;
+		editorOffset.y -= 2;
 	else if (input->isDown())
-		editorOffset.y += 2.0f;
-	if (input->isKey("c"))
+		editorOffset.y += 2;
+
+	if (input->isKey("F6"))
 	{
 		if (brushCol == BLACK)
 			brushCol.setColour(WHITE);
@@ -415,6 +427,20 @@ void Editor::inputDraw()
 			brushCol.setColour(BLACK);
 		input->resetKeys();
 	}
+	if (input->isKey("b"))
+	{
+		drawTool = dtBrush;
+		GFX::showCursor(false);
+	}
+	else if (input->isKey("c"))
+	{
+		drawTool = dtCrop;
+		GFX::showCursor(true);
+		cropOffset.x = 0;
+		cropOffset.y = 0;
+		cropSize.x = levelImage->w;
+		cropSize.y = levelImage->h;
+	}
 	if (input->isKey("m"))
 	{
 		++brushSize;
@@ -425,13 +451,87 @@ void Editor::inputDraw()
 		brushSize -= (brushSize > 1) ? 1 : 0;
 		input->resetKeys();
 	}
-	if (input->isLeftClick())
+	if (drawTool == dtBrush)
 	{
-		brushRect.x = input->getMouseX() + editorOffset.x - brushSize / 2.0f;
-		brushRect.y = input->getMouseY() + editorOffset.y - brushSize / 2.0f;
-		brushRect.w = brushSize;
-		brushRect.h = brushSize;
-		SDL_FillRect(levelImage, &brushRect, brushCol.getSDL_Uint32Colour(GFX::getVideoSurface()));
+		if (input->isLeftClick())
+		{
+			brushRect.x = input->getMouseX() + editorOffset.x - brushSize / 2.0f;
+			brushRect.y = input->getMouseY() + editorOffset.y - brushSize / 2.0f;
+			brushRect.w = brushSize;
+			brushRect.h = brushSize;
+			SDL_FillRect(levelImage, &brushRect, brushCol.getSDL_Uint32Colour(GFX::getVideoSurface()));
+		}
+	}
+	else if (drawTool == dtCrop)
+	{
+		if (input->isLeftClick())
+		{
+			if (cropEdge == diNONE)
+			{
+				if (input->getMouse().inRect(-editorOffset.x + cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+					cropEdge = diLEFT;
+				else if (input->getMouse().inRect(-editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+					cropEdge = diRIGHT;
+				else if (input->getMouse().inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+					cropEdge = diTOP;
+				else if (input->getMouse().inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y + cropSize.y, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+					cropEdge = diBOTTOM;
+				else
+					cropEdge = diMIDDLE; // No valid edge
+			}
+			else if (input->getMouse() != lastPos)
+			{
+				switch (cropEdge.value)
+				{
+					case diLEFT: cropOffset.x += input->getMouseX() - lastPos.x; cropSize.x -= input->getMouseX() - lastPos.x; break;
+					case diRIGHT: cropSize.x += input->getMouseX() - lastPos.x; break;
+					case diTOP: cropOffset.y += input->getMouseY() - lastPos.y; cropSize.y -= input->getMouseY() - lastPos.y; break;
+					case diBOTTOM: cropSize.y += input->getMouseY() - lastPos.y; break;
+				}
+				if (cropSize.x < 0)
+				{
+					cropOffset.x += cropSize.x;
+					cropSize.x *= -1;
+					cropEdge.makeOpposite();
+				}
+				if (cropSize.y < 0)
+				{
+					cropOffset.y += cropSize.y;
+					cropSize.y *= -1;
+					cropEdge.makeOpposite();
+				}
+			}
+		}
+		else
+		{
+			cropEdge = diNONE;
+		}
+		if (isAcceptKey(input) && drawTool == dtCrop)
+		{
+			if (collisionLayer)
+				SDL_FreeSurface(collisionLayer);
+			collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			SDL_FillRect(collisionLayer, NULL, -1);
+			SDL_Rect srcRect;
+			srcRect.x = std::max(cropOffset.x, 0);
+			srcRect.y = std::max(cropOffset.y, 0);
+			srcRect.w = std::min(levelImage->w, collisionLayer->w);
+			srcRect.h = std::min(levelImage->h, collisionLayer->h);
+			SDL_Rect dstRect;
+			dstRect.x = std::max(-cropOffset.x, 0);
+			dstRect.y = std::max(-cropOffset.y, 0);
+            SDL_BlitSurface(levelImage, &srcRect, collisionLayer, &dstRect);
+            SDL_FreeSurface(levelImage);
+			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			SDL_BlitSurface(collisionLayer, NULL, levelImage, NULL);
+			editorOffset -= cropOffset;
+			cropOffset.x = 0;
+			cropOffset.y = 0;
+			drawTool = dtBrush;
+			GFX::showCursor(false);
+			input->resetKeys();
+		}
+		lastPos = input->getMouse();
 	}
 
 	if (isCancelKey(input))
@@ -546,44 +646,62 @@ void Editor::renderDraw()
 
 	SDL_Rect src;
 	SDL_Rect dst;
-	dst.x = max(-editorOffset.x, 0.0f);
-	dst.y = max(-editorOffset.y, 0.0f);
-	src.x = max(editorOffset.x, 0.0f);
-	src.y = max(editorOffset.y, 0.0f);
+	dst.x = max(-editorOffset.x, 0);
+	dst.y = max(-editorOffset.y, 0);
+	src.x = max(editorOffset.x, 0);
+	src.y = max(editorOffset.y, 0);
 	src.w = min((int)GFX::getXResolution(), getWidth() - src.x);
 	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
 	SDL_BlitSurface(levelImage, &src, screen, &dst);
 
-	Vector2di pos = input->getMouse();
-	pos.x -= brushSize / 2.0f;
-	pos.y -= brushSize / 2.0f;
-	if (pos.y >= 0)
+	if (drawTool == dtBrush)
 	{
-		for (int I = max(-pos.x, 0); I < brushSize && pos.x + I < GFX::getXResolution(); ++I)
+		Vector2di pos = input->getMouse();
+		pos.x -= brushSize / 2;
+		pos.y -= brushSize / 2;
+		if (pos.y >= 0)
 		{
-			GFX::setPixel(screen, pos.x + I, pos.y, Colour(WHITE) - GFX::getPixel(screen, pos.x + I, pos.y));
+			for (int I = max(-pos.x, 0); I < brushSize && pos.x + I < GFX::getXResolution(); ++I)
+			{
+				GFX::setPixel(screen, pos.x + I, pos.y, Colour(WHITE) - GFX::getPixel(screen, pos.x + I, pos.y));
+			}
+		}
+		if (pos.y + brushSize - 1 < GFX::getYResolution())
+		{
+			for (int I = max(-pos.x, 0); I < brushSize && pos.x + I < GFX::getXResolution(); ++I)
+			{
+				GFX::setPixel(screen, pos.x + I, pos.y + brushSize - 1, Colour(WHITE) - GFX::getPixel(screen, pos.x + I, pos.y + brushSize - 1));
+			}
+		}
+		if (pos.x >= 0)
+		{
+			for (int I = max(-pos.y, 1); I < brushSize - 1 && pos.y + I < GFX::getYResolution(); ++I)
+			{
+				GFX::setPixel(screen, pos.x, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x , pos.y + I));
+			}
+		}
+		if (pos.x + brushSize - 1 < GFX::getXResolution())
+		{
+			for (int I = max(-pos.y, 1); I < brushSize - 1 && pos.y + I < GFX::getYResolution(); ++I)
+			{
+				GFX::setPixel(screen, pos.x + brushSize - 1, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x + brushSize - 1, pos.y + I));
+			}
 		}
 	}
-	if (pos.y + brushSize - 1 < GFX::getYResolution())
+	else if (drawTool == dtCrop)
 	{
-		for (int I = max(-pos.x, 0); I < brushSize && pos.x + I < GFX::getXResolution(); ++I)
-		{
-			GFX::setPixel(screen, pos.x + I, pos.y + brushSize - 1, Colour(WHITE) - GFX::getPixel(screen, pos.x + I, pos.y + brushSize - 1));
-		}
-	}
-	if (pos.x >= 0)
-	{
-		for (int I = max(-pos.y, 1); I < brushSize - 1 && pos.y + I < GFX::getYResolution(); ++I)
-		{
-			GFX::setPixel(screen, pos.x, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x , pos.y + I));
-		}
-	}
-	if (pos.x + brushSize - 1 < GFX::getXResolution())
-	{
-		for (int I = max(-pos.y, 1); I < brushSize - 1 && pos.y + I < GFX::getYResolution(); ++I)
-		{
-			GFX::setPixel(screen, pos.x + brushSize - 1, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x + brushSize - 1, pos.y + I));
-		}
+		hlineColor(screen, -editorOffset.x + cropOffset.x - 1, -editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y - 1, EDITOR_CROP_COLOUR);
+		hlineColor(screen, -editorOffset.x + cropOffset.x - 1, -editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y + cropSize.y, EDITOR_CROP_COLOUR);
+		vlineColor(screen, -editorOffset.x + cropOffset.x - 1, -editorOffset.y + cropOffset.y, -editorOffset.y + cropOffset.y + cropSize.y, EDITOR_CROP_COLOUR);
+		vlineColor(screen, -editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y, -editorOffset.y + cropOffset.y + cropSize.y, EDITOR_CROP_COLOUR);
+		boxColor(screen, -editorOffset.x + cropOffset.x + cropSize.x / 2 - EDITOR_CROP_RECT_HALFHEIGHT, -editorOffset.y + cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1,
+				-editorOffset.x + cropOffset.x + cropSize.x / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, -editorOffset.y + cropOffset.y - 2, EDITOR_CROP_COLOUR);
+		boxColor(screen, -editorOffset.x + cropOffset.x + cropSize.x / 2 - EDITOR_CROP_RECT_HALFHEIGHT, -editorOffset.y + cropOffset.y + cropSize.y + 1,
+				-editorOffset.x + cropOffset.x + cropSize.x / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, -editorOffset.y + cropOffset.y + cropSize.y + EDITOR_CROP_RECT_WIDTH, EDITOR_CROP_COLOUR);
+		boxColor(screen, -editorOffset.x + cropOffset.x - 1 - EDITOR_CROP_RECT_WIDTH, -editorOffset.y + cropOffset.y + cropSize.y / 2 - EDITOR_CROP_RECT_HALFHEIGHT,
+				-editorOffset.x + cropOffset.x - 2, -editorOffset.y + cropOffset.y + cropSize.y / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, EDITOR_CROP_COLOUR);
+		boxColor(screen, -editorOffset.x + cropOffset.x + cropSize.x + 1, -editorOffset.y + cropOffset.y + cropSize.y / 2 - EDITOR_CROP_RECT_HALFHEIGHT,
+				-editorOffset.x + cropOffset.x  + cropSize.x + EDITOR_CROP_RECT_WIDTH, -editorOffset.y + cropOffset.y + cropSize.y / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, EDITOR_CROP_COLOUR);
 	}
 }
 

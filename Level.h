@@ -145,6 +145,7 @@ public:
 
 	string levelFileName; // chapterPath + filename
 	string chapterPath;
+	string imageFileName;
 	string name;
 
 	#ifdef _DEBUG
