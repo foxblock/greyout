@@ -95,6 +95,9 @@ private:
 		,dtBrush
 		,dtCrop
 	};
+	bool gridActive;
+	int gridSize;
+	Vector2di mousePos;
 };
 
 

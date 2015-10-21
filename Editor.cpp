@@ -49,7 +49,10 @@
 #define EDITOR_MIN_HEIGHT 32
 #define EDITOR_CROP_RECT_HALFHEIGHT 10
 #define EDITOR_CROP_RECT_WIDTH 5
-#define EDITOR_CROP_COLOUR 0xCCCCCCFF
+#define EDITOR_CROP_COLOUR 0x3399FFFF
+#define EDITOR_GRID_COLOUR 0xCCCCCCFF
+#define EDITOR_GRID_SNAP 0.2f
+#define EDITOR_GRID_SPACING 3
 
 Editor::Editor()
 {
@@ -95,6 +98,10 @@ Editor::Editor()
 	cropOffset.y = 0;
 	cropEdge = diNONE;
 	drawTool = dtBrush;
+	gridActive = false;
+	gridSize = 32;
+	mousePos.x = 0;
+	mousePos.y = 0;
 }
 
 Editor::~Editor()
@@ -242,7 +249,7 @@ string Editor::debugInfo()
 
 void Editor::inputStart()
 {
-	Vector2di mousePos = input->getMouse();
+	mousePos = input->getMouse();
 	if (input->isUp())
 	{
 		startSel -= (startSel > 0) ? 1 : 0;
@@ -441,6 +448,10 @@ void Editor::inputDraw()
 		cropSize.x = levelImage->w;
 		cropSize.y = levelImage->h;
 	}
+	if (input->isKey("g"))
+	{
+		gridActive = !gridActive;
+	}
 	if (input->isKey("m"))
 	{
 		++brushSize;
@@ -451,65 +462,92 @@ void Editor::inputDraw()
 		brushSize -= (brushSize > 1) ? 1 : 0;
 		input->resetKeys();
 	}
+	// Snap mouse to grid
+	mousePos = input->getMouse();
+	if (gridActive)
+	{
+		// TODO: Clean up this mess, use % operator instead
+		// TODO: Different checks for crop tool
+		mousePos += editorOffset;
+		if (std::abs(mousePos.x - brushSize / 2 - round((mousePos.x - brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
+		{
+			mousePos.x -= mousePos.x - brushSize / 2 - round((mousePos.x - brushSize / 2) / (float)gridSize) * gridSize;
+		}
+		else if (std::abs(mousePos.x + brushSize / 2 - round((mousePos.x + brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
+		{
+			mousePos.x -= mousePos.x + brushSize / 2 - round((mousePos.x + brushSize / 2) / (float)gridSize) * gridSize;
+		}
+		if (std::abs(mousePos.y - brushSize / 2 - round((mousePos.y - brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
+		{
+			mousePos.y -= mousePos.y - brushSize / 2 - round((mousePos.y - brushSize / 2) / (float)gridSize) * gridSize;
+		}
+		else if (std::abs(mousePos.y + brushSize / 2 - round((mousePos.y + brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
+		{
+			mousePos.y -= mousePos.y + brushSize / 2 - round((mousePos.y + brushSize / 2) / (float)gridSize) * gridSize;
+		}
+		mousePos -= editorOffset;
+	}
+
+	// Mouse button handling
 	if (drawTool == dtBrush)
 	{
 		if (input->isLeftClick())
 		{
-			brushRect.x = input->getMouseX() + editorOffset.x - brushSize / 2;
-			brushRect.y = input->getMouseY() + editorOffset.y - brushSize / 2;
+			brushRect.x = mousePos.x + editorOffset.x - brushSize / 2;
+			brushRect.y = mousePos.y + editorOffset.y - brushSize / 2;
 			brushRect.w = brushSize;
 			brushRect.h = brushSize;
 			SDL_FillRect(levelImage, &brushRect, brushCol.getSDL_Uint32Colour(GFX::getVideoSurface()));
 			Sint16 polX[6];
 			Sint16 polY[6];
-			if (input->getMouseX() < lastPos.x)
+			if (mousePos.x < lastPos.x)
 			{
 				polX[0] = lastPos.x + editorOffset.x - brushSize / 2;
 				polY[0] = lastPos.y + editorOffset.y - brushSize / 2;
-				polX[2] = input->getMouseX() + editorOffset.x + brushSize / 2;
-				polY[2] = input->getMouseY() + editorOffset.y - brushSize / 2;
-				polX[3] = input->getMouseX() + editorOffset.x + brushSize / 2;
-				polY[3] = input->getMouseY() + editorOffset.y + brushSize / 2;
+				polX[2] = mousePos.x + editorOffset.x + brushSize / 2 - 1;
+				polY[2] = mousePos.y + editorOffset.y - brushSize / 2;
+				polX[3] = mousePos.x + editorOffset.x + brushSize / 2 - 1;
+				polY[3] = mousePos.y + editorOffset.y + brushSize / 2 - 1;
 				polX[5] = lastPos.x + editorOffset.x - brushSize / 2;
-				polY[5] = lastPos.y + editorOffset.y + brushSize / 2;
-				if (input->getMouseY() < lastPos.y)
+				polY[5] = lastPos.y + editorOffset.y + brushSize / 2 - 1;
+				if (mousePos.y < lastPos.y)
 				{
-					polX[1] = lastPos.x + editorOffset.x + brushSize / 2;
+					polX[1] = lastPos.x + editorOffset.x + brushSize / 2 - 1;
 					polY[1] = lastPos.y + editorOffset.y - brushSize / 2;
-					polX[4] = input->getMouseX() + editorOffset.x - brushSize / 2;
-					polY[4] = input->getMouseY() + editorOffset.y + brushSize / 2;
+					polX[4] = mousePos.x + editorOffset.x - brushSize / 2;
+					polY[4] = mousePos.y + editorOffset.y + brushSize / 2 - 1;
 				}
 				else
 				{
-					polX[1] = input->getMouseX() + editorOffset.x - brushSize / 2;
-					polY[1] = input->getMouseY() + editorOffset.y - brushSize / 2;
-					polX[4] = lastPos.x + editorOffset.x + brushSize / 2;
-					polY[4] = lastPos.y + editorOffset.y + brushSize / 2;
+					polX[1] = mousePos.x + editorOffset.x - brushSize / 2;
+					polY[1] = mousePos.y + editorOffset.y - brushSize / 2;
+					polX[4] = lastPos.x + editorOffset.x + brushSize / 2 - 1;
+					polY[4] = lastPos.y + editorOffset.y + brushSize / 2 - 1;
 				}
 			}
 			else
 			{
-                polX[0] = lastPos.x + editorOffset.x + brushSize / 2;
-                polY[0] = lastPos.y + editorOffset.y + brushSize / 2;
-                polX[2] = input->getMouseX() + editorOffset.x - brushSize / 2;
-                polY[2] = input->getMouseY() + editorOffset.y + brushSize / 2;
-                polX[3] = input->getMouseX() + editorOffset.x - brushSize / 2;
-                polY[3] = input->getMouseY() + editorOffset.y - brushSize / 2;
-                polX[5] = lastPos.x + editorOffset.x + brushSize / 2;
+                polX[0] = lastPos.x + editorOffset.x + brushSize / 2 - 1;
+                polY[0] = lastPos.y + editorOffset.y + brushSize / 2 - 1;
+                polX[2] = mousePos.x + editorOffset.x - brushSize / 2;
+                polY[2] = mousePos.y + editorOffset.y + brushSize / 2 - 1;
+                polX[3] = mousePos.x + editorOffset.x - brushSize / 2;
+                polY[3] = mousePos.y + editorOffset.y - brushSize / 2;
+                polX[5] = lastPos.x + editorOffset.x + brushSize / 2 - 1;
                 polY[5] = lastPos.y + editorOffset.y - brushSize / 2;
-                if (input->getMouseY() < lastPos.y)
+                if (mousePos.y < lastPos.y)
 				{
-					polX[1] = input->getMouseX() + editorOffset.x + brushSize / 2;
-					polY[1] = input->getMouseY() + editorOffset.y + brushSize / 2;
+					polX[1] = mousePos.x + editorOffset.x + brushSize / 2 - 1;
+					polY[1] = mousePos.y + editorOffset.y + brushSize / 2 - 1;
 					polX[4] = lastPos.x + editorOffset.x - brushSize / 2;
 					polY[4] = lastPos.y + editorOffset.y - brushSize / 2;
 				}
 				else
 				{
 					polX[1] = lastPos.x + editorOffset.x - brushSize / 2;
-					polY[1] = lastPos.y + editorOffset.y + brushSize / 2;
-					polX[4] = input->getMouseX() + editorOffset.x + brushSize / 2;
-					polY[4] = input->getMouseY() + editorOffset.y - brushSize / 2;
+					polY[1] = lastPos.y + editorOffset.y + brushSize / 2 - 1;
+					polX[4] = mousePos.x + editorOffset.x + brushSize / 2 - 1;
+					polY[4] = mousePos.y + editorOffset.y - brushSize / 2;
 				}
 			}
 			filledPolygonColor(levelImage, polX, polY, 6, (Uint32)(brushCol.red << 24) + (Uint32)(brushCol.green << 16) + (Uint32)(brushCol.blue << 8) + (Uint32)255);
@@ -521,25 +559,25 @@ void Editor::inputDraw()
 		{
 			if (cropEdge == diNONE)
 			{
-				if (input->getMouse().inRect(-editorOffset.x + cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+				if (mousePos.inRect(-editorOffset.x + cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
 					cropEdge = diLEFT;
-				else if (input->getMouse().inRect(-editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+				else if (mousePos.inRect(-editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
 					cropEdge = diRIGHT;
-				else if (input->getMouse().inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+				else if (mousePos.inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
 					cropEdge = diTOP;
-				else if (input->getMouse().inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y + cropSize.y, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+				else if (mousePos.inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y + cropSize.y, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
 					cropEdge = diBOTTOM;
 				else
 					cropEdge = diMIDDLE; // No valid edge
 			}
-			else if (input->getMouse() != lastPos)
+			else if (mousePos != lastPos)
 			{
 				switch (cropEdge.value)
 				{
-					case diLEFT: cropOffset.x += input->getMouseX() - lastPos.x; cropSize.x -= input->getMouseX() - lastPos.x; break;
-					case diRIGHT: cropSize.x += input->getMouseX() - lastPos.x; break;
-					case diTOP: cropOffset.y += input->getMouseY() - lastPos.y; cropSize.y -= input->getMouseY() - lastPos.y; break;
-					case diBOTTOM: cropSize.y += input->getMouseY() - lastPos.y; break;
+					case diLEFT: cropOffset.x += mousePos.x - lastPos.x; cropSize.x -= mousePos.x - lastPos.x; break;
+					case diRIGHT: cropSize.x += mousePos.x - lastPos.x; break;
+					case diTOP: cropOffset.y += mousePos.y - lastPos.y; cropSize.y -= mousePos.y - lastPos.y; break;
+					case diBOTTOM: cropSize.y += mousePos.y - lastPos.y; break;
 				}
 				if (cropSize.x < 0)
 				{
@@ -585,7 +623,7 @@ void Editor::inputDraw()
 			input->resetKeys();
 		}
 	}
-	lastPos = input->getMouse();
+	lastPos = mousePos;
 
 	if (isCancelKey(input))
 	{
@@ -707,9 +745,34 @@ void Editor::renderDraw()
 	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
 	SDL_BlitSurface(levelImage, &src, screen, &dst);
 
+	// Grid
+	if (gridActive)
+	{
+		int startX = -editorOffset.x % gridSize - 1;
+		if (startX < 0)
+			startX += gridSize;
+		for (int I = startX; I < GFX::getXResolution(); I += gridSize)
+		{
+			for (int K = 0; K < GFX::getYResolution(); K += EDITOR_GRID_SPACING+1)
+			{
+				pixelColor(screen, I, K, EDITOR_GRID_COLOUR);
+			}
+		}
+		int startY = -editorOffset.y % gridSize - 1;
+		if (startY < 0)
+			startY += gridSize;
+		for (int I = startY; I < GFX::getYResolution(); I += gridSize)
+		{
+			for (int K = 0; K < GFX::getXResolution(); K += EDITOR_GRID_SPACING+1)
+			{
+				pixelColor(screen, K, I, EDITOR_GRID_COLOUR);
+			}
+		}
+	}
+	// Tool overlay (cursor/crop area, etc.)
 	if (drawTool == dtBrush)
 	{
-		Vector2di pos = input->getMouse();
+		Vector2di pos = mousePos;
 		pos.x -= brushSize / 2;
 		pos.y -= brushSize / 2;
 		if (pos.y >= 0)
@@ -739,6 +802,14 @@ void Editor::renderDraw()
 			{
 				GFX::setPixel(screen, pos.x + brushSize - 1, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x + brushSize - 1, pos.y + I));
 			}
+		}
+		// Cross at exact mouse position
+		if (brushSize > 5)
+		{
+			for (int I = -2; I <= 2; ++I)
+				GFX::setPixel(screen, input->getMouseX() + I, input->getMouseY(), Colour(WHITE) - GFX::getPixel(screen, input->getMouseX() + I, input->getMouseY()));
+			for (int I = -2; I <= 2; I == -1 ? I += 2 : ++I)
+				GFX::setPixel(screen, input->getMouseX(), input->getMouseY() + I, Colour(WHITE) - GFX::getPixel(screen, input->getMouseX(), input->getMouseY() + I));
 		}
 	}
 	else if (drawTool == dtCrop)
