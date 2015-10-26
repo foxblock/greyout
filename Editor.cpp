@@ -100,6 +100,7 @@ Editor::Editor()
 	drawTool = dtBrush;
 	gridActive = false;
 	gridSize = 32;
+	snapDistance = gridSize * EDITOR_GRID_SNAP;
 	mousePos.x = 0;
 	mousePos.y = 0;
 }
@@ -459,33 +460,80 @@ void Editor::inputDraw()
 	}
 	if (input->isKey("n"))
 	{
-		brushSize -= (brushSize > 1) ? 1 : 0;
+		if (brushSize > 1)
+			--brushSize;
 		input->resetKeys();
 	}
 	// Snap mouse to grid
 	mousePos = input->getMouse();
 	if (gridActive)
 	{
-		// TODO: Clean up this mess, use % operator instead
-		// TODO: Different checks for crop tool
-		mousePos += editorOffset;
-		if (std::abs(mousePos.x - brushSize / 2 - round((mousePos.x - brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
+		if (drawTool == dtBrush)
 		{
-			mousePos.x -= mousePos.x - brushSize / 2 - round((mousePos.x - brushSize / 2) / (float)gridSize) * gridSize;
-		}
-		else if (std::abs(mousePos.x + brushSize / 2 - round((mousePos.x + brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
+			int temp = (mousePos.x + editorOffset.x - brushSize / 2) % gridSize;
+			if (temp != 0) // Possibly need to make a correction
+			{
+				if (temp < 0) // Wrap negative values (left of level area)
+					temp += gridSize;
+				if (temp <= snapDistance) // If in snap distance right side of grid line
+					mousePos.x -= temp;
+				else if (gridSize - temp <= snapDistance) // In snap distance left side of grid line
+					mousePos.x += gridSize - temp;
+				else // If not snapped to left of brush, check right side of brush
+				{
+					temp = (mousePos.x + editorOffset.x + brushSize / 2) % gridSize;
+					if (temp < 0)
+						temp += gridSize;
+					if (temp <= snapDistance)
+						mousePos.x -= temp;
+					else if (gridSize - temp <= snapDistance)
+						mousePos.x += gridSize - temp;
+				}
+			}
+			temp = (mousePos.y + editorOffset.y - brushSize / 2) % gridSize;
+			if (temp != 0)
+			{
+				if (temp < 0) // Wrap negative values (top of level area)
+					temp += gridSize;
+				if (temp <= snapDistance)
+					mousePos.y -= temp;
+				else if (gridSize - temp <= snapDistance)
+					mousePos.y += gridSize - temp;
+				else
+				{
+					temp = (mousePos.y + editorOffset.y + brushSize / 2) % gridSize;
+					if (temp < 0)
+						temp += gridSize;
+					if (temp <= snapDistance)
+						mousePos.y -= temp;
+					else if (gridSize - temp <= snapDistance)
+						mousePos.y += gridSize - temp;
+				}
+			}
+		} // brush
+		else if (drawTool == dtCrop)
 		{
-			mousePos.x -= mousePos.x + brushSize / 2 - round((mousePos.x + brushSize / 2) / (float)gridSize) * gridSize;
-		}
-		if (std::abs(mousePos.y - brushSize / 2 - round((mousePos.y - brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
-		{
-			mousePos.y -= mousePos.y - brushSize / 2 - round((mousePos.y - brushSize / 2) / (float)gridSize) * gridSize;
-		}
-		else if (std::abs(mousePos.y + brushSize / 2 - round((mousePos.y + brushSize / 2) / (float)gridSize) * gridSize) <= gridSize * EDITOR_GRID_SNAP)
-		{
-			mousePos.y -= mousePos.y + brushSize / 2 - round((mousePos.y + brushSize / 2) / (float)gridSize) * gridSize;
-		}
-		mousePos -= editorOffset;
+			if (cropEdge == diLEFT || cropEdge == diRIGHT)
+			{
+				int temp = (mousePos.x + editorOffset.x - mouseCropOffset.x) % gridSize;
+				if (temp < 0)
+					temp += gridSize;
+				if (temp <= snapDistance)
+					mousePos.x -= temp;
+				else if (gridSize - temp <= snapDistance)
+					mousePos.x += gridSize - temp;
+			}
+			else if (cropEdge == diTOP || cropEdge == diBOTTOM)
+			{
+				int temp = (mousePos.y + editorOffset.y - mouseCropOffset.y) % gridSize;
+				if (temp < 0)
+					temp += gridSize;
+				if (temp <= snapDistance)
+					mousePos.y -= temp;
+				else if (gridSize - temp <= snapDistance)
+					mousePos.y += gridSize - temp;
+			}
+		} // crop
 	}
 
 	// Mouse button handling
@@ -560,15 +608,31 @@ void Editor::inputDraw()
 			if (cropEdge == diNONE)
 			{
 				if (mousePos.inRect(-editorOffset.x + cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+				{
 					cropEdge = diLEFT;
+					mouseCropOffset.x = mousePos.x + editorOffset.x - cropOffset.x;
+				}
 				else if (mousePos.inRect(-editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+				{
 					cropEdge = diRIGHT;
+					mouseCropOffset.x = mousePos.x + editorOffset.x - cropOffset.x - cropSize.x;
+				}
 				else if (mousePos.inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+				{
 					cropEdge = diTOP;
+					mouseCropOffset.y = mousePos.y + editorOffset.y - cropOffset.y;
+				}
 				else if (mousePos.inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y + cropSize.y, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+				{
 					cropEdge = diBOTTOM;
+					mouseCropOffset.y = mousePos.y + editorOffset.y - cropOffset.y - cropSize.y;
+				}
 				else
+				{
 					cropEdge = diMIDDLE; // No valid edge
+					mouseCropOffset.x = 0;
+					mouseCropOffset.y = 0;
+				}
 			}
 			else if (mousePos != lastPos)
 			{

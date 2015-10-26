@@ -84,10 +84,11 @@ private:
 	Colour brushCol;
 	int brushSize;
 	SDL_Rect brushRect;
-	Vector2di editorOffset;
-	Vector2di cropSize;
-	Vector2di cropOffset;
-	SimpleDirection cropEdge; // Currently selected edge or side to crop
+	Vector2di editorOffset; // Offset of the window relative to the level image
+	Vector2di cropSize; // Size of the crop rectangle
+	Vector2di cropOffset; // Offset of the upper left corner of the crop offset relative to the level image
+	Vector2di mouseCropOffset; // Offset of the mouse to the crop rectangle when moving an edge
+	SimpleDirection cropEdge; // Currently selected edge or side to crop, diNONE if no edge is selected (mouse not down), diMIDDLE if mouse down, but no valid edge selected
 	int drawTool;
 	enum _DrawTool
 	{
@@ -97,6 +98,7 @@ private:
 	};
 	bool gridActive;
 	int gridSize;
+	int snapDistance;
 	Vector2di mousePos;
 };
 
