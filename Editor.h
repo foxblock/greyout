@@ -83,7 +83,7 @@ private:
 	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	Colour brushCol;
 	int brushSize;
-	SDL_Rect brushRect;
+	Vector2di mousePos; // Current mouse pos, adjusted for snapping to grid and other stuff
 	Vector2di editorOffset; // Offset of the window relative to the level image
 	Vector2di cropSize; // Size of the crop rectangle
 	Vector2di cropOffset; // Offset of the upper left corner of the crop offset relative to the level image
@@ -98,8 +98,9 @@ private:
 	};
 	bool gridActive;
 	int gridSize;
-	int snapDistance;
-	Vector2di mousePos;
+	int snapDistance; // Distance in which brush will snap to grid (in pixels), based on grid size
+	Vector2di straightLinePos; // Mouse starting position for straight lines (shift modifier)
+	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
 };
 
 

@@ -86,23 +86,27 @@ Editor::Editor()
 	lastState = esStart;
 	GFX::showCursor(true);
 
-	editorOffset.x = 0;
-	editorOffset.y = 0;
 	ownsImage = false;
 	brushCol.setColour(BLACK);
 	brushSize = 32;
-	brushRect = {0, 0, 0, 0};
+	mousePos.x = 0;
+	mousePos.y = 0;
+	editorOffset.x = 0;
+	editorOffset.y = 0;
 	cropSize.x = 0;
 	cropSize.y = 0;
 	cropOffset.x = 0;
 	cropOffset.y = 0;
+	mouseCropOffset.x = 0;
+	mouseCropOffset.y = 0;
 	cropEdge = diNONE;
 	drawTool = dtBrush;
 	gridActive = false;
 	gridSize = 32;
 	snapDistance = gridSize * EDITOR_GRID_SNAP;
-	mousePos.x = 0;
-	mousePos.y = 0;
+	straightLinePos.x = 0;
+	straightLinePos.y = 0;
+	straightLineDirection = 0;
 }
 
 Editor::~Editor()
@@ -547,9 +551,36 @@ void Editor::inputDraw()
 	if (drawTool == dtBrush)
 	{
 		if (input->isLeftClick() == SimpleJoy::sjPRESSED && !input->isKey("LEFT_SHIFT") && !input->isKey("RIGHT_SHIFT"))
-			lastPos = mousePos;
+			lastPos = mousePos; // Reset lastPos on first press, except when user explicitly wants to connect the dots
 		if (input->isLeftClick())
 		{
+			// Straight lines
+			if (input->isKey("LEFT_SHIFT") || input->isKey("RIGHT_SHIFT"))
+			{
+				if (straightLineDirection == 0)
+				{
+					straightLinePos = mousePos;
+					straightLineDirection = 1;
+				}
+				else if (straightLineDirection == 1)
+				{
+					if (std::abs(straightLinePos.x - mousePos.x) > std::abs(straightLinePos.y - mousePos.y))
+						straightLineDirection = 2;
+					else if (std::abs(straightLinePos.x - mousePos.x) < std::abs(straightLinePos.y - mousePos.y))
+						straightLineDirection = 3;
+				}
+				else
+				{
+					if (straightLineDirection == 2)
+						mousePos.y = straightLinePos.y;
+					else
+						mousePos.x = straightLinePos.x;
+				}
+			}
+			else
+			{
+				straightLineDirection = 0;
+			}
 			mousePos.x -= brushSize / 2;
 			mousePos.y -= brushSize / 2;
 			lastPos.x -= brushSize / 2;
@@ -611,6 +642,10 @@ void Editor::inputDraw()
 			mousePos.y += brushSize / 2;
 			lastPos.x += brushSize / 2;
 			lastPos.y += brushSize / 2;
+		}
+		else
+		{
+			straightLineDirection = 0;
 		}
 	}
 	else if (drawTool == dtCrop)
