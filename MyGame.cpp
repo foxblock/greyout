@@ -281,7 +281,10 @@ bool MyGame::stateLoop()
 	{
 		input->update();
 		if ( input->isKey("f") )
+		{
 			frameAdvance = false;
+			input->resetKeys();
+		}
 		if (input->isQuit())
 		{
 			state->nullifyState();
