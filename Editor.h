@@ -27,6 +27,16 @@
 
 #include "Level.h"
 
+struct EditorPanel
+{
+	SDL_Surface *surf;
+	Vector2di pos;
+	bool active;
+	bool transparent;
+	bool userIsInteracting;
+	bool changed;
+};
+
 class Editor : public Level
 {
 public:
@@ -82,6 +92,7 @@ private:
 	/// Draw
 	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	Colour brushCol;
+	Colour brushCol2;
 	int brushSize;
 	Vector2di mousePos; // Current mouse pos, adjusted for snapping to grid and other stuff
 	Vector2di editorOffset; // Offset of the window relative to the level image
@@ -102,9 +113,7 @@ private:
 	Vector2di straightLinePos; // Mouse starting position for straight lines (shift modifier)
 	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
 	Text panelText;
-	SDL_Surface *colourPanel;
-	Vector2di colourPanelPos;
-	bool colourPanelActive;
+	EditorPanel colourPanel;
 	void drawColourPanel(SDL_Surface *target);
 };
 
