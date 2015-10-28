@@ -101,6 +101,11 @@ private:
 	int snapDistance; // Distance in which brush will snap to grid (in pixels), based on grid size
 	Vector2di straightLinePos; // Mouse starting position for straight lines (shift modifier)
 	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
+	Text panelText;
+	SDL_Surface *colourPanel;
+	Vector2di colourPanelPos;
+	bool colourPanelActive;
+	void drawColourPanel(SDL_Surface *target);
 };
 
 

@@ -347,7 +347,7 @@ bool MyGame::stateLoop()
 				videoTempCounter = settings->getVideoFrameskip();
 				if (result != 0)
 				{
-					printf("Error saving screenshot: %s\n", SDL_GetError());
+					printf("Error saving video frame: %s\nVideo capture aborted.", SDL_GetError());
 					stopVideoCapture();
 				}
 			}

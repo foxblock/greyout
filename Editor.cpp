@@ -47,12 +47,20 @@
 #define EDITOR_DEFAULT_HEIGHT 240
 #define EDITOR_MIN_WIDTH 32
 #define EDITOR_MIN_HEIGHT 32
-#define EDITOR_CROP_RECT_HALFHEIGHT 10
+#define EDITOR_CROP_RECT_HALFHEIGHT 10 // The small box drawn in the middle of the crop rectangle
 #define EDITOR_CROP_RECT_WIDTH 5
-#define EDITOR_CROP_COLOUR 0x3399FFFF
+#define EDITOR_CROP_COLOUR 0x3399FFFF // SDL_gfx expects colour values to be in RGBA
 #define EDITOR_GRID_COLOUR 0xCCCCCCFF
-#define EDITOR_GRID_SNAP 0.2f
-#define EDITOR_GRID_SPACING 3
+#define EDITOR_GRID_SNAP 0.2f // Fractions of gridSize
+#define EDITOR_GRID_SPACING 3 // Spacing of grid dots in pixels (0 = solid line)
+#define EDITOR_PANEL_TEXT_SIZE 12
+#define EDITOR_SLIDER_HEIGHT 16
+#define EDITOR_SLIDER_WIDTH 130
+#define EDITOR_SLIDER_INDICATOR_WIDTH 2
+#define EDITOR_COLOUR_PANEL_WIDTH 200
+#define EDITOR_COLOUR_PANEL_HEIGHT 100
+#define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
+
 
 Editor::Editor()
 {
@@ -68,7 +76,6 @@ Editor::Editor()
 	entriesText.setColour(WHITE);
 	entriesText.setAlignment(CENTRED);
 	entriesText.setUpBoundary(Vector2di((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X, GFX::getYResolution()));
-
 	startItems.push_back("NEW LEVEL");
 	startItems.push_back("LOAD LEVEL");
 	startItems.push_back("NEW CHAPTER");
@@ -79,7 +86,6 @@ Editor::Editor()
 	settingsItems.push_back("GRAVITY:");
 	settingsItems.push_back("SAVE");
 	settingsItems.push_back("CONTINUE");
-
 	startSel = 0;
 	settingsSel = 0;
 	editorState = esStart;
@@ -107,12 +113,21 @@ Editor::Editor()
 	straightLinePos.x = 0;
 	straightLinePos.y = 0;
 	straightLineDirection = 0;
+	panelText.loadFont(GAME_FONT, EDITOR_PANEL_TEXT_SIZE);
+	panelText.setColour(WHITE);
+	panelText.setAlignment(LEFT_JUSTIFIED);
+	colourPanel = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	colourPanelPos.x = GFX::getXResolution() - EDITOR_COLOUR_PANEL_WIDTH;
+	colourPanelPos.y = GFX::getYResolution() / 2;
+	colourPanelActive = false;
 }
 
 Editor::~Editor()
 {
 	if (ownsImage)
 		SDL_FreeSurface(levelImage);
+	if (colourPanel)
+		SDL_FreeSurface(colourPanel);
 }
 
 ///---public---
@@ -429,14 +444,9 @@ void Editor::inputDraw()
 
 	if (input->isKey("F6"))
 	{
-		if (brushCol == BLACK)
-			brushCol.setColour(WHITE);
-		else if (brushCol == WHITE)
-			brushCol.setColour(RED);
-		else if (brushCol == RED)
-			brushCol.setColour(147, 149, 152);
-		else
-			brushCol.setColour(BLACK);
+		colourPanelActive = !colourPanelActive;
+		if (colourPanelActive)
+			drawColourPanel(colourPanel);
 		input->resetKeys();
 	}
 	if (input->isKey("b"))
@@ -469,6 +479,19 @@ void Editor::inputDraw()
 	{
 		if (brushSize > 1)
 			--brushSize;
+		input->resetKeys();
+	}
+	if (input->isKey("v"))
+	{
+		if (brushCol == BLACK)
+			brushCol.setColour(WHITE);
+		else if (brushCol == WHITE)
+			brushCol.setColour(147, 149, 152);
+		else if (brushCol == Colour(147, 149, 152))
+			brushCol.setColour(RED);
+		else if (brushCol == RED)
+			brushCol.setColour(BLACK);
+			drawColourPanel(colourPanel);
 		input->resetKeys();
 	}
 	// Snap mouse to grid
@@ -637,7 +660,7 @@ void Editor::inputDraw()
 					polY[4] = lastPos.y + editorOffset.y;
 				}
 			}
-			filledPolygonColor(levelImage, polX, polY, 6, (Uint32)(brushCol.red << 24) + (Uint32)(brushCol.green << 16) + (Uint32)(brushCol.blue << 8) + (Uint32)255);
+			filledPolygonColor(levelImage, polX, polY, 6, brushCol.getRGBAvalue());
 			mousePos.x += brushSize / 2;
 			mousePos.y += brushSize / 2;
 			lastPos.x += brushSize / 2;
@@ -652,7 +675,7 @@ void Editor::inputDraw()
 	{
 		if (input->isLeftClick())
 		{
-			if (cropEdge == diNONE)
+			if (cropEdge == diNONE) // selecting an edge
 			{
 				if (mousePos.inRect(-editorOffset.x + cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
 				{
@@ -681,7 +704,7 @@ void Editor::inputDraw()
 					mouseCropOffset.y = 0;
 				}
 			}
-			else if (mousePos != lastPos)
+			else if (mousePos != lastPos) // moving an edge
 			{
 				switch (cropEdge.value)
 				{
@@ -704,8 +727,20 @@ void Editor::inputDraw()
 				}
 			}
 		}
-		else
+		else if (cropEdge != diNONE)
 		{
+			if (cropSize.x < EDITOR_MIN_WIDTH)
+			{
+				if (cropEdge == diLEFT)
+					cropOffset.x -= EDITOR_MIN_WIDTH - cropSize.x;
+				cropSize.x = EDITOR_MIN_WIDTH;
+			}
+			if (cropSize.y < EDITOR_MIN_HEIGHT)
+			{
+				if (cropEdge == diTOP)
+					cropOffset.y -= EDITOR_MIN_HEIGHT - cropSize.y;
+				cropSize.y = EDITOR_MIN_HEIGHT;
+			}
 			cropEdge = diNONE;
 		}
 		if (isAcceptKey(input) && drawTool == dtCrop)
@@ -939,6 +974,11 @@ void Editor::renderDraw()
 		boxColor(screen, -editorOffset.x + cropOffset.x + cropSize.x + 1, -editorOffset.y + cropOffset.y + cropSize.y / 2 - EDITOR_CROP_RECT_HALFHEIGHT,
 				-editorOffset.x + cropOffset.x  + cropSize.x + EDITOR_CROP_RECT_WIDTH, -editorOffset.y + cropOffset.y + cropSize.y / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, EDITOR_CROP_COLOUR);
 	}
+	if (colourPanelActive)
+	{
+		SDL_Rect temp = {colourPanelPos.x, colourPanelPos.y, 0, 0};
+		SDL_BlitSurface(colourPanel, NULL, GFX::getVideoSurface(), &temp);
+	}
 }
 
 void Editor::renderUnits()
@@ -951,3 +991,42 @@ void Editor::renderTest()
 	Level::render(GFX::getVideoSurface());
 }
 
+void Editor::drawColourPanel(SDL_Surface *target)
+{
+	bg.render(target);
+	int xPos = EDITOR_COLOUR_PANEL_SPACING;
+	int yPos = EDITOR_COLOUR_PANEL_SPACING;
+	int indicatorPos = (EDITOR_SLIDER_WIDTH - EDITOR_SLIDER_INDICATOR_WIDTH) * brushCol.red / 255;
+    panelText.setAlignment(LEFT_JUSTIFIED);
+	panelText.setPosition(xPos + 2, yPos);
+	panelText.print(target, "R");
+	int labelWidth = panelText.getWidth();
+	xPos += labelWidth + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+    xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
+    panelText.setPosition(xPos + 2, yPos);
+    panelText.print(target, brushCol.red);
+    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos = EDITOR_COLOUR_PANEL_SPACING;
+	panelText.setPosition(xPos + 2, yPos);
+	panelText.print(target, "G");
+	xPos += labelWidth + EDITOR_COLOUR_PANEL_SPACING;
+	indicatorPos = (EDITOR_SLIDER_WIDTH - EDITOR_SLIDER_INDICATOR_WIDTH) * brushCol.green / 255;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+    xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
+    panelText.setPosition(xPos + 2, yPos);
+    panelText.print(target, brushCol.green);
+    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos = EDITOR_COLOUR_PANEL_SPACING;
+	panelText.setPosition(xPos + 2, yPos);
+	panelText.print(target, "B");
+	xPos += labelWidth + EDITOR_COLOUR_PANEL_SPACING;
+	indicatorPos = (EDITOR_SLIDER_WIDTH - EDITOR_SLIDER_INDICATOR_WIDTH) * brushCol.blue / 255;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+    xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
+    panelText.setPosition(xPos + 2, yPos);
+    panelText.print(target, brushCol.blue);
+}
