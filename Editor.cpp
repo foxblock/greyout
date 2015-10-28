@@ -55,11 +55,12 @@
 #define EDITOR_GRID_SPACING 3 // Spacing of grid dots in pixels (0 = solid line)
 #define EDITOR_PANEL_TEXT_SIZE 12
 #define EDITOR_SLIDER_HEIGHT 16
-#define EDITOR_SLIDER_WIDTH 130
+#define EDITOR_SLIDER_WIDTH 128
 #define EDITOR_SLIDER_INDICATOR_WIDTH 2
 #define EDITOR_COLOUR_PANEL_WIDTH 216
 #define EDITOR_COLOUR_PANEL_HEIGHT 100
 #define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
+#define EDITOR_COLOUR_PANEL_OFFSET 48 // X-Offset of the colour sliders
 
 
 Editor::Editor()
@@ -124,6 +125,7 @@ Editor::Editor()
 	colourPanel.transparent = false;
 	colourPanel.userIsInteracting = false;
 	colourPanel.changed = false;
+	colourPanelActiveSlider = 0;
 }
 
 Editor::~Editor()
@@ -499,7 +501,7 @@ void Editor::inputDraw()
 			brushCol.setColour(147, 149, 152);
 		else if (brushCol == Colour(147, 149, 152))
 			brushCol.setColour(RED);
-		else if (brushCol == RED)
+		else
 			brushCol.setColour(BLACK);
 		colourPanel.changed = true;
 		input->resetKeys();
@@ -514,7 +516,7 @@ void Editor::inputDraw()
 	}
 	mousePos = input->getMouse();
 	// Panel interaction
-	if (colourPanel.active && mousePos.inRect(colourPanel.pos.x, colourPanel.pos.y, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT))
+	if (colourPanel.active && (colourPanel.userIsInteracting || mousePos.inRect(colourPanel.pos.x, colourPanel.pos.y, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT)))
 	{
 		// Make transparent if user is drawing/cropping over panel, else show cursor
 		if ((input->isLeftClick() == SimpleJoy::sjHELD || input->isRightClick() == SimpleJoy::sjHELD) && !colourPanel.userIsInteracting)
@@ -525,6 +527,51 @@ void Editor::inputDraw()
 		else
 		{
 			GFX::showCursor(true);
+		}
+		if (input->isLeftClick() && !colourPanel.transparent)
+		{
+			mousePos.x -= colourPanel.pos.x;
+			if (colourPanelActiveSlider == 0)
+			{
+				mousePos.y -= colourPanel.pos.y;
+				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET && mousePos.x < EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH)
+				{
+					if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING && mousePos.y < EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
+						colourPanelActiveSlider = 1;
+					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
+						colourPanelActiveSlider = 2;
+					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
+						colourPanelActiveSlider = 3;
+					else
+						colourPanelActiveSlider = -1;
+				}
+				else
+					colourPanelActiveSlider = -1;
+				colourPanel.userIsInteracting = true;
+				mousePos.y += colourPanel.pos.y;
+			}
+			switch (colourPanelActiveSlider)
+			{
+			case 1:
+				brushCol.red = std::min(std::max((int)((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
+				colourPanel.changed = true;
+				break;
+			case 2:
+				brushCol.green = std::min(std::max((int)((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
+				colourPanel.changed = true;
+				break;
+			case 3:
+				brushCol.blue = std::min(std::max((int)((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
+				colourPanel.changed = true;
+				break;
+			}
+			mousePos.x += colourPanel.pos.x;
+			return;
+		}
+		else
+		{
+			colourPanelActiveSlider = 0;
+			colourPanel.userIsInteracting = false;
 		}
 	}
 	else
@@ -1042,15 +1089,14 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	xPos -= EDITOR_SLIDER_HEIGHT / 2;
 	yPos -= EDITOR_SLIDER_HEIGHT / 2;
 	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, brushCol.getRGBAvalue());
-	xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
+    xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
 	yPos = EDITOR_COLOUR_PANEL_SPACING;
-	int indicatorPos = (EDITOR_SLIDER_WIDTH - EDITOR_SLIDER_INDICATOR_WIDTH) * brushCol.red / 255;
+	int indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.red / 255;
     panelText.setAlignment(LEFT_JUSTIFIED);
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "R");
-	int labelWidth = panelText.getWidth();
-	xPos += labelWidth + EDITOR_COLOUR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	xPos = EDITOR_COLOUR_PANEL_OFFSET;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
     xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
@@ -1059,9 +1105,9 @@ void Editor::drawColourPanel(SDL_Surface *target)
     xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "G");
-	xPos += labelWidth + EDITOR_COLOUR_PANEL_SPACING;
-	indicatorPos = (EDITOR_SLIDER_WIDTH - EDITOR_SLIDER_INDICATOR_WIDTH) * brushCol.green / 255;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	xPos = EDITOR_COLOUR_PANEL_OFFSET;
+	indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.green / 255;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
     xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
@@ -1070,9 +1116,9 @@ void Editor::drawColourPanel(SDL_Surface *target)
     xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "B");
-	xPos += labelWidth + EDITOR_COLOUR_PANEL_SPACING;
-	indicatorPos = (EDITOR_SLIDER_WIDTH - EDITOR_SLIDER_INDICATOR_WIDTH) * brushCol.blue / 255;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	xPos = EDITOR_COLOUR_PANEL_OFFSET;
+	indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.blue / 255;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
     xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);

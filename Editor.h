@@ -114,6 +114,7 @@ private:
 	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
 	Text panelText;
 	EditorPanel colourPanel;
+	int colourPanelActiveSlider; // -1 - invalid, 0 - none, 1 - red, 2 - green, 3 - blue
 	void drawColourPanel(SDL_Surface *target);
 };
 
