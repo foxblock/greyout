@@ -243,6 +243,8 @@ void Editor::render()
 	}
 
 #ifdef _DEBUG
+	hlineColor(GFX::getVideoSurface(), 0, GFX::getXResolution()-1, input->getMouseY(), 0xFF0000FF);
+	vlineColor(GFX::getVideoSurface(), input->getMouseX(), 0, GFX::getYResolution()-1, 0xFF0000FF);
 	debugText.setPosition(10,10);
 	debugText.print(debugString);
 #endif
@@ -553,15 +555,15 @@ void Editor::inputDraw()
 			switch (colourPanelActiveSlider)
 			{
 			case 1:
-				brushCol.red = std::min(std::max((int)((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
+				brushCol.red = std::min(std::max((int)ceil((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
 				colourPanel.changed = true;
 				break;
 			case 2:
-				brushCol.green = std::min(std::max((int)((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
+				brushCol.green = std::min(std::max((int)ceil((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
 				colourPanel.changed = true;
 				break;
 			case 3:
-				brushCol.blue = std::min(std::max((int)((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
+				brushCol.blue = std::min(std::max((int)ceil((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
 				colourPanel.changed = true;
 				break;
 			}
