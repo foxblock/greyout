@@ -628,6 +628,7 @@ void Editor::inputDraw()
 						input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS);
 						colourPanel.userIsInteracting = true;
 						colourPanel.changed = true;
+						mousePos += colourPanel.pos;
 						return;
 					}
 				}
