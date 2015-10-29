@@ -113,8 +113,11 @@ private:
 	Vector2di straightLinePos; // Mouse starting position for straight lines (shift modifier)
 	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
 	Text panelText;
+	string panelInputTemp;
+	string panelInputBackup;
+	int panelActiveSlider; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
+	int panelInputTarget; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
 	EditorPanel colourPanel;
-	int colourPanelActiveSlider; // -1 - invalid, 0 - none, 1 - red, 2 - green, 3 - blue
 	void drawColourPanel(SDL_Surface *target);
 };
 

@@ -57,7 +57,7 @@
 #define EDITOR_SLIDER_HEIGHT 16
 #define EDITOR_SLIDER_WIDTH 128
 #define EDITOR_SLIDER_INDICATOR_WIDTH 2
-#define EDITOR_COLOUR_PANEL_WIDTH 216
+#define EDITOR_COLOUR_PANEL_WIDTH 212
 #define EDITOR_COLOUR_PANEL_HEIGHT 100
 #define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
 #define EDITOR_COLOUR_PANEL_OFFSET 48 // X-Offset of the colour sliders
@@ -118,6 +118,9 @@ Editor::Editor()
 	panelText.loadFont(GAME_FONT, EDITOR_PANEL_TEXT_SIZE);
 	panelText.setColour(WHITE);
 	panelText.setAlignment(LEFT_JUSTIFIED);
+	panelInputTemp = "0";
+	panelActiveSlider = 0;
+	panelInputTarget = 0;
 	colourPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	colourPanel.pos.x = GFX::getXResolution() - EDITOR_COLOUR_PANEL_WIDTH;
 	colourPanel.pos.y = GFX::getYResolution() / 2;
@@ -125,7 +128,6 @@ Editor::Editor()
 	colourPanel.transparent = false;
 	colourPanel.userIsInteracting = false;
 	colourPanel.changed = false;
-	colourPanelActiveSlider = 0;
 }
 
 Editor::~Editor()
@@ -243,8 +245,8 @@ void Editor::render()
 	}
 
 #ifdef _DEBUG
-	hlineColor(GFX::getVideoSurface(), 0, GFX::getXResolution()-1, input->getMouseY(), 0xFF0000FF);
-	vlineColor(GFX::getVideoSurface(), input->getMouseX(), 0, GFX::getYResolution()-1, 0xFF0000FF);
+	hlineColor(GFX::getVideoSurface(), 0, GFX::getXResolution()-1, input->getMouseY(), 0xFF0000AA);
+	vlineColor(GFX::getVideoSurface(), input->getMouseX(), 0, GFX::getYResolution()-1, 0xFF0000AA);
 	debugText.setPosition(10,10);
 	debugText.print(debugString);
 #endif
@@ -441,83 +443,151 @@ void Editor::inputSettings()
 
 void Editor::inputDraw()
 {
-	if (isCancelKey(input))
+	/// Button handling
+	if (!input->isPollingKeyboard())
 	{
-		editorState = esSettings;
-		GFX::showCursor(true);
-		input->resetKeys();
-	}
-	if (input->isLeft())
-		editorOffset.x -= 2;
-	else if (input->isRight())
-		editorOffset.x += 2;
-	if (input->isUp())
-		editorOffset.y -= 2;
-	else if (input->isDown())
-		editorOffset.y += 2;
+		if (isCancelKey(input))
+		{
+			panelActiveSlider = 0;
+			colourPanel.userIsInteracting = false;
+			editorState = esSettings;
+			GFX::showCursor(true);
+			input->resetKeys();
+		}
+		if (input->isLeft())
+			editorOffset.x -= 2;
+		else if (input->isRight())
+			editorOffset.x += 2;
+		if (input->isUp())
+			editorOffset.y -= 2;
+		else if (input->isDown())
+			editorOffset.y += 2;
 
-	if (input->isKey("F6"))
-	{
-		colourPanel.active = !colourPanel.active;
-		if (colourPanel.active)
-			drawColourPanel(colourPanel.surf);
-		input->resetKeys();
+		if (input->isKey("F6") && !colourPanel.userIsInteracting)
+		{
+			colourPanel.active = !colourPanel.active;
+			if (colourPanel.active)
+				drawColourPanel(colourPanel.surf);
+			input->resetKeys();
+		}
+		if (input->isKey("b"))
+		{
+			drawTool = dtBrush;
+			GFX::showCursor(false);
+			input->resetKeys();
+		}
+		else if (input->isKey("c"))
+		{
+			drawTool = dtCrop;
+			GFX::showCursor(true);
+			cropOffset.x = 0;
+			cropOffset.y = 0;
+			cropSize.x = levelImage->w;
+			cropSize.y = levelImage->h;
+			input->resetKeys();
+		}
+		if (input->isKey("g"))
+		{
+			gridActive = !gridActive;
+			input->resetKeys();
+		}
+		if (input->isKey("m"))
+		{
+			++brushSize;
+			input->resetKeys();
+		}
+		if (input->isKey("n"))
+		{
+			if (brushSize > 1)
+				--brushSize;
+			input->resetKeys();
+		}
+		if (input->isKey("v"))
+		{
+			if (brushCol == BLACK)
+				brushCol.setColour(WHITE);
+			else if (brushCol == WHITE)
+				brushCol.setColour(147, 149, 152);
+			else if (brushCol == Colour(147, 149, 152))
+				brushCol.setColour(RED);
+			else
+				brushCol.setColour(BLACK);
+			colourPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("x"))
+		{
+			Colour temp(brushCol);
+			brushCol.setColour(brushCol2);
+			brushCol2.setColour(temp);
+			colourPanel.changed = true;
+			input->resetKeys();
+		}
 	}
-	if (input->isKey("b"))
+	else
 	{
-		drawTool = dtBrush;
-		GFX::showCursor(false);
-		input->resetKeys();
+		if (input->keyboardBufferHasChanged())
+		{
+			switch (panelInputTarget)
+			{
+			case 1:
+				brushCol.red = std::min(StringUtility::stringToInt(panelInputTemp), 255);
+				panelInputTemp = StringUtility::intToString(brushCol.red);
+				colourPanel.changed = true;
+				break;
+			case 2:
+				brushCol.green = std::min(StringUtility::stringToInt(panelInputTemp), 255);
+				panelInputTemp = StringUtility::intToString(brushCol.green);
+				colourPanel.changed = true;
+				break;
+			case 3:
+				brushCol.blue = std::min(StringUtility::stringToInt(panelInputTemp), 255);
+				panelInputTemp = StringUtility::intToString(brushCol.blue);
+				colourPanel.changed = true;
+				break;
+			}
+		}
+		else if (input->isKey("RETURN"))
+		{
+			input->stopKeyboardInput();
+			if (panelInputTarget >= 1 && panelInputTarget <= 3)
+			{
+				colourPanel.userIsInteracting = false;
+				colourPanel.changed = true;
+			}
+			panelInputTarget = 0;
+			input->resetKeys();
+		}
+		else if (input->isKey("ESCAPE"))
+		{
+			input->stopKeyboardInput();
+			switch (panelInputTarget)
+			{
+			case 1:
+				brushCol.red = std::min(StringUtility::stringToInt(panelInputBackup), 255);
+				colourPanel.changed = true;
+				colourPanel.userIsInteracting = false;
+				break;
+			case 2:
+				brushCol.green = std::min(StringUtility::stringToInt(panelInputBackup), 255);
+				colourPanel.changed = true;
+				colourPanel.userIsInteracting = false;
+				break;
+			case 3:
+				brushCol.blue = std::min(StringUtility::stringToInt(panelInputBackup), 255);
+				colourPanel.changed = true;
+				colourPanel.userIsInteracting = false;
+				break;
+			}
+			panelInputTarget = 0;
+			input->resetKeys();
+		}
+		mousePos = input->getMouse();
+		return; // Skip over mouse handling entirely
 	}
-	else if (input->isKey("c"))
-	{
-		drawTool = dtCrop;
-		GFX::showCursor(true);
-		cropOffset.x = 0;
-		cropOffset.y = 0;
-		cropSize.x = levelImage->w;
-		cropSize.y = levelImage->h;
-		input->resetKeys();
-	}
-	if (input->isKey("g"))
-	{
-		gridActive = !gridActive;
-		input->resetKeys();
-	}
-	if (input->isKey("m"))
-	{
-		++brushSize;
-		input->resetKeys();
-	}
-	if (input->isKey("n"))
-	{
-		if (brushSize > 1)
-			--brushSize;
-		input->resetKeys();
-	}
-	if (input->isKey("v"))
-	{
-		if (brushCol == BLACK)
-			brushCol.setColour(WHITE);
-		else if (brushCol == WHITE)
-			brushCol.setColour(147, 149, 152);
-		else if (brushCol == Colour(147, 149, 152))
-			brushCol.setColour(RED);
-		else
-			brushCol.setColour(BLACK);
-		colourPanel.changed = true;
-		input->resetKeys();
-	}
-	if (input->isKey("x"))
-	{
-		Colour temp(brushCol);
-		brushCol.setColour(brushCol2);
-		brushCol2.setColour(temp);
-		colourPanel.changed = true;
-		input->resetKeys();
-	}
+	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
 	mousePos = input->getMouse();
-	// Panel interaction
+	/// Panel interaction
 	if (colourPanel.active && (colourPanel.userIsInteracting || mousePos.inRect(colourPanel.pos.x, colourPanel.pos.y, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT)))
 	{
 		// Make transparent if user is drawing/cropping over panel, else show cursor
@@ -530,29 +600,49 @@ void Editor::inputDraw()
 		{
 			GFX::showCursor(true);
 		}
-		if (input->isLeftClick() && !colourPanel.transparent)
+		if (input->isLeftClick() && !colourPanel.transparent) // user is actually interacting with the panel contents
 		{
-			mousePos.x -= colourPanel.pos.x;
-			if (colourPanelActiveSlider == 0)
+			mousePos -= colourPanel.pos;
+			if (panelActiveSlider == 0 && input->isLeftClick() == SimpleJoy::sjPRESSED)
 			{
-				mousePos.y -= colourPanel.pos.y;
+				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH + EDITOR_COLOUR_PANEL_SPACING &&
+					mousePos.x < EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING)
+				{
+					if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING && mousePos.y < EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
+					{
+						panelInputTarget = 1;
+						panelInputTemp = panelInputBackup = StringUtility::intToString(brushCol.red);
+					}
+					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
+					{
+						panelInputTarget = 2;
+						panelInputTemp = panelInputBackup = StringUtility::intToString(brushCol.green);
+					}
+					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
+					{
+						panelInputTarget = 3;
+						panelInputTemp = panelInputBackup = StringUtility::intToString(brushCol.blue);
+					}
+					if (panelInputTarget > 0)
+					{
+						input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS);
+						colourPanel.userIsInteracting = true;
+						colourPanel.changed = true;
+						return;
+					}
+				}
 				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET && mousePos.x < EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH)
 				{
 					if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING && mousePos.y < EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
-						colourPanelActiveSlider = 1;
+						panelActiveSlider = 1;
 					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
-						colourPanelActiveSlider = 2;
+						panelActiveSlider = 2;
 					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
-						colourPanelActiveSlider = 3;
-					else
-						colourPanelActiveSlider = -1;
+						panelActiveSlider = 3;
 				}
-				else
-					colourPanelActiveSlider = -1;
 				colourPanel.userIsInteracting = true;
-				mousePos.y += colourPanel.pos.y;
 			}
-			switch (colourPanelActiveSlider)
+			switch (panelActiveSlider)
 			{
 			case 1:
 				brushCol.red = std::min(std::max((int)ceil((mousePos.x - EDITOR_COLOUR_PANEL_OFFSET - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 255), 0), 255);
@@ -567,12 +657,12 @@ void Editor::inputDraw()
 				colourPanel.changed = true;
 				break;
 			}
-			mousePos.x += colourPanel.pos.x;
-			return;
+			mousePos += colourPanel.pos;
+			return; // Skip over rest of mouse handling
 		}
 		else
 		{
-			colourPanelActiveSlider = 0;
+			panelActiveSlider = 0;
 			colourPanel.userIsInteracting = false;
 		}
 	}
@@ -586,6 +676,7 @@ void Editor::inputDraw()
 		SDL_SetAlpha(colourPanel.surf, 0, 255);
 		colourPanel.transparent = false;
 	}
+	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	// Snap mouse to grid
 	if (gridActive)
 	{
@@ -1102,7 +1193,15 @@ void Editor::drawColourPanel(SDL_Surface *target)
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
     xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
-    panelText.print(target, brushCol.red);
+	if (panelInputTarget == 1)
+	{
+		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		panelText.setColour(BLACK);
+		panelText.print(target, brushCol.red);
+		panelText.setColour(WHITE);
+	}
+	else
+		panelText.print(target, brushCol.red);
     yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
     xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
@@ -1113,7 +1212,15 @@ void Editor::drawColourPanel(SDL_Surface *target)
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
     xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
-    panelText.print(target, brushCol.green);
+	if (panelInputTarget == 2)
+	{
+		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		panelText.setColour(BLACK);
+		panelText.print(target, brushCol.green);
+		panelText.setColour(WHITE);
+	}
+	else
+		panelText.print(target, brushCol.green);
     yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
     xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
@@ -1124,5 +1231,13 @@ void Editor::drawColourPanel(SDL_Surface *target)
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
     xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
-    panelText.print(target, brushCol.blue);
+	if (panelInputTarget == 3)
+	{
+		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		panelText.setColour(BLACK);
+		panelText.print(target, brushCol.blue);
+		panelText.setColour(WHITE);
+	}
+	else
+		panelText.print(target, brushCol.blue);
 }
