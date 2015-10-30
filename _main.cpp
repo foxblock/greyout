@@ -78,17 +78,17 @@
 // TODO: More levels with a background image and overlaping coloured blocks (see level "Greyout")
 
 // Greyout colours:
-//            R   G   B      int
-// Green:    50 217  54  3332406
-// Grey:    147 149 152  9672088
-// Red:     255   0   0 16711680
-// White:   255 255 255 16777215
-// Black:     0   0   0        0
-// Orange:  255 153   0 16750848
-// LOrange: 255 220 168 16768168
-// Blue:      0  51 255    13311
-// LBlue:   178 193 255 11715071
-// B+O Mix: 216 206 212 14208724
+//            R   G   B      int    hex
+// Green:    50 217  54  3332406 32d936
+// Grey:    147 149 152  9672088 939598
+// Red:     255   0   0 16711680 ff0000
+// White:   255 255 255 16777215 ffffff
+// Black:     0   0   0        0 000000
+// Orange:  255 153   0 16750848 ff9900
+// LOrange: 255 220 168 16768168 ffdca8
+// Blue:      0  51 255    13311 0033ff
+// LBlue:   178 193 255 11715071 b2c1ff
+// B+O Mix: 216 206 212 14208724 d8ced4
 
 // Compiler options:
 // All targets: -DPENJIN_NO_CENTRE_SCALING -DPENJIN_DONT_REMOVE_TRANSPARENCY_ON_SET -DPENJIN_CALC_FPS -DPENJIN_SDL -DPENJIN_SDL_INPUT -DPENJIN_CACHE_ROTATIONS

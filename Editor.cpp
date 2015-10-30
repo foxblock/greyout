@@ -58,7 +58,7 @@
 #define EDITOR_SLIDER_WIDTH 128
 #define EDITOR_SLIDER_INDICATOR_WIDTH 2
 #define EDITOR_COLOUR_PANEL_WIDTH 212
-#define EDITOR_COLOUR_PANEL_HEIGHT 100
+#define EDITOR_COLOUR_PANEL_HEIGHT 84
 #define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
 #define EDITOR_COLOUR_PANEL_OFFSET 48 // X-Offset of the colour sliders
 
@@ -603,8 +603,9 @@ void Editor::inputDraw()
 		if (input->isLeftClick() && !colourPanel.transparent) // user is actually interacting with the panel contents
 		{
 			mousePos -= colourPanel.pos;
-			if (panelActiveSlider == 0 && input->isLeftClick() == SimpleJoy::sjPRESSED)
+			if (input->isLeftClick() == SimpleJoy::sjPRESSED) // Initial mouse press on the panel
 			{
+				// Text fields
 				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH + EDITOR_COLOUR_PANEL_SPACING &&
 					mousePos.x < EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING)
 				{
@@ -632,6 +633,7 @@ void Editor::inputDraw()
 						return;
 					}
 				}
+				// Sliders
 				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET && mousePos.x < EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH)
 				{
 					if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING && mousePos.y < EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
@@ -640,6 +642,14 @@ void Editor::inputDraw()
 						panelActiveSlider = 2;
 					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
 						panelActiveSlider = 3;
+				}
+				if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 3 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 4)
+				{
+					if ((mousePos.x - EDITOR_COLOUR_PANEL_SPACING) % (EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT) < EDITOR_SLIDER_HEIGHT)
+					{
+						brushCol.setColour(GFX::getPixel(colourPanel.surf, mousePos.x, mousePos.y));
+						colourPanel.changed = true;
+					}
 				}
 				colourPanel.userIsInteracting = true;
 			}
@@ -1241,4 +1251,25 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	}
 	else
 		panelText.print(target, brushCol.blue);
+	xPos = EDITOR_COLOUR_PANEL_SPACING;
+    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x939598FF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF0000FF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x32D936FF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF9900FF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFDCA8FF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x0033FFFF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xB2C1FFFF);
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xD8CED4FF);
 }
