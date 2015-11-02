@@ -28,6 +28,9 @@
 #include "gameDefines.h"
 #include "globalControls.h"
 #include "SurfaceCache.h"
+#include "BaseUnit.h"
+#include "ControlUnit.h"
+#include "LevelLoader.h"
 
 #include "IMG_savepng.h"
 #include <SDL/SDL_gfxPrimitives.h>
@@ -128,6 +131,7 @@ Editor::Editor()
 	colourPanel.transparent = false;
 	colourPanel.userIsInteracting = false;
 	colourPanel.changed = false;
+	drawUnits = false;
 }
 
 Editor::~Editor()
@@ -192,8 +196,6 @@ void Editor::userInput()
 
 void Editor::update()
 {
-	Level::update();
-
 	switch (editorState)
 	{
 	case esStart:
@@ -349,6 +351,7 @@ void Editor::inputSettings()
 	{
 		if (isAcceptKey(input) || isCancelKey(input))
 			input->stopKeyboardInput();
+		input->resetKeys();
 		return;
 	}
 
@@ -431,8 +434,7 @@ void Editor::inputSettings()
 		default:
 			break;
 		}
-		input->resetMouseButtons();
-		input->resetB();
+		input->resetKeys();
 	}
 	else if (isCancelKey(input))
 	{
@@ -500,6 +502,11 @@ void Editor::inputDraw()
 		{
 			if (brushSize > 1)
 				--brushSize;
+			input->resetKeys();
+		}
+		if (input->isKey("u"))
+		{
+			drawUnits = !drawUnits;
 			input->resetKeys();
 		}
 		if (input->isKey("v"))
@@ -957,6 +964,16 @@ void Editor::inputDraw()
 			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 			SDL_BlitSurface(collisionLayer, NULL, levelImage, NULL);
 			editorOffset -= cropOffset;
+			for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+			{
+				(*I)->position -= cropOffset;
+				(*I)->startingPosition -= cropOffset;
+			}
+			for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+			{
+				(*I)->position -= cropOffset;
+				(*I)->startingPosition -= cropOffset;
+			}
 			cropOffset.x = 0;
 			cropOffset.y = 0;
 			drawTool = dtBrush;
@@ -1079,6 +1096,13 @@ void Editor::renderDraw()
 	src.w = min((int)GFX::getXResolution(), getWidth() - src.x);
 	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
 	SDL_BlitSurface(levelImage, &src, screen, &dst);
+	if (drawUnits)
+	{
+		for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
+			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
+			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+	}
 
 	// Grid
 	if (gridActive)

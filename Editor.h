@@ -119,6 +119,7 @@ private:
 	int panelInputTarget; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
 	EditorPanel colourPanel;
 	void drawColourPanel(SDL_Surface *target);
+	bool drawUnits;
 };
 
 
