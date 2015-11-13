@@ -120,6 +120,13 @@ private:
 	EditorPanel colourPanel;
 	void drawColourPanel(SDL_Surface *target);
 	bool drawUnits;
+	/// Units
+	struct UnitContainer
+	{
+		BaseUnit *unit;
+		SDL_Surface *img;
+	};
+	vector<UnitContainer> unitButtons;
 };
 
 

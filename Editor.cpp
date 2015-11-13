@@ -31,6 +31,7 @@
 #include "BaseUnit.h"
 #include "ControlUnit.h"
 #include "LevelLoader.h"
+#include "fileTypeDefines.h"
 
 #include "IMG_savepng.h"
 #include <SDL/SDL_gfxPrimitives.h>
@@ -132,6 +133,23 @@ Editor::Editor()
 	colourPanel.userIsInteracting = false;
 	colourPanel.changed = false;
 	drawUnits = false;
+
+	list<PARAMETER_TYPE > params;
+	params.push_back(make_pair(CLASS_STRING,""));
+	for (map<string,int>::iterator I = LEVEL_LOADER->unitClasses.begin(); I != LEVEL_LOADER->unitClasses.end(); ++I)
+	{
+		params.front().second = I->first;
+		UnitContainer temp;
+		temp.unit = LEVEL_LOADER->createUnit(params, this);
+		if (temp.unit)
+		{
+			temp.img = SDL_CreateRGBSurface(SDL_SWSURFACE, 32, 32, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			SDL_SetColorKey(temp.img, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(temp.img->format,255,0,255));
+			SDL_FillRect(temp.img, NULL, SDL_MapRGB(temp.img->format,255,0,255));
+			temp.unit->render(temp.img);
+			unitButtons.push_back(temp);
+		}
+	}
 }
 
 Editor::~Editor()
@@ -140,6 +158,13 @@ Editor::~Editor()
 		SDL_FreeSurface(levelImage);
 	if (colourPanel.surf)
 		SDL_FreeSurface(colourPanel.surf);
+	for (vector<UnitContainer>::iterator I = unitButtons.begin(); I != unitButtons.end(); ++I)
+	{
+		if (I->unit)
+			delete I->unit;
+		if (I->img)
+			SDL_FreeSurface(I->img);
+	}
 }
 
 ///---public---
@@ -196,27 +221,31 @@ void Editor::userInput()
 
 void Editor::update()
 {
+	debugString = debugInfo();
+
 	switch (editorState)
 	{
 	case esStart:
 	{
-		//
+		break;
 	}
 	case esSettings:
 	{
-		//
+		break;
 	}
 	case esDraw:
 	{
-		//
+		break;
 	}
 	case esUnits:
 	{
-		//
+		for (map<string, int>::iterator I = LEVEL_LOADER->unitClasses.begin(); I != LEVEL_LOADER->unitClasses.end(); ++I)
+			debugString += I->first + "\n";
+		break;
 	}
 	case esTest:
 	{
-		//
+		break;
 	}
 	default:
 		return;
@@ -266,7 +295,7 @@ string Editor::debugInfo()
 		case esDraw:
 			return "DRAW MODE\nBrush: " + StringUtility::intToString(brushSize) + "\nGrid: " + StringUtility::intToString(gridSize) + "\n";
 		case esUnits:
-			return "SELECT MODE\n";
+			return "UNIT MODE\n";
 		case esTest:
 			return "TEST PLAY\n" + Level::debugInfo();
 		default:
@@ -448,12 +477,20 @@ void Editor::inputDraw()
 	/// Button handling
 	if (!input->isPollingKeyboard())
 	{
+		// Hotkeys
 		if (isCancelKey(input))
 		{
 			panelActiveSlider = 0;
 			colourPanel.userIsInteracting = false;
 			editorState = esSettings;
 			GFX::showCursor(true);
+			input->resetKeys();
+		}
+		if (isAcceptKey(input))
+		{
+			panelActiveSlider = 0;
+			colourPanel.userIsInteracting = false;
+			editorState = esUnits;
 			input->resetKeys();
 		}
 		if (input->isLeft())
@@ -533,6 +570,7 @@ void Editor::inputDraw()
 	}
 	else
 	{
+		// Keyboard input
 		if (input->keyboardBufferHasChanged())
 		{
 			switch (panelInputTarget)
@@ -987,7 +1025,21 @@ void Editor::inputDraw()
 
 void Editor::inputUnits()
 {
-
+	if (isCancelKey(input))
+	{
+		editorState = esDraw;
+		input->resetKeys();
+	}
+	if (input->isKey("u"))
+	{
+		drawUnits = !drawUnits;
+		input->resetKeys();
+	}
+	if (input->isKey("g"))
+	{
+		gridActive = !gridActive;
+		input->resetKeys();
+	}
 }
 
 void Editor::inputTest()
@@ -1200,7 +1252,40 @@ void Editor::renderDraw()
 
 void Editor::renderUnits()
 {
+	SDL_Surface *screen = GFX::getVideoSurface();
+	GFX::clearScreen();
 
+	SDL_Rect src;
+	SDL_Rect dst;
+	dst.x = max(-editorOffset.x, 0);
+	dst.y = max(-editorOffset.y, 0);
+	src.x = max(editorOffset.x, 0);
+	src.y = max(editorOffset.y, 0);
+	src.w = min((int)GFX::getXResolution(), getWidth() - src.x);
+	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
+	SDL_BlitSurface(levelImage, &src, screen, &dst);
+	if (drawUnits)
+	{
+		for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
+			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
+			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+	}
+
+	dst.x = max(-editorOffset.x + 4, 0);
+	dst.y = max(-editorOffset.y + 4, 0);
+	for (vector<UnitContainer>::iterator I = unitButtons.begin(); I != unitButtons.end(); ++I)
+	{
+		boxColor(screen, dst.x - 2, dst.y - 2, dst.x + 34, dst.y + 34, 0x000000FF);
+		boxColor(screen, dst.x, dst.y, dst.x + 32, dst.y + 32, EDITOR_GRID_COLOUR);
+		SDL_BlitSurface(I->img, NULL, screen, &dst);
+		dst.x += 40;
+		if (dst.x > (-editorOffset.x) + levelImage->w)
+		{
+			dst.x = max(-editorOffset.x + 4, 0);
+			dst.y += 40;
+		}
+	}
 }
 
 void Editor::renderTest()

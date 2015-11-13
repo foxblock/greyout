@@ -26,7 +26,6 @@
 
 #include <fstream>
 #include <vector>
-#include <map>
 
 #include "StringUtility.h"
 #include "Image.h"
@@ -63,60 +62,14 @@
 
 using namespace std;
 
-enum DataIdent
-{
-	diUnknown,
-	diLevel,
-	diPlayer,
-	diUnit
-};
-
-enum LevelIdent
-{
-	lcUnknown,
-	lcGeneric,
-	lcBenchmark,
-	lcPlayground
-};
-
-enum PlayerIdent
-{
-	pcUnknown,
-	pcGeneric,
-	pcBlack,
-	pcWhite
-};
-
-enum UnitIdent
-{
-	ucUnknown,
-	ucGeneric,
-	ucPushableBox,
-	ucSolidBox,
-	ucExit,
-	ucDialogueTrigger,
-	ucGear,
-	ucSwitch,
-	ucKey,
-	ucBaseTrigger,
-	ucExitTrigger,
-	ucSoundTrigger,
-	ucCameraTrigger,
-	ucTextObject,
-	ucFadingBox,
-	ucLevelTrigger,
-	ucEmitter,
-	ucControlSprite
-};
-
 // mapping the ident string used in the map file to a ident integer for use in
 // a switch statement for cleaner and faster map loading
-static map<string, DataIdent> dataIdents;
-static map<string, LevelIdent> levelClasses;
-static map<string, PlayerIdent> playerClasses;
-static map<string, UnitIdent> unitClasses;
+map<string, int> LevelLoader::dataIdents;
+map<string, int> LevelLoader::levelClasses;
+map<string, int> LevelLoader::playerClasses;
+map<string, int> LevelLoader::unitClasses;
 
-void createIdentMaps()
+void LevelLoader::createIdentMaps()
 {
 	dataIdents["level"] = diLevel;
 	dataIdents["player"] = diPlayer;

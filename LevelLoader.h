@@ -26,6 +26,7 @@
 #define LEVELLOADER_H
 
 #include <list>
+#include <map>
 
 #include "PenjinTypes.h"
 
@@ -49,6 +50,7 @@ class LevelLoader
 private:
 	LevelLoader();
 	static LevelLoader *self;
+	void createIdentMaps();
 public:
 	virtual ~LevelLoader();
 	static LevelLoader* getLevelLoader();
@@ -82,6 +84,58 @@ public:
 		ecFile
 	};
 
+	enum DataIdent
+	{
+		diUnknown,
+		diLevel,
+		diPlayer,
+		diUnit
+	};
+
+	enum LevelIdent
+	{
+		lcUnknown,
+		lcGeneric,
+		lcBenchmark,
+		lcPlayground
+	};
+
+	enum PlayerIdent
+	{
+		pcUnknown,
+		pcGeneric,
+		pcBlack,
+		pcWhite,
+		pcEOL
+	};
+
+	enum UnitIdent
+	{
+		ucUnknown,
+		ucGeneric,
+		ucPushableBox,
+		ucSolidBox,
+		ucExit,
+		ucDialogueTrigger,
+		ucGear,
+		ucSwitch,
+		ucKey,
+		ucBaseTrigger,
+		ucExitTrigger,
+		ucSoundTrigger,
+		ucCameraTrigger,
+		ucTextObject,
+		ucFadingBox,
+		ucLevelTrigger,
+		ucEmitter,
+		ucControlSprite,
+		ucEOL
+	};
+
+	static map<string, int> dataIdents;
+	static map<string, int> levelClasses;
+	static map<string, int> playerClasses;
+	static map<string, int> unitClasses;
 };
 
 #endif // LEVELLOADER_H
