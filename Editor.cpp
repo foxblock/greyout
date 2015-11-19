@@ -66,6 +66,13 @@
 #define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
 #define EDITOR_COLOUR_PANEL_OFFSET 48 // X-Offset of the colour sliders
 
+#define EDITOR_UNIT_PANEL_WIDTH 200
+#define EDITOR_UNIT_PANEL_HEIGHT 380
+#define EDITOR_UNIT_PANEL_SPACING 4
+#define EDITOR_UNIT_BUTTON_SIZE 32
+#define EDITOR_UNIT_BUTTON_BORDER 4
+#define EDITOR_UNIT_BUTTONS_IMAGE "images/general/editor_buttons.png"
+
 
 Editor::Editor()
 {
@@ -134,22 +141,17 @@ Editor::Editor()
 	colourPanel.changed = false;
 	drawUnits = false;
 
-	list<PARAMETER_TYPE > params;
-	params.push_back(make_pair(CLASS_STRING,""));
-	for (map<string,int>::iterator I = LEVEL_LOADER->unitClasses.begin(); I != LEVEL_LOADER->unitClasses.end(); ++I)
-	{
-		params.front().second = I->first;
-		UnitContainer temp;
-		temp.unit = LEVEL_LOADER->createUnit(params, this);
-		if (temp.unit)
-		{
-			temp.img = SDL_CreateRGBSurface(SDL_SWSURFACE, 32, 32, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
-			SDL_SetColorKey(temp.img, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(temp.img->format,255,0,255));
-			SDL_FillRect(temp.img, NULL, SDL_MapRGB(temp.img->format,255,0,255));
-			temp.unit->render(temp.img);
-			unitButtons.push_back(temp);
-		}
-	}
+	unitPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	unitPanel.pos.x = 0;
+	unitPanel.pos.y = 50;
+	unitPanel.active = false;
+	unitPanel.transparent = false;
+	unitPanel.userIsInteracting = false;
+	unitPanel.changed = false;
+	unitButtons.loadFrames(SURFACE_CACHE->loadSurface(EDITOR_UNIT_BUTTONS_IMAGE), 8, 8, 0, 0, true);
+	unitButtons.setTransparentColour(MAGENTA);
+	hoverUnitButton = -1;
+	selectedUnitButton = -1;
 }
 
 Editor::~Editor()
@@ -158,13 +160,8 @@ Editor::~Editor()
 		SDL_FreeSurface(levelImage);
 	if (colourPanel.surf)
 		SDL_FreeSurface(colourPanel.surf);
-	for (vector<UnitContainer>::iterator I = unitButtons.begin(); I != unitButtons.end(); ++I)
-	{
-		if (I->unit)
-			delete I->unit;
-		if (I->img)
-			SDL_FreeSurface(I->img);
-	}
+	if (unitPanel.surf)
+		SDL_FreeSurface(unitPanel.surf);
 }
 
 ///---public---
@@ -221,7 +218,9 @@ void Editor::userInput()
 
 void Editor::update()
 {
+#ifdef _DEBUG
 	debugString = debugInfo();
+#endif
 
 	switch (editorState)
 	{
@@ -239,8 +238,6 @@ void Editor::update()
 	}
 	case esUnits:
 	{
-		for (map<string, int>::iterator I = LEVEL_LOADER->unitClasses.begin(); I != LEVEL_LOADER->unitClasses.end(); ++I)
-			debugString += I->first + "\n";
 		break;
 	}
 	case esTest:
@@ -1040,6 +1037,13 @@ void Editor::inputUnits()
 		gridActive = !gridActive;
 		input->resetKeys();
 	}
+	if (input->isKey("F7") && !unitPanel.userIsInteracting)
+	{
+		unitPanel.active = !unitPanel.active;
+		if (unitPanel.active)
+			drawUnitPanel(unitPanel.surf);
+		input->resetKeys();
+	}
 }
 
 void Editor::inputTest()
@@ -1274,17 +1278,15 @@ void Editor::renderUnits()
 
 	dst.x = max(-editorOffset.x + 4, 0);
 	dst.y = max(-editorOffset.y + 4, 0);
-	for (vector<UnitContainer>::iterator I = unitButtons.begin(); I != unitButtons.end(); ++I)
+	if (unitPanel.active)
 	{
-		boxColor(screen, dst.x - 2, dst.y - 2, dst.x + 34, dst.y + 34, 0x000000FF);
-		boxColor(screen, dst.x, dst.y, dst.x + 32, dst.y + 32, EDITOR_GRID_COLOUR);
-		SDL_BlitSurface(I->img, NULL, screen, &dst);
-		dst.x += 40;
-		if (dst.x > (-editorOffset.x) + levelImage->w)
+		if (unitPanel.changed)
 		{
-			dst.x = max(-editorOffset.x + 4, 0);
-			dst.y += 40;
+			drawColourPanel(unitPanel.surf);
+			unitPanel.changed = false;
 		}
+		SDL_Rect temp = {unitPanel.pos.x, unitPanel.pos.y, 0, 0};
+		SDL_BlitSurface(unitPanel.surf, NULL, GFX::getVideoSurface(), &temp);
 	}
 }
 
@@ -1306,6 +1308,7 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	yPos = EDITOR_COLOUR_PANEL_SPACING;
 	int indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.red / 255;
     panelText.setAlignment(LEFT_JUSTIFIED);
+    panelText.setUpBoundary(GFX::getXResolution(), GFX::getYResolution());
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "R");
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
@@ -1381,4 +1384,107 @@ void Editor::drawColourPanel(SDL_Surface *target)
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xB2C1FFFF);
     xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xD8CED4FF);
+}
+
+void Editor::drawUnitPanel(SDL_Surface *target)
+{
+	bg.render(target);
+	panelText.setUpBoundary(EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT);
+	panelText.setAlignment(CENTRED);
+	panelText.setPosition(0, 0);
+	int temp = (hoverUnitButton == -1) ? selectedUnitButton : hoverUnitButton;
+	switch (temp)
+	{
+		case  0: panelText.print(target, "BLACK PLAYER"); break;
+		case  1: panelText.print(target, "WHITE PLAYER"); break;
+		case  2: panelText.print(target, "ORANGE PLAYER"); break;
+		case  3: panelText.print(target, "BLUE PLAYER"); break;
+		case 16: panelText.print(target, "PUSHABLE BOX"); break;
+		case 17: panelText.print(target, "SOLID BOX"); break;
+		case 18: panelText.print(target, "FADING BOX (B/W)"); break;
+		case 19: panelText.print(target, "FADING BOX (ORANGE)"); break;
+		case 20: panelText.print(target, "FADING BOX (BLUE)"); break;
+		case 21: panelText.print(target, "FADING BOX (MIX)"); break;
+		case 22: panelText.print(target, "EXIT"); break;
+		case 23: panelText.print(target, "KEY"); break;
+		case 24: panelText.print(target, "SWITCH"); break;
+		case 25: panelText.print(target, "BLACK GEAR"); break;
+		case 26: panelText.print(target, "WHITE GEAR"); break;
+		case 27: panelText.print(target, "TEXT"); break;
+		case 28: panelText.print(target, "PARTICLE EMITTER"); break;
+		case 29: panelText.print(target, "CONTROL HELP"); break;
+		case 48: panelText.print(target, "BASE TRIGGER"); break;
+		case 49: panelText.print(target, "DIALOGUE TRIGGER"); break;
+		case 50: panelText.print(target, "EXIT TRIGGER"); break;
+		case 51: panelText.print(target, "SOUND TRIGGER"); break;
+		case 52: panelText.print(target, "CAMERA TRIGGER"); break;
+		case 53: panelText.print(target, "LEVEL TRIGGER"); break;
+		default: panelText.print(target, "-NONE SELECTED-");
+	}
+	panelText.setAlignment(LEFT_JUSTIFIED);
+	int xPos = EDITOR_UNIT_PANEL_SPACING;
+	int yPos = EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+	panelText.setPosition(xPos, yPos);
+	panelText.print(target, "PLAYERS:");
+	yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+	for (int I = 0; I < 64; ++I)
+	{
+		if (I == selectedUnitButton)
+		{
+			boxColor(target, xPos, yPos, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_BORDER - 1, 0xFFFFFFFF);
+			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, 0xFFFFFFFF);
+			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_BORDER, xPos + EDITOR_UNIT_BUTTON_BORDER - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER - 1, 0xFFFFFFFF);
+			boxColor(target, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER - 1, 0xFFFFFFFF);
+		}
+		else if (I == hoverUnitButton)
+		{
+			boxColor(target, xPos, yPos, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, 0xFFFFFFFF);
+			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, 0xFFFFFFFF);
+			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0xFFFFFFFF);
+			boxColor(target, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0xFFFFFFFF);
+		}
+		else
+		{
+			boxColor(target, xPos, yPos, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, 0x000000FF);
+			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, 0x000000FF);
+			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0x000000FF);
+			boxColor(target, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0x000000FF);
+		}
+		unitButtons.setCurrentFrame(I);
+		unitButtons.setPosition(xPos + EDITOR_UNIT_BUTTON_BORDER, yPos + EDITOR_UNIT_BUTTON_BORDER);
+		unitButtons.render(target);
+		if (I == 3) // Last "player" index
+		{
+			I = 15; // First "unit" index - 1
+			xPos = EDITOR_UNIT_PANEL_SPACING;
+			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+			panelText.setPosition(xPos, yPos);
+			panelText.print(target, "UNITS:");
+			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+		}
+		else if (I == 29) // Last "unit" index
+		{
+			I = 47; // First "trigger" index - 1
+			xPos = EDITOR_UNIT_PANEL_SPACING;
+			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+			panelText.setPosition(xPos, yPos);
+			panelText.print(target, "TRIGGERS:");
+			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+		}
+		else if (I == 53) // Last "trigger" index
+		{
+			break;
+		}
+		else
+		{
+			xPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+			if (xPos > EDITOR_UNIT_PANEL_WIDTH - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_UNIT_PANEL_SPACING)
+			{
+				xPos = EDITOR_UNIT_PANEL_SPACING;
+				yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+			}
+		}
+		if (yPos > EDITOR_UNIT_PANEL_HEIGHT - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_UNIT_PANEL_SPACING)
+			break;
+	}
 }

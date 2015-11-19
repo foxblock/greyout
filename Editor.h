@@ -118,15 +118,14 @@ private:
 	int panelActiveSlider; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
 	int panelInputTarget; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
 	EditorPanel colourPanel;
-	void drawColourPanel(SDL_Surface *target);
 	bool drawUnits;
+	void drawColourPanel(SDL_Surface *target);
 	/// Units
-	struct UnitContainer
-	{
-		BaseUnit *unit;
-		SDL_Surface *img;
-	};
-	vector<UnitContainer> unitButtons;
+	EditorPanel unitPanel;
+	AnimatedSprite unitButtons;
+	int hoverUnitButton;
+	int selectedUnitButton;
+	void drawUnitPanel(SDL_Surface *target);
 };
 
 

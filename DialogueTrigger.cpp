@@ -32,7 +32,7 @@ DialogueTrigger::DialogueTrigger(Level* newParent) : BaseTrigger(newParent)
 	stringToProp["time"] = tpTime;
 	textKey = "";
 	time = 1000;
-	triggerCol = LIGHT_RED;
+	triggerCol = CYAN;
 }
 
 DialogueTrigger::~DialogueTrigger()
