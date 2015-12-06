@@ -1131,39 +1131,126 @@ void Editor::inputUnits()
 					case  1:
 						params.push_back(make_pair(CLASS_STRING, "white"));
 						break;
-					// case  2: panelText.print(target, "ORANGE PLAYER"); break;
-					// case  3: panelText.print(target, "BLUE PLAYER"); break;
-					// case 16: panelText.print(target, "PUSHABLE BOX"); break;
-					// case 17: panelText.print(target, "SOLID BOX"); break;
-					// case 18: panelText.print(target, "FADING BOX (B/W)"); break;
-					// case 19: panelText.print(target, "FADING BOX (ORANGE)"); break;
-					// case 20: panelText.print(target, "FADING BOX (BLUE)"); break;
-					// case 21: panelText.print(target, "FADING BOX (MIX)"); break;
+					case  2:
+						params.push_back(make_pair(CLASS_STRING, "black"));
+						params.push_back(make_pair("imageoverwrite", "images/player/orange_big.png"));
+						params.push_back(make_pair("collision", "black,0r51g255b,red"));
+						params.push_back(make_pair("colour", "255r153g0b"));
+						break;
+					case  3:
+						params.push_back(make_pair(CLASS_STRING, "black"));
+						params.push_back(make_pair("imageoverwrite", "images/player/blue_big.png"));
+						params.push_back(make_pair("collision", "black,255r153g0b,red"));
+						params.push_back(make_pair("colour", "0r51g255b"));
+						break;
+					case 16:
+						params.push_back(make_pair(CLASS_STRING, "pushablebox"));
+						break;
+					case 17:
+						params.push_back(make_pair(CLASS_STRING, "solidbox"));
+						break;
+					case 18: // fading (b/w)
+						params.push_back(make_pair(CLASS_STRING, "fadingbox"));
+						params.push_back(make_pair("colour", "black"));
+						params.push_back(make_pair("farcolour", "147r149g152b"));
+						params.push_back(make_pair("faderadius", "48,72"));
+						params.push_back(make_pair("fadesteps", "3"));
+						params.push_back(make_pair("collision", "black"));
+						break;
+					case 19: // fading (orange)
+						params.push_back(make_pair(CLASS_STRING, "fadingbox"));
+						params.push_back(make_pair("colour", "255r153g0b"));
+						params.push_back(make_pair("farcolour", "255r220g168b"));
+						params.push_back(make_pair("faderadius", "58,80"));
+						params.push_back(make_pair("fadesteps", "3"));
+						params.push_back(make_pair("collision", "black,255r153g0b"));
+						break;
+					case 20:  // fading (blue)
+						params.push_back(make_pair(CLASS_STRING, "fadingbox"));
+						params.push_back(make_pair("colour", "0r51g255b"));
+						params.push_back(make_pair("farcolour", "178r193g255b"));
+						params.push_back(make_pair("faderadius", "58,80"));
+						params.push_back(make_pair("fadesteps", "3"));
+						params.push_back(make_pair("collision", "black,0r51g255b"));
+						break;
+					case 21:  // fading (orange blue mix)
+						params.push_back(make_pair(CLASS_STRING, "fadingbox"));
+						params.push_back(make_pair("colour", "black"));
+						params.push_back(make_pair("farcolour", "216r206g212b"));
+						params.push_back(make_pair("faderadius", "58,80"));
+						params.push_back(make_pair("collision", "black,255r153g0b,0r51g255b"));
+						break;
 					case 22:
 						params.push_back(make_pair(CLASS_STRING, "exit"));
 						params.push_back(make_pair("collision", "black,white"));
 						break;
-					// case 23: panelText.print(target, "KEY"); break;
-					// case 24: panelText.print(target, "SWITCH"); break;
-					// case 25: panelText.print(target, "BLACK GEAR"); break;
-					// case 26: panelText.print(target, "WHITE GEAR"); break;
-					// case 27: panelText.print(target, "TEXT"); break;
-					// case 28: panelText.print(target, "PARTICLE EMITTER"); break;
-					// case 29: panelText.print(target, "CONTROL HELP"); break;
-					// case 48: panelText.print(target, "BASE TRIGGER"); break;
-					// case 49: panelText.print(target, "DIALOGUE TRIGGER"); break;
-					// case 50: panelText.print(target, "EXIT TRIGGER"); break;
-					// case 51: panelText.print(target, "SOUND TRIGGER"); break;
-					// case 52: panelText.print(target, "CAMERA TRIGGER"); break;
-					// case 53: panelText.print(target, "LEVEL TRIGGER"); break;
+					case 23:
+						params.push_back(make_pair(CLASS_STRING, "key"));
+						break;
+					case 24:
+						params.push_back(make_pair(CLASS_STRING, "switch"));
+						break;
+					case 25:
+						params.push_back(make_pair(CLASS_STRING, "gear"));
+						params.push_back(make_pair("colour", "black"));
+						break;
+					case 26:
+						params.push_back(make_pair(CLASS_STRING, "gear"));
+						params.push_back(make_pair("colour", "white"));
+						break;
+					case 27:
+						params.push_back(make_pair(CLASS_STRING, "text"));
+						params.push_back(make_pair("font", "fonts/lato.ttf"));
+						params.push_back(make_pair("text", "YOUR TEXT HERE"));
+						break;
+					case 28:
+						params.push_back(make_pair(CLASS_STRING, "emitter"));
+						params.push_back(make_pair("direction", "0.5,-1"));
+						params.push_back(make_pair("directionscatter", "20"));
+						params.push_back(make_pair("power", "8"));
+						params.push_back(make_pair("powerscatter", "4"));
+						params.push_back(make_pair("delay", "5"));
+						params.push_back(make_pair("delayscatter", "0"));
+						params.push_back(make_pair("lifetime", "1000"));
+						params.push_back(make_pair("collision", "black"));
+						params.push_back(make_pair("colour", "black"));
+						params.push_back(make_pair("multiplier", "10"));
+						break;
+					case 29:
+						params.push_back(make_pair(CLASS_STRING, "controlsprite"));
+						params.push_back(make_pair("startingstate", "jump"));
+						break;
+					case 48:
+						params.push_back(make_pair(CLASS_STRING, "basetrigger"));
+						break;
+					case 49:
+						params.push_back(make_pair(CLASS_STRING, "dialoguetrigger"));
+						params.push_back(make_pair("time", "5000"));
+						params.push_back(make_pair("textkey", "playground"));
+						break;
+					case 50:
+						params.push_back(make_pair(CLASS_STRING, "exittrigger"));
+						break;
+					case 51:
+						params.push_back(make_pair(CLASS_STRING, "soundtrigger"));
+						params.push_back(make_pair("file", "sounds/die.wav"));
+						break;
+					case 52:
+						params.push_back(make_pair(CLASS_STRING, "cameratrigger"));
+						params.push_back(make_pair("destination", "128,128"));
+						params.push_back(make_pair("time", "2000"));
+						break;
+					case 53:
+						params.push_back(make_pair(CLASS_STRING, "leveltrigger"));
+						params.push_back(make_pair("action", "gravity=0,0.5"));
+						break;
 					default:
 						params.clear();
 				}
 				if (!params.empty())
 				{
-					selectedUnitButton = hoverUnitButton;
 					params.push_back(make_pair("position",StringUtility::vecToString(mousePos + editorOffset)));
-					if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+					if (hoverUnitButton >= EDITOR_UNIT_PLAYER_START && hoverUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
 						currentUnit = LEVEL_LOADER->createPlayer(params, this, -1);
 					else
 						currentUnit = LEVEL_LOADER->createUnit(params, this, -1);
@@ -1171,8 +1258,11 @@ void Editor::inputUnits()
 				else
 				{
 					currentUnit = NULL;
-					selectedUnitButton = -1;
 				}
+				if (currentUnit)
+					selectedUnitButton = hoverUnitButton;
+				else
+					selectedUnitButton = -1;
 			}
 			if (input->isLeftClick())
 				unitPanel.userIsInteracting = true;
@@ -1205,6 +1295,7 @@ void Editor::inputUnits()
 				units.push_back(currentUnit);
 			currentUnit = NULL;
 			selectedUnitButton = -1;
+			unitPanel.changed = true;
 		}
 	}
 
