@@ -125,6 +125,8 @@ private:
 	AnimatedSprite unitButtons;
 	int hoverUnitButton;
 	int selectedUnitButton;
+	BaseUnit *currentUnit;
+	bool currentUnitPlaced;
 	void drawUnitPanel(SDL_Surface *target);
 };
 

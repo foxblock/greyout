@@ -159,6 +159,8 @@ Editor::Editor()
 	unitButtons.setTransparentColour(MAGENTA);
 	hoverUnitButton = -1;
 	selectedUnitButton = -1;
+	currentUnit = NULL;
+	currentUnitPlaced = false;
 }
 
 Editor::~Editor()
@@ -489,13 +491,16 @@ void Editor::inputDraw()
 			editorState = esSettings;
 			GFX::showCursor(true);
 			input->resetKeys();
+			return;
 		}
 		if (isAcceptKey(input))
 		{
 			panelActiveSlider = 0;
 			colourPanel.userIsInteracting = false;
 			editorState = esUnits;
+			GFX::showCursor(true);
 			input->resetKeys();
+			return;
 		}
 		if (input->isLeft())
 			editorOffset.x -= 2;
@@ -1035,6 +1040,7 @@ void Editor::inputUnits()
 		if (isCancelKey(input))
 		{
 			editorState = esDraw;
+			GFX::showCursor(false);
 			input->resetKeys();
 		}
 		if (input->isKey("u"))
@@ -1112,7 +1118,66 @@ void Editor::inputUnits()
 					break;
 				}
 			}
-			unitPanel.userIsInteracting = true;
+			if (input->isLeftClick() == SimpleJoy::sjPRESSED && hoverUnitButton != -1)
+			{
+				if (!currentUnitPlaced)
+					delete currentUnit;
+				list<PARAMETER_TYPE > params;
+				switch (hoverUnitButton)
+				{
+					case  0:
+						params.push_back(make_pair(CLASS_STRING, "black"));
+						break;
+					case  1:
+						params.push_back(make_pair(CLASS_STRING, "white"));
+						break;
+					// case  2: panelText.print(target, "ORANGE PLAYER"); break;
+					// case  3: panelText.print(target, "BLUE PLAYER"); break;
+					// case 16: panelText.print(target, "PUSHABLE BOX"); break;
+					// case 17: panelText.print(target, "SOLID BOX"); break;
+					// case 18: panelText.print(target, "FADING BOX (B/W)"); break;
+					// case 19: panelText.print(target, "FADING BOX (ORANGE)"); break;
+					// case 20: panelText.print(target, "FADING BOX (BLUE)"); break;
+					// case 21: panelText.print(target, "FADING BOX (MIX)"); break;
+					case 22:
+						params.push_back(make_pair(CLASS_STRING, "exit"));
+						params.push_back(make_pair("collision", "black,white"));
+						break;
+					// case 23: panelText.print(target, "KEY"); break;
+					// case 24: panelText.print(target, "SWITCH"); break;
+					// case 25: panelText.print(target, "BLACK GEAR"); break;
+					// case 26: panelText.print(target, "WHITE GEAR"); break;
+					// case 27: panelText.print(target, "TEXT"); break;
+					// case 28: panelText.print(target, "PARTICLE EMITTER"); break;
+					// case 29: panelText.print(target, "CONTROL HELP"); break;
+					// case 48: panelText.print(target, "BASE TRIGGER"); break;
+					// case 49: panelText.print(target, "DIALOGUE TRIGGER"); break;
+					// case 50: panelText.print(target, "EXIT TRIGGER"); break;
+					// case 51: panelText.print(target, "SOUND TRIGGER"); break;
+					// case 52: panelText.print(target, "CAMERA TRIGGER"); break;
+					// case 53: panelText.print(target, "LEVEL TRIGGER"); break;
+					default:
+						params.clear();
+				}
+				if (!params.empty())
+				{
+					selectedUnitButton = hoverUnitButton;
+					params.push_back(make_pair("position",StringUtility::vecToString(mousePos + editorOffset)));
+					if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+						currentUnit = LEVEL_LOADER->createPlayer(params, this, -1);
+					else
+						currentUnit = LEVEL_LOADER->createUnit(params, this, -1);
+				}
+				else
+				{
+					currentUnit = NULL;
+					selectedUnitButton = -1;
+				}
+			}
+			if (input->isLeftClick())
+				unitPanel.userIsInteracting = true;
+			else
+				unitPanel.userIsInteracting = false;
 			unitPanel.changed = true;
 			return; // Skip over rest of mouse handling
 		}
@@ -1128,10 +1193,22 @@ void Editor::inputUnits()
 		unitPanel.transparent = false;
 	}
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
-	// Code goes here
+	if (currentUnit)
+	{
+		currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
+		currentUnit->startingPosition = currentUnit->position;
+		if (input->isLeftClick())
+		{
+			if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+				players.push_back((ControlUnit*)currentUnit);
+			else
+				units.push_back(currentUnit);
+			currentUnit = NULL;
+			selectedUnitButton = -1;
+		}
+	}
 
-	if (input->isLeftClick() || input->isRightClick())
-		lastPos = mousePos;
+	lastPos = mousePos;
 }
 
 void Editor::inputTest()
@@ -1363,9 +1440,11 @@ void Editor::renderUnits()
 		for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
 			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
 	}
+	if (currentUnit)
+	{
+		renderUnit(GFX::getVideoSurface(), currentUnit, editorOffset);
+	}
 
-	dst.x = max(-editorOffset.x + 4, 0);
-	dst.y = max(-editorOffset.y + 4, 0);
 	if (unitPanel.active)
 	{
 		if (unitPanel.changed)
