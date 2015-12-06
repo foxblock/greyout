@@ -61,6 +61,7 @@
 #define EDITOR_SLIDER_HEIGHT 16
 #define EDITOR_SLIDER_WIDTH 128
 #define EDITOR_SLIDER_INDICATOR_WIDTH 2
+
 #define EDITOR_COLOUR_PANEL_WIDTH 212
 #define EDITOR_COLOUR_PANEL_HEIGHT 84
 #define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
@@ -72,6 +73,12 @@
 #define EDITOR_UNIT_BUTTON_SIZE 32
 #define EDITOR_UNIT_BUTTON_BORDER 4
 #define EDITOR_UNIT_BUTTONS_IMAGE "images/general/editor_buttons.png"
+#define EDITOR_UNIT_PLAYER_START 0
+#define EDITOR_UNIT_PLAYER_COUNT 4
+#define EDITOR_UNIT_UNITS_START 16
+#define EDITOR_UNIT_UNITS_COUNT 14
+#define EDITOR_UNIT_TRIGGER_START 48
+#define EDITOR_UNIT_TRIGGER_COUNT 6
 
 
 Editor::Editor()
@@ -1022,28 +1029,109 @@ void Editor::inputDraw()
 
 void Editor::inputUnits()
 {
-	if (isCancelKey(input))
+	/// Button handling
+	if (!input->isPollingKeyboard())
 	{
-		editorState = esDraw;
-		input->resetKeys();
+		if (isCancelKey(input))
+		{
+			editorState = esDraw;
+			input->resetKeys();
+		}
+		if (input->isKey("u"))
+		{
+			drawUnits = !drawUnits;
+			input->resetKeys();
+		}
+		if (input->isKey("g"))
+		{
+			gridActive = !gridActive;
+			input->resetKeys();
+		}
+		if (input->isKey("F7") && !unitPanel.userIsInteracting)
+		{
+			unitPanel.active = !unitPanel.active;
+			if (unitPanel.active)
+				drawUnitPanel(unitPanel.surf);
+			input->resetKeys();
+		}
 	}
-	if (input->isKey("u"))
+	else
 	{
-		drawUnits = !drawUnits;
-		input->resetKeys();
+		return; // Skip over mouse handling entirely
 	}
-	if (input->isKey("g"))
+	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
+	mousePos = input->getMouse();
+	/// Panel interaction
+	if (unitPanel.active && (unitPanel.userIsInteracting || mousePos.inRect(unitPanel.pos.x, unitPanel.pos.y, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT)))
 	{
-		gridActive = !gridActive;
-		input->resetKeys();
+		// Make transparent if user is drawing/cropping over panel, else show cursor
+		if ((input->isLeftClick() == SimpleJoy::sjHELD || input->isRightClick() == SimpleJoy::sjHELD) && !unitPanel.userIsInteracting)
+		{
+			SDL_SetAlpha(unitPanel.surf, SDL_SRCALPHA, 128);
+			unitPanel.transparent = true;
+		}
+		if (!unitPanel.transparent && (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())) // user is actually interacting with the panel contents
+		{
+			Vector2di backupPos = mousePos;
+			backupPos -= unitPanel.pos;
+			hoverUnitButton = -1; // Reset selection
+			float columns = EDITOR_UNIT_PANEL_WIDTH / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING);
+			for (int I = 0; I <= 2; ++I) // Go through categories (players, units, triggers)
+			{
+				int tempCount = 0;
+				int tempOffset = 0;
+				switch (I)
+				{
+					case 0: // Offset by selected unit text and "Players:" label
+						backupPos.y -= (EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING) * 2;
+						tempCount = EDITOR_UNIT_PLAYER_COUNT;
+						tempOffset = EDITOR_UNIT_PLAYER_START;
+						break;
+					case 1: // Offset by player buttons and "units" label
+						backupPos.y -= ceil(EDITOR_UNIT_PLAYER_COUNT / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING);
+						tempCount = EDITOR_UNIT_UNITS_COUNT;
+						tempOffset = EDITOR_UNIT_UNITS_START;
+						break;
+					case 2: // Offset by unit buttons and "triggers" label
+						backupPos.y -= ceil(EDITOR_UNIT_UNITS_COUNT / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING);
+						tempCount = EDITOR_UNIT_TRIGGER_COUNT;
+						tempOffset = EDITOR_UNIT_TRIGGER_START;
+						break;
+				}
+				if (backupPos.y < 0)
+				{
+					break; // outside of any buttons
+				}
+				else if (backupPos.y < ceil(tempCount / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING))
+				{
+					backupPos.x -= EDITOR_UNIT_PANEL_SPACING; // Button x offset
+					int x = backupPos.x / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING);
+					int y = backupPos.y / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING);
+					if (x < columns && y * columns + x < tempCount)
+						hoverUnitButton = tempOffset + y * columns + x;
+					break;
+				}
+			}
+			unitPanel.userIsInteracting = true;
+			unitPanel.changed = true;
+			return; // Skip over rest of mouse handling
+		}
+		else
+		{
+			unitPanel.userIsInteracting = false;
+		}
 	}
-	if (input->isKey("F7") && !unitPanel.userIsInteracting)
+	// Reset panel transparency
+	if (unitPanel.active && unitPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(unitPanel.pos.x, unitPanel.pos.y, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT)))
 	{
-		unitPanel.active = !unitPanel.active;
-		if (unitPanel.active)
-			drawUnitPanel(unitPanel.surf);
-		input->resetKeys();
+		SDL_SetAlpha(unitPanel.surf, 0, 255);
+		unitPanel.transparent = false;
 	}
+	/// Drawing area interaction (might be skipped if user is interacting with any panel)
+	// Code goes here
+
+	if (input->isLeftClick() || input->isRightClick())
+		lastPos = mousePos;
 }
 
 void Editor::inputTest()
@@ -1282,7 +1370,7 @@ void Editor::renderUnits()
 	{
 		if (unitPanel.changed)
 		{
-			drawColourPanel(unitPanel.surf);
+			drawUnitPanel(unitPanel.surf);
 			unitPanel.changed = false;
 		}
 		SDL_Rect temp = {unitPanel.pos.x, unitPanel.pos.y, 0, 0};
@@ -1298,6 +1386,7 @@ void Editor::renderTest()
 void Editor::drawColourPanel(SDL_Surface *target)
 {
 	bg.render(target);
+	// Draw primary and secondary colour panel
 	int xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT / 2;
 	int yPos = EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 1.25f;
 	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, brushCol2.getRGBAvalue());
@@ -1306,6 +1395,7 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, brushCol.getRGBAvalue());
     xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
 	yPos = EDITOR_COLOUR_PANEL_SPACING;
+	// Draw sliders
 	int indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.red / 255;
     panelText.setAlignment(LEFT_JUSTIFIED);
     panelText.setUpBoundary(GFX::getXResolution(), GFX::getYResolution());
@@ -1363,6 +1453,7 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	}
 	else
 		panelText.print(target, brushCol.blue);
+	// Draw colour presets
 	xPos = EDITOR_COLOUR_PANEL_SPACING;
     yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
@@ -1453,25 +1544,25 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 		unitButtons.setCurrentFrame(I);
 		unitButtons.setPosition(xPos + EDITOR_UNIT_BUTTON_BORDER, yPos + EDITOR_UNIT_BUTTON_BORDER);
 		unitButtons.render(target);
-		if (I == 3) // Last "player" index
+		if (I == EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT - 1) // Last "player" index
 		{
-			I = 15; // First "unit" index - 1
+			I = EDITOR_UNIT_UNITS_START - 1;
 			xPos = EDITOR_UNIT_PANEL_SPACING;
 			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
 			panelText.setPosition(xPos, yPos);
 			panelText.print(target, "UNITS:");
 			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
 		}
-		else if (I == 29) // Last "unit" index
+		else if (I == EDITOR_UNIT_UNITS_START + EDITOR_UNIT_UNITS_COUNT - 1) // Last "unit" index
 		{
-			I = 47; // First "trigger" index - 1
+			I = EDITOR_UNIT_TRIGGER_START - 1; // First "trigger" index - 1
 			xPos = EDITOR_UNIT_PANEL_SPACING;
 			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
 			panelText.setPosition(xPos, yPos);
 			panelText.print(target, "TRIGGERS:");
 			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
 		}
-		else if (I == 53) // Last "trigger" index
+		else if (I == EDITOR_UNIT_TRIGGER_START + EDITOR_UNIT_TRIGGER_COUNT - 1) // Last "trigger" index
 		{
 			break;
 		}
