@@ -1040,6 +1040,9 @@ void Editor::inputUnits()
 		if (isCancelKey(input))
 		{
 			editorState = esDraw;
+			if (currentUnit && !currentUnitPlaced)
+				delete currentUnit;
+			currentUnit = NULL;
 			GFX::showCursor(false);
 			input->resetKeys();
 		}
@@ -1121,7 +1124,10 @@ void Editor::inputUnits()
 			if (input->isLeftClick() == SimpleJoy::sjPRESSED && hoverUnitButton != -1)
 			{
 				if (!currentUnitPlaced)
+				{
 					delete currentUnit;
+					currentUnit = NULL;
+				}
 				list<PARAMETER_TYPE > params;
 				switch (hoverUnitButton)
 				{
@@ -1255,12 +1261,11 @@ void Editor::inputUnits()
 					else
 						currentUnit = LEVEL_LOADER->createUnit(params, this, -1);
 				}
-				else
-				{
-					currentUnit = NULL;
-				}
 				if (currentUnit)
+				{
 					selectedUnitButton = hoverUnitButton;
+					currentUnitPlaced = false;
+				}
 				else
 					selectedUnitButton = -1;
 			}
@@ -1285,6 +1290,7 @@ void Editor::inputUnits()
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	if (currentUnit)
 	{
+		// Place selected unit (either new or old)
 		currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
 		currentUnit->startingPosition = currentUnit->position;
 		if (input->isLeftClick())
@@ -1296,6 +1302,44 @@ void Editor::inputUnits()
 			currentUnit = NULL;
 			selectedUnitButton = -1;
 			unitPanel.changed = true;
+			input->resetMouseButtons();
+		}
+	}
+	else
+	{
+		// Select already placed unit
+		if (input->isLeftClick())
+		{
+			Vector2df pos = mousePos + editorOffset;
+			for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+			{
+				if (pos.inRect((*I)->getRect()))
+				{
+					// If clicking on two overlapping units, always select smaller one
+					if (currentUnit && currentUnit->getWidth() * currentUnit->getHeight() > (*I)->getWidth() * (*I)->getHeight())
+					{
+                        currentUnit = *I;
+					}
+					if (!currentUnit)
+						currentUnit = *I;
+				}
+			}
+			for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+			{
+				if (pos.inRect((*I)->getRect()))
+				{
+					// If clicking on two overlapping units, always select smaller one
+					if (currentUnit && currentUnit->getWidth() * currentUnit->getHeight() > (*I)->getWidth() * (*I)->getHeight())
+					{
+                        currentUnit = *I;
+					}
+					if (!currentUnit)
+						currentUnit = *I;
+				}
+			}
+			if (currentUnit)
+				currentUnitPlaced = true;
+			input->resetMouseButtons();
 		}
 	}
 
@@ -1534,6 +1578,11 @@ void Editor::renderUnits()
 	if (currentUnit)
 	{
 		renderUnit(GFX::getVideoSurface(), currentUnit, editorOffset);
+		Vector2df temp = currentUnit->position - editorOffset;
+		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y - 1, 0x32D936FF);
+		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y + currentUnit->getHeight(), 0x32D936FF);
+		vlineColor(GFX::getVideoSurface(), temp.x - 1, temp.y, temp.y + currentUnit->getHeight() - 1, 0x32D936FF);
+		vlineColor(GFX::getVideoSurface(), temp.x + currentUnit->getWidth(), temp.y, temp.y + currentUnit->getHeight() - 1, 0x32D936FF);
 	}
 
 	if (unitPanel.active)

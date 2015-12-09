@@ -70,6 +70,9 @@
 // DONE: Fix selection when going back in settings menu (will always be 0, add check for mouse)
 // DONE: Make random time on orders random every time (currently set once, then never parsed again, THANKS optimised system!)
 // TODO: Cheats in the main menu (to unlock all levels), simple combinations of direction buttons then one to confirm
+// TODO: Fix mouse input on level select screen being slightly off center (by half of the spacing) in the x-direction
+// TODO: Coherent menu navigation (same accept/back buttons across the whole game)
+// TODO: Fix pressing "ENTER" to confirm "exit" command in pause menu closes the menu, but does not exit level. Level is exit instead when pausing again.
 
 // TODO: Level with three levels: black in lower level, one pit with spikes, a few black boxes on upper level, white in second level with white box to form shaft for the boxes
 // TODO: Checkerboard level with fading blocks, a few keep colour, a few fade to red (tried that, kinda failed...)
