@@ -37,6 +37,8 @@ BaseTrigger::BaseTrigger( Level *newParent ) : BaseUnit( newParent )
 	stringToProp["autoreenable"] = bpAutoReEnable;
 	size.x = 32;
 	size.y = 32;
+	screenPosition.x = 0;
+	screenPosition.y = 0;
 	collisionColours.insert(Colour(BLACK).getIntColour());
 	collisionColours.insert(Colour(WHITE).getIntColour());
 	flags.addFlag(ufNoMapCollision);
@@ -151,6 +153,12 @@ void BaseTrigger::update()
 	BaseUnit::update();
 }
 
+void BaseTrigger::updateScreenPosition(const Vector2di& offset)
+{
+	screenPosition.x = position.x - offset.x;
+	screenPosition.y = position.y - offset.y;
+}
+
 void BaseTrigger::render( SDL_Surface *surf )
 {
 #ifdef _DEBUG
@@ -158,8 +166,8 @@ void BaseTrigger::render( SDL_Surface *surf )
 	Colour tempC = triggerCol;
 	if ( !enabled )
 		tempC = tempC - 64;
-	temp.x = position.x;
-	temp.y = position.y;
+	temp.x = screenPosition.x;
+	temp.y = screenPosition.y;
 	temp.w = size.x;
 	temp.h = 1;
 	SDL_FillRect( surf, &temp, tempC.getSDL_Uint32Colour( surf ) );

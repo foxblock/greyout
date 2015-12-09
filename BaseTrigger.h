@@ -38,6 +38,7 @@ public:
 	virtual void reset();
 
 	virtual void update();
+	virtual void updateScreenPosition(const Vector2di& offset);
 	virtual void render(SDL_Surface* surf);
 
 	virtual void hitUnit(const UnitCollisionEntry& entry);
@@ -56,6 +57,7 @@ protected:
 	virtual void doTrigger(const UnitCollisionEntry& entry);
 
 	Vector2di size;
+	Vector2di screenPosition;
 	Colour triggerCol;
 	vector<BaseUnit*> targets;
 	vector<string> targetIDs;

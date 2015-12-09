@@ -428,7 +428,7 @@ int BaseUnit::getHeight() const
 	if (currentSprite)
 		return currentSprite->getHeight();
 	else
-		return -1;
+		return 0;
 }
 
 int BaseUnit::getWidth() const
@@ -436,7 +436,7 @@ int BaseUnit::getWidth() const
 	if (currentSprite)
 		return currentSprite->getWidth();
 	else
-		return -1;
+		return 0;
 }
 
 Vector2di BaseUnit::getSize() const
