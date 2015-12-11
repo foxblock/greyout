@@ -128,6 +128,8 @@ private:
 	BaseUnit *currentUnit;
 	bool currentUnitPlaced;
 	void drawUnitPanel(SDL_Surface *target);
+	EditorPanel paramsPanel;
+	void drawParamsPanel(SDL_Surface *target);
 };
 
 

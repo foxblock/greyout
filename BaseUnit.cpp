@@ -382,6 +382,56 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void BaseUnit::generateParameters()
+{
+	parameters.erase(++parameters.begin(), parameters.end()); // Keep class param
+	if (startingState[0] != 0)
+		parameters.push_back(make_pair("startingstate", startingState));
+	parameters.push_back(make_pair("position", StringUtility::vecToString(position)));
+	if (velocity.x != 0 && velocity.y != 0)
+		parameters.push_back(make_pair("velocity", StringUtility::vecToString(velocity)));
+	if (!flags.empty())
+	{
+		// Parse flags
+	}
+	if (!collisionColours.empty())
+	{
+		string temp = "";
+		for (set<int>::iterator I = collisionColours.begin(); I != collisionColours.end(); ++I)
+			temp += StringUtility::intToString(*I) + ",";
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("collision", temp));
+	}
+	if (imageOverwrite[0] != 0)
+		parameters.push_back(make_pair("imageoverwrite", imageOverwrite));
+	if (tiles.x != 0 && tiles.y != 0)
+		parameters.push_back(make_pair("tiles", StringUtility::vecToString(tiles)));
+	if (framerate != 0)
+		parameters.push_back(make_pair("framerate", StringUtility::intToString(framerate)));
+	if (loops != 0)
+		parameters.push_back(make_pair("loops", StringUtility::intToString(loops)));
+	if (transCol != MAGENTA)
+		parameters.push_back(make_pair("transparentcolour", colourToString(transCol)));
+	parameters.push_back(make_pair("colour", colourToString(col)));
+	if (collisionInfo.squashThreshold > 0)
+		parameters.push_back(make_pair("health", StringUtility::intToString(collisionInfo.squashThreshold)));
+	parameters.push_back(make_pair("id", id));
+	if (!orderList.empty())
+	{
+		// Parse orders
+	}
+	switch (unitCollisionMode)
+	{
+		case 0: parameters.push_back(make_pair("collisionmode", "never")); break;
+		case 1: parameters.push_back(make_pair("collisionmode", "always")); break;
+		case 2: parameters.push_back(make_pair("collisionmode", "colour")); break;
+	}
+	if (!stateParams.empty())
+	{
+		// Parse states
+	}
+}
+
 void BaseUnit::reset()
 {
 	velocity = Vector2df(0,0);
@@ -765,6 +815,11 @@ bool BaseUnit::pIsRandomTime(CRstring input, int &output)
 	else
 		output = 0;
 	return true;
+}
+
+string BaseUnit::colourToString(const Colour &cols)
+{
+	return StringUtility::intToString(cols.red) + "r" + StringUtility::intToString(cols.green) + "g" + StringUtility::intToString(cols.blue) + "b";
 }
 
 

@@ -67,6 +67,9 @@ public:
 	// this function can be overwritten in child classes to allow for custom data fiels
 	// return true if the data has been successfully processed, false otherwise
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	// generate parameters from current variables (position, size, colour, etc.)
+	// and store it in the parameters variable
+	virtual void generateParameters();
 
 	// resets the unit to its initial state (right after loading)
 	virtual void reset();
@@ -167,6 +170,7 @@ protected:
 	static bool pLoadUintIDs( CRstring input, vector<string> &output );
 	static bool pLoadTime( CRstring input, int &output );
 	static bool pIsRandomTime(CRstring input, int &output);
+	static string colourToString(const Colour &cols);
 
 	// basically just a lazy way of writing position += velocity
 	virtual void move();

@@ -80,6 +80,9 @@
 #define EDITOR_UNIT_TRIGGER_START 48
 #define EDITOR_UNIT_TRIGGER_COUNT 6
 
+#define EDITOR_PARAMS_PANEL_WIDTH 200
+#define EDITOR_PARAMS_PANEL_HEIGHT 300
+#define EDITOR_PARAMS_SPACING 4
 
 Editor::Editor()
 {
@@ -141,7 +144,7 @@ Editor::Editor()
 	panelInputTarget = 0;
 	colourPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	colourPanel.pos.x = GFX::getXResolution() - EDITOR_COLOUR_PANEL_WIDTH;
-	colourPanel.pos.y = GFX::getYResolution() / 2;
+	colourPanel.pos.y = GFX::getYResolution() - EDITOR_COLOUR_PANEL_HEIGHT;
 	colourPanel.active = false;
 	colourPanel.transparent = false;
 	colourPanel.userIsInteracting = false;
@@ -161,6 +164,13 @@ Editor::Editor()
 	selectedUnitButton = -1;
 	currentUnit = NULL;
 	currentUnitPlaced = false;
+	paramsPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	paramsPanel.pos.x = GFX::getXResolution() - EDITOR_PARAMS_PANEL_WIDTH;
+	paramsPanel.pos.y = 0;
+	paramsPanel.active = false;
+	paramsPanel.transparent = false;
+	paramsPanel.userIsInteracting = false;
+	paramsPanel.changed = false;
 }
 
 Editor::~Editor()
@@ -1046,14 +1056,21 @@ void Editor::inputUnits()
 			GFX::showCursor(false);
 			input->resetKeys();
 		}
-		if (input->isKey("u"))
-		{
-			drawUnits = !drawUnits;
-			input->resetKeys();
-		}
 		if (input->isKey("g"))
 		{
 			gridActive = !gridActive;
+			input->resetKeys();
+		}
+		if (input->isKey("p"))
+		{
+			paramsPanel.active = !paramsPanel.active;
+			if (paramsPanel.active)
+				drawParamsPanel(paramsPanel.surf);
+			input->resetKeys();
+		}
+		if (input->isKey("u"))
+		{
+			drawUnits = !drawUnits;
 			input->resetKeys();
 		}
 		if (input->isKey("F7") && !unitPanel.userIsInteracting)
@@ -1295,10 +1312,13 @@ void Editor::inputUnits()
 		currentUnit->startingPosition = currentUnit->position;
 		if (input->isLeftClick())
 		{
-			if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
-				players.push_back((ControlUnit*)currentUnit);
-			else
-				units.push_back(currentUnit);
+			if (!currentUnitPlaced)
+			{
+				if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+					players.push_back((ControlUnit*)currentUnit);
+				else
+					units.push_back(currentUnit);
+			}
 			currentUnit = NULL;
 			selectedUnitButton = -1;
 			unitPanel.changed = true;
@@ -1338,7 +1358,12 @@ void Editor::inputUnits()
 				}
 			}
 			if (currentUnit)
+			{
 				currentUnitPlaced = true;
+				currentUnit->generateParameters();
+				if (paramsPanel.active)
+					paramsPanel.changed = true;
+			}
 			input->resetMouseButtons();
 		}
 	}
@@ -1595,6 +1620,16 @@ void Editor::renderUnits()
 		SDL_Rect temp = {unitPanel.pos.x, unitPanel.pos.y, 0, 0};
 		SDL_BlitSurface(unitPanel.surf, NULL, GFX::getVideoSurface(), &temp);
 	}
+	if (paramsPanel.active)
+	{
+		if (paramsPanel.changed)
+		{
+			drawParamsPanel(paramsPanel.surf);
+			paramsPanel.changed = false;
+		}
+		SDL_Rect temp = {paramsPanel.pos.x, paramsPanel.pos.y, 0, 0};
+		SDL_BlitSurface(paramsPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+	}
 }
 
 void Editor::renderTest()
@@ -1797,4 +1832,19 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 		if (yPos > EDITOR_UNIT_PANEL_HEIGHT - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_UNIT_PANEL_SPACING)
 			break;
 	}
+}
+
+void Editor::drawParamsPanel(SDL_Surface* target)
+{
+	bg.render(target);
+	if (!currentUnit)
+		return;
+	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2);
+	panelText.setWrapping(true);
+	panelText.setAlignment(LEFT_JUSTIFIED);
+	panelText.setPosition(EDITOR_PARAMS_SPACING, EDITOR_PARAMS_SPACING);
+	string temp;
+	for (list<PARAMETER_TYPE >::iterator I = currentUnit->parameters.begin(); I != currentUnit->parameters.end(); ++I)
+		temp += I->first + VALUE_STRING + I->second + "\n";
+	panelText.print(target, temp);
 }

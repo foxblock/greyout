@@ -38,6 +38,7 @@ public:
 	int flags;
 
 	void clear() {flags = 0;}
+	bool empty() {return (flags == 0);}
 
 	/// All of the following functions also work with multiple (combined) flags passed as "var"
 	// Checks whether the passed flag is in flags
