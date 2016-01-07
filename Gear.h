@@ -45,15 +45,18 @@ public:
 protected:
 	virtual bool processOrder(Order& next);
 
+	virtual string generateParameterOrders(Order o);
+
 	enum GearProp
 	{
 		gpSpeed=BaseUnit::upEOL,
-		gpRotation,
+		gpAngle,
 		gpEOL
 	};
 	enum GearOder
 	{
-		goRotation=BaseUnit::okEOL,
+		goRotateTo=BaseUnit::okEOL,
+		goRotateBy,
 		goEOL
 	};
 

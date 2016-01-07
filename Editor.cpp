@@ -1310,6 +1310,9 @@ void Editor::inputUnits()
 		// Place selected unit (either new or old)
 		currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
 		currentUnit->startingPosition = currentUnit->position;
+		currentUnit->generateParameters();
+		if (paramsPanel.active)
+			paramsPanel.changed = true;
 		if (input->isLeftClick())
 		{
 			if (!currentUnitPlaced)
@@ -1330,6 +1333,7 @@ void Editor::inputUnits()
 		// Select already placed unit
 		if (input->isLeftClick())
 		{
+			// Find and select unit under cursor
 			Vector2df pos = mousePos + editorOffset;
 			for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
 			{

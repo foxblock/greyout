@@ -67,6 +67,8 @@ class PushableBox : public BaseUnit
 		virtual bool processOrder(Order& next);
 		virtual bool updateOrder(const Order& curr);
 
+		virtual string generateParameterOrders(Order o);
+
 		virtual void move();
 
 		Vector2df sizeTimer; // incremental step for size orders

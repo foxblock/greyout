@@ -27,9 +27,13 @@
 Gear::Gear(Level* newParent) : BaseUnit(newParent)
 {
 	stringToProp["speed"] = gpSpeed;
-	stringToProp["rotation"] = gpRotation;
+	stringToProp["angle"] = gpAngle;
 
-	stringToOrder["rotation"] = goRotation;
+	stringToOrder["rotateto"] = goRotateTo;
+	stringToOrder["rotateby"] = goRotateBy;
+
+	orderToString[goRotateTo] = "rotateto";
+	orderToString[goRotateBy] = "rotateby";
 
 	speed = 0;
 	angle = 0;
@@ -88,7 +92,7 @@ bool Gear::processParameter(const PARAMETER_TYPE& value)
 		speed = StringUtility::stringToFloat(value.second);
 		break;
 	}
-	case gpRotation:
+	case gpAngle:
 	{
 		angle = StringUtility::stringToFloat(value.second);
 		break;
@@ -145,7 +149,7 @@ bool Gear::processOrder(Order& next)
 		speed = 0;
 		break;
 	}
-	case goRotation:
+	case goRotateTo:
 	{
 		if (next.params.size() < 2)
 		{
@@ -156,6 +160,19 @@ bool Gear::processOrder(Order& next)
 			return false;
 		}
 		speed = (StringUtility::stringToFloat(next.params[1]) - angle) / next.ticks;
+		break;
+	}
+	case goRotateBy:
+	{
+		if (next.params.size() < 2)
+		{
+			string temp = StringUtility::combine(next.params, DELIMIT_STRING);
+			printf("ERROR: Bad order parameter \"%s\"in order #%i on unit id \"%s\"\n", temp.c_str(), currentOrder, id.c_str());
+			orderList.erase(orderList.begin() + currentOrder);
+			orderTimer = 1; // process next order in next cycle
+			return false;
+		}
+		speed = (StringUtility::stringToFloat(next.params[1])) / next.ticks;
 		break;
 	}
 	default:
@@ -170,6 +187,23 @@ bool Gear::processOrder(Order& next)
 		orderRunning = true;
 	}
 	return parsed;
+}
+
+string Gear::generateParameterOrders(Order o)
+{
+	if (o.key != goRotateBy && o.key != goRotateTo)
+		return BaseUnit::generateParameterOrders(o);
+	// Key
+	string result = orderToString[o.key];
+	// Time
+	if (o.randomTicks > 0)
+		result += StringUtility::intToString(o.randomTicks) + "r";
+	else
+		result += StringUtility::intToString(o.ticks) + "f";
+	// Parameters
+	for (vector<string>::iterator I = o.params.begin(); I != o.params.end(); ++I)
+		result += "," + *I;
+	return result;
 }
 
 ///---private---

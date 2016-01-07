@@ -35,6 +35,7 @@
 map<string,int> BaseUnit::stringToFlag;
 map<string,int> BaseUnit::stringToProp;
 map<string,int> BaseUnit::stringToOrder;
+map<int,string> BaseUnit::orderToString;
 
 BaseUnit::BaseUnit(Level* newParent)
 {
@@ -82,6 +83,17 @@ BaseUnit::BaseUnit(Level* newParent)
 	stringToOrder["parameter"] = okParameter;
 	stringToOrder["sound"] = okSound;
 	stringToOrder["state"] = okState;
+
+	orderToString[okIdle] = "idle";
+	orderToString[okPosition] = "position";
+	orderToString[okRepeat] = "repeat";
+	orderToString[okColour] = "colour";
+	orderToString[okExplode] = "explode";
+	orderToString[okRemove] = "remove";
+	orderToString[okIncrement] = "increment";
+	orderToString[okParameter] = "parameter";
+	orderToString[okSound] = "sound";
+	orderToString[okState] = "state";
 
 	currentSprite = NULL;
 	position = Vector2df(0.0f,0.0f);
@@ -313,19 +325,21 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		if (params.size() < 2)
 		{
 			Order temp;
+			// Order key gets checked in processOrder at runtime, since child classes might provide implementation
 			temp.key = stringToOrder[params.front()];
 			temp.ticks = 1;
-			temp.randomTicks = -1;
+			temp.randomTicks = 0;
 			orderList.push_back(temp);
 		}
 		else
 		{
 			Order temp;
+			temp.key = stringToOrder[params.front()];
 			pLoadTime(params[1], temp.ticks);
 			if (temp.ticks <= 0)
 				temp.ticks = 1;
-			pIsRandomTime(params[1], temp.randomTicks);
-			temp.key = stringToOrder[params.front()];
+			// Read reference time value for random ticks (if ticks are not set to random, it will be set to 0)
+			pLoadRandomTime(params[1], temp.randomTicks);
 			temp.params.insert(temp.params.begin(), params.begin()+1, params.end());
 			orderList.push_back(temp);
 		}
@@ -392,7 +406,7 @@ void BaseUnit::generateParameters()
 		parameters.push_back(make_pair("velocity", StringUtility::vecToString(velocity)));
 	if (!flags.empty())
 	{
-		// Parse flags
+		parameters.push_back(make_pair("flags", generateParameterFlags()));
 	}
 	if (!collisionColours.empty())
 	{
@@ -404,9 +418,9 @@ void BaseUnit::generateParameters()
 	}
 	if (imageOverwrite[0] != 0)
 		parameters.push_back(make_pair("imageoverwrite", imageOverwrite));
-	if (tiles.x != 0 && tiles.y != 0)
+	if (tiles.x != 1 && tiles.y != 1)
 		parameters.push_back(make_pair("tiles", StringUtility::vecToString(tiles)));
-	if (framerate != 0)
+	if (framerate != 10)
 		parameters.push_back(make_pair("framerate", StringUtility::intToString(framerate)));
 	if (loops != 0)
 		parameters.push_back(make_pair("loops", StringUtility::intToString(loops)));
@@ -418,7 +432,10 @@ void BaseUnit::generateParameters()
 	parameters.push_back(make_pair("id", id));
 	if (!orderList.empty())
 	{
-		// Parse orders
+		for (vector<Order>::iterator I = orderList.begin(); I != orderList.end(); ++I)
+		{
+			parameters.push_back(make_pair("order", generateParameterOrders(*I)));
+		}
 	}
 	switch (unitCollisionMode)
 	{
@@ -428,7 +445,18 @@ void BaseUnit::generateParameters()
 	}
 	if (!stateParams.empty())
 	{
-		// Parse states
+		string temp = "";
+		for (vector<State>::iterator I = stateParams.begin(); I != stateParams.end(); ++I)
+		{
+			temp = I->name + "," + StringUtility::intToString(I->start) + "," +StringUtility::intToString(I->length) + "," + StringUtility::intToString(I->fps) + "," +StringUtility::intToString(I->loops) + ",";
+			switch (I->mode)
+			{
+				case pmReverse: temp += "reverse"; break;
+				case pmPulse: temp += "pulse"; break;
+				default: temp += "normal";
+			}
+			parameters.push_back(make_pair("state", temp));
+		}
 	}
 }
 
@@ -808,7 +836,7 @@ bool BaseUnit::pLoadTime(CRstring input, int& output)
 	return true;
 }
 
-bool BaseUnit::pIsRandomTime(CRstring input, int &output)
+bool BaseUnit::pLoadRandomTime(CRstring input, int &output)
 {
 	if (input[input.length()-1] == 'r')
 		output = StringUtility::stringToInt(input.substr(0,input.length()-1));
@@ -1031,4 +1059,43 @@ bool BaseUnit::finishOrder(const Order& curr)
 	}
 
 	return parsed;
+}
+
+string BaseUnit::generateParameterFlags()
+{
+	string result = "";
+	if (flags.hasFlag(ufNoMapCollision)) result += "nomapcollision,";
+	if (flags.hasFlag(ufNoUnitCollision)) result += "nounitcollision,";
+	if (flags.hasFlag(ufNoGravity)) result += "nogravity,";
+	if (flags.hasFlag(ufInvincible)) result += "invincible,";
+	if (flags.hasFlag(ufMissionObjective)) result += "missionobjective,";
+	if (flags.hasFlag(ufNoUpdate)) result += "noupdate,";
+	if (flags.hasFlag(ufNoRender)) result += "norender,";
+	if (flags.hasFlag(ufDisregardBoundaries)) result += "disregardboundaries,";
+	if (flags.hasFlag(ufAlwaysOnTop)) result += "alwaysontop,";
+	result.erase(result.length()-1);
+	return result;
+}
+
+string BaseUnit::generateParameterOrders(Order o)
+{
+	// Key
+	string result = orderToString[o.key];
+	if (o.key == okRepeat || o.key == okRemove || o.key == okExplode)
+		return result;
+	// Time
+	if (o.key == okIdle || o.key == okPosition || o.key == okColour || o.key == okIncrement)
+	{
+		if (o.randomTicks > 0)
+			result += StringUtility::intToString(o.randomTicks) + "r";
+		else
+			result += StringUtility::intToString(o.ticks) + "f";
+	}
+	// Parameters
+	if (o.key == okPosition || o.key == okColour || o.key == okIncrement || o.key == okParameter || o.key == okSound || o.key == okState)
+	{
+		for (vector<string>::iterator I = o.params.begin(); I != o.params.end(); ++I)
+			result += "," + *I;
+	}
+	return result;
 }

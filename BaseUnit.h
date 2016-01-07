@@ -169,7 +169,7 @@ protected:
 	static bool pLoadColour( CRstring input, Colour &output );
 	static bool pLoadUintIDs( CRstring input, vector<string> &output );
 	static bool pLoadTime( CRstring input, int &output );
-	static bool pIsRandomTime(CRstring input, int &output);
+	static bool pLoadRandomTime(CRstring input, int &output);
 	static string colourToString(const Colour &cols);
 
 	// basically just a lazy way of writing position += velocity
@@ -223,8 +223,8 @@ protected:
 	struct Order
 	{
 		int key;
-		int ticks;
-		int randomTicks;
+		int ticks; // The actual duration this order is executed for (in game frames)
+		int randomTicks; // Reference value for random ticks (see BaseUnit::processOrder)
 		vector<string> params; // consists of several items, mostly time and something like position, speed, etc.
 	};
 	enum OrderKey
@@ -251,10 +251,14 @@ protected:
 	// Lesson: Don't use frame-based movement in your games, if you can avoid it
 	virtual bool finishOrder(const Order& curr);
 	static map<string,int> stringToOrder;
+	static map<int,string> orderToString;
 	vector<Order> orderList;
 	int currentOrder;
 	int orderTimer;
 	bool initOrders;
+
+	virtual string generateParameterFlags();
+	virtual string generateParameterOrders(Order o);
 
 	Vector3df tempColour;
 	Vector3df tempColourChange;

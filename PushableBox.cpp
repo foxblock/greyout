@@ -50,6 +50,8 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 	//pushSound.setSimultaneousPlay(true);
 
 	stringToOrder["size"] = boSize;
+
+	orderToString[boSize] = "size";
 }
 
 PushableBox::~PushableBox()
@@ -134,9 +136,9 @@ void PushableBox::update()
 		isBeingPushed = false; // stop sound if box not actually moving
 	if (isBeingPushed == false && pushSound.isPlaying())
 		pushSound.pause();
-	// stop sound on next frame if not being pushed 
+	// stop sound on next frame if not being pushed
 	// if box is being pushed hitUnit will be called and this set to true again before next update
-	isBeingPushed = false; 
+	isBeingPushed = false;
 	BaseUnit::update();
 }
 
@@ -308,6 +310,23 @@ bool PushableBox::updateOrder(const Order& curr)
 	}
 
 	return parsed;
+}
+
+string PushableBox::generateParameterOrders(Order o)
+{
+	if (o.key != boSize)
+		return BaseUnit::generateParameterOrders(o);
+	// Key
+	string result = orderToString[o.key];
+	// Time
+	if (o.randomTicks > 0)
+		result += StringUtility::intToString(o.randomTicks) + "r";
+	else
+		result += StringUtility::intToString(o.ticks) + "f";
+	// Parameters
+	for (vector<string>::iterator I = o.params.begin(); I != o.params.end(); ++I)
+		result += "," + *I;
+	return result;
 }
 
 void PushableBox::move()
