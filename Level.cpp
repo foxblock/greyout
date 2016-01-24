@@ -555,7 +555,7 @@ void Level::userInput()
 	controlsString += input->isKeyLetter() + "\n";
 #endif
 
-	if (input->isStart())
+	if (input->isStart() || input->isKey("ESCAPE"))
 	{
 		pauseToggle();
 		return;
@@ -1229,8 +1229,7 @@ void Level::pauseInput()
 		}
 		else if (isCancelKey(input))
 			showMusicList = false;
-
-		if (input->isStart())
+		else if (input->isStart())
 			pauseToggle();
 
 		input->resetKeys();
@@ -1254,7 +1253,7 @@ void Level::pauseInput()
 		{
 			switch (pauseSelection)
 			{
-			case 0:
+			case 0: // Restart
 				reset();
 				trialEnd = false;
 				pauseToggle();
@@ -1262,13 +1261,13 @@ void Level::pauseInput()
 				deathCount = 0;
 				timeOnLevel = 0;
 				break;
-			case 1:
+			case 1: // Next
 				eventTimer = 60;
 				eventState = fsWin;
 				EFFECTS->fadeOut(60);
 				pauseToggle();
 				break;
-			case 2:
+			case 2: // Exit
 				eventTimer = 30;
 				eventState = fsMenu;
 				EFFECTS->fadeOut(30);
@@ -1277,6 +1276,7 @@ void Level::pauseInput()
 			default:
 				break;
 			}
+			input->resetKeys();
 		}
 	}
 	else
@@ -1319,15 +1319,19 @@ void Level::pauseInput()
 			else if (pauseItems[pauseSelection] == "SETTINGS")
 			{
 				ENGINE->settings->show();
-				input->resetKeys();
 			}
 			#ifdef _MUSIC
 			else if (pauseItems[pauseSelection] == "MUSIC FILE:")
 			{
 				showMusicList = true;
-				input->resetKeys();
 			}
 			#endif
+			input->resetKeys();
+		}
+		else if (isCancelKey(input))
+		{
+			pauseToggle();
+			input->resetKeys();
 		}
 
 		if ( input->isStart() )

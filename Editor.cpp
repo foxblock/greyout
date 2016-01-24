@@ -86,6 +86,13 @@
 
 Editor::Editor()
 {
+	l = NULL;
+	#ifdef _DEBUG
+	debugText.loadFont(DEBUG_FONT,8);
+	debugText.setColour(50,217,54);
+	debugString = "";
+	#endif
+
 	bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
 	bg.disableTransparentColour();
 	bg.setPosition(0,0);
@@ -176,7 +183,8 @@ Editor::Editor()
 Editor::~Editor()
 {
 	if (ownsImage)
-		SDL_FreeSurface(levelImage);
+		SDL_FreeSurface(l->levelImage);
+	delete l;
 	if (colourPanel.surf)
 		SDL_FreeSurface(colourPanel.surf);
 	if (unitPanel.surf)
@@ -313,7 +321,7 @@ string Editor::debugInfo()
 		case esUnits:
 			return "UNIT MODE\n";
 		case esTest:
-			return "TEST PLAY\n" + Level::debugInfo();
+			return "TEST PLAY\n" + l->debugInfo();
 		default:
 			return "ERROR\n";
 	}
@@ -366,14 +374,27 @@ void Editor::inputStart()
 		case 0: // New level
 			editorState = esSettings;
 			ownsImage = true;
-			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
+			l = new Level();
+			l->levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
 					GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
-			SDL_FillRect(levelImage, NULL, -1);
-			editorOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2;
-			editorOffset.y = ((int)levelImage->h - (int)GFX::getYResolution()) / 2;
+			SDL_FillRect(l->levelImage, NULL, -1);
+			editorOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2;
+			editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
 			break;
 		case 1: // Open level
+		{
+			editorState = esSettings;
+			ownsImage = false;
+			string temp = "levels/playground.txt";
+			l = LEVEL_LOADER->loadLevelFromFile(temp);
+			if (!l)
+			{
+				printf("ERROR: Failed to load level file in editor: %s", temp.c_str());
+				input->resetKeys();
+				setNextState(STATE_MAIN);
+			}
 			break;
+		}
 		case 2: // New chapter
 			break;
 		case 3: // Open chapter
@@ -455,7 +476,7 @@ void Editor::inputSettings()
 		switch (settingsSel)
 		{
 		case 0: // Name
-			input->pollKeyboardInput(&name, KEYBOARD_MASK_ASCII);
+			input->pollKeyboardInput(&l->name, KEYBOARD_MASK_ASCII);
 			break;
 		case 1: // Filename
 			break;
@@ -464,12 +485,12 @@ void Editor::inputSettings()
 		case 3: // Gravity
 			break;
 		case 4: // Save
-			if (name[0] != 0)
+			if (l->name[0] != 0)
 			{
                 char filename[256] = "images/levels/";
-                strcat(filename, name.c_str());
+                strcat(filename, l->name.c_str());
                 strcat(filename, ".png");
-				IMG_SavePNG(filename, levelImage, IMG_COMPRESS_DEFAULT);
+				IMG_SavePNG(filename, l->levelImage, IMG_COMPRESS_DEFAULT);
 			}
 			break;
 		case 5: // Continue
@@ -540,8 +561,8 @@ void Editor::inputDraw()
 			GFX::showCursor(true);
 			cropOffset.x = 0;
 			cropOffset.y = 0;
-			cropSize.x = levelImage->w;
-			cropSize.y = levelImage->h;
+			cropSize.x = l->levelImage->w;
+			cropSize.y = l->levelImage->h;
 			input->resetKeys();
 		}
 		if (input->isKey("g"))
@@ -917,9 +938,9 @@ void Editor::inputDraw()
 				}
 			}
 			if (input->isLeftClick())
-				filledPolygonColor(levelImage, polX, polY, 6, brushCol.getRGBAvalue());
+				filledPolygonColor(l->levelImage, polX, polY, 6, brushCol.getRGBAvalue());
 			else
-				filledPolygonColor(levelImage, polX, polY, 6, brushCol2.getRGBAvalue());
+				filledPolygonColor(l->levelImage, polX, polY, 6, brushCol2.getRGBAvalue());
 			mousePos.x += brushSize / 2;
 			mousePos.y += brushSize / 2;
 			lastPos.x += brushSize / 2;
@@ -1004,29 +1025,31 @@ void Editor::inputDraw()
 		}
 		if (isAcceptKey(input) && drawTool == dtCrop)
 		{
-			if (collisionLayer)
-				SDL_FreeSurface(collisionLayer);
-			collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
-			SDL_FillRect(collisionLayer, NULL, -1);
+			if (l->collisionLayer)
+				SDL_FreeSurface(l->collisionLayer);
+			l->collisionLayer = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			SDL_FillRect(l->collisionLayer, NULL, -1);
 			SDL_Rect srcRect;
 			srcRect.x = std::max(cropOffset.x, 0);
 			srcRect.y = std::max(cropOffset.y, 0);
-			srcRect.w = std::min(levelImage->w, collisionLayer->w);
-			srcRect.h = std::min(levelImage->h, collisionLayer->h);
+			srcRect.w = std::min(l->levelImage->w, l->collisionLayer->w);
+			srcRect.h = std::min(l->levelImage->h, l->collisionLayer->h);
 			SDL_Rect dstRect;
 			dstRect.x = std::max(-cropOffset.x, 0);
 			dstRect.y = std::max(-cropOffset.y, 0);
-            SDL_BlitSurface(levelImage, &srcRect, collisionLayer, &dstRect);
-            SDL_FreeSurface(levelImage);
-			levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
-			SDL_BlitSurface(collisionLayer, NULL, levelImage, NULL);
+            SDL_BlitSurface(l->levelImage, &srcRect, l->collisionLayer, &dstRect);
+            if (!ownsImage)
+				SDL_FreeSurface(l->levelImage);
+			l->levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			ownsImage = true;
+			SDL_BlitSurface(l->collisionLayer, NULL, l->levelImage, NULL);
 			editorOffset -= cropOffset;
-			for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
 			{
 				(*I)->position -= cropOffset;
 				(*I)->startingPosition -= cropOffset;
 			}
-			for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
 			{
 				(*I)->position -= cropOffset;
 				(*I)->startingPosition -= cropOffset;
@@ -1274,9 +1297,9 @@ void Editor::inputUnits()
 				{
 					params.push_back(make_pair("position",StringUtility::vecToString(mousePos + editorOffset)));
 					if (hoverUnitButton >= EDITOR_UNIT_PLAYER_START && hoverUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
-						currentUnit = LEVEL_LOADER->createPlayer(params, this, -1);
+						currentUnit = LEVEL_LOADER->createPlayer(params, l, -1);
 					else
-						currentUnit = LEVEL_LOADER->createUnit(params, this, -1);
+						currentUnit = LEVEL_LOADER->createUnit(params, l, -1);
 				}
 				if (currentUnit)
 				{
@@ -1318,9 +1341,9 @@ void Editor::inputUnits()
 			if (!currentUnitPlaced)
 			{
 				if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
-					players.push_back((ControlUnit*)currentUnit);
+					l->players.push_back((ControlUnit*)currentUnit);
 				else
-					units.push_back(currentUnit);
+					l->units.push_back(currentUnit);
 			}
 			currentUnit = NULL;
 			selectedUnitButton = -1;
@@ -1335,7 +1358,7 @@ void Editor::inputUnits()
 		{
 			// Find and select unit under cursor
 			Vector2df pos = mousePos + editorOffset;
-			for (vector<BaseUnit*>::iterator I = units.begin(); I != units.end(); ++I)
+			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
 			{
 				if (pos.inRect((*I)->getRect()))
 				{
@@ -1348,7 +1371,7 @@ void Editor::inputUnits()
 						currentUnit = *I;
 				}
 			}
-			for (vector<ControlUnit*>::iterator I = players.begin(); I != players.end(); ++I)
+			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
 			{
 				if (pos.inRect((*I)->getRect()))
 				{
@@ -1380,7 +1403,7 @@ void Editor::inputTest()
 	if (input->isSelect())
 		editorState = lastState;
 	else
-		Level::userInput();
+		l->userInput();
 }
 
 void Editor::renderStart()
@@ -1457,7 +1480,7 @@ void Editor::renderSettings()
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			entriesText.print(name);
+			entriesText.print(l->name);
 		}
 
 		if (I == settingsItems.size()-3)
@@ -1478,15 +1501,15 @@ void Editor::renderDraw()
 	dst.y = max(-editorOffset.y, 0);
 	src.x = max(editorOffset.x, 0);
 	src.y = max(editorOffset.y, 0);
-	src.w = min((int)GFX::getXResolution(), getWidth() - src.x);
-	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
-	SDL_BlitSurface(levelImage, &src, screen, &dst);
+	src.w = min((int)GFX::getXResolution(), l->getWidth() - src.x);
+	src.h = min((int)GFX::getYResolution(), l->getHeight() - src.y);
+	SDL_BlitSurface(l->levelImage, &src, screen, &dst);
 	if (drawUnits)
 	{
-		for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
-			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
-		for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
-			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		for (vector<BaseUnit*>::const_iterator I = l->units.begin(); I != l->units.end(); ++I)
+			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		for (vector<ControlUnit*>::const_iterator I = l->players.begin(); I != l->players.end(); ++I)
+			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
 	}
 
 	// Grid
@@ -1594,19 +1617,19 @@ void Editor::renderUnits()
 	dst.y = max(-editorOffset.y, 0);
 	src.x = max(editorOffset.x, 0);
 	src.y = max(editorOffset.y, 0);
-	src.w = min((int)GFX::getXResolution(), getWidth() - src.x);
-	src.h = min((int)GFX::getYResolution(), getHeight() - src.y);
-	SDL_BlitSurface(levelImage, &src, screen, &dst);
+	src.w = min((int)GFX::getXResolution(), l->getWidth() - src.x);
+	src.h = min((int)GFX::getYResolution(), l->getHeight() - src.y);
+	SDL_BlitSurface(l->levelImage, &src, screen, &dst);
 	if (drawUnits)
 	{
-		for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
-			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
-		for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
-			renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		for (vector<BaseUnit*>::const_iterator I = l->units.begin(); I != l->units.end(); ++I)
+			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		for (vector<ControlUnit*>::const_iterator I = l->players.begin(); I != l->players.end(); ++I)
+			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
 	}
 	if (currentUnit)
 	{
-		renderUnit(GFX::getVideoSurface(), currentUnit, editorOffset);
+		l->renderUnit(GFX::getVideoSurface(), currentUnit, editorOffset);
 		Vector2df temp = currentUnit->position - editorOffset;
 		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y - 1, 0x32D936FF);
 		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y + currentUnit->getHeight(), 0x32D936FF);
@@ -1638,7 +1661,7 @@ void Editor::renderUnits()
 
 void Editor::renderTest()
 {
-	Level::render(GFX::getVideoSurface());
+	l->render(GFX::getVideoSurface());
 }
 
 void Editor::drawColourPanel(SDL_Surface *target)

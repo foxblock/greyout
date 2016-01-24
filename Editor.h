@@ -37,7 +37,7 @@ struct EditorPanel
 	bool changed;
 };
 
-class Editor : public Level
+class Editor : public BaseState
 {
 public:
 	Editor();
@@ -49,7 +49,10 @@ public:
 
 #ifdef _DEBUG
 	string debugInfo();
+	string debugString;
+	Text debugText;
 #endif
+	Level *l;
 
 private:
 	void inputStart();

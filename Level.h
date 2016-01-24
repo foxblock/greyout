@@ -140,7 +140,7 @@ public:
 	vector<BaseUnit*> units;
 	vector<PixelParticle*> effects;
 	vector<Link*> links;
-	SDL_Surface* levelImage;
+	SDL_Surface* levelImage; // The raw level background loaded from a file (will not be altered)
 	SimpleFlags flags;
 
 	string levelFileName; // chapterPath + filename
@@ -187,18 +187,21 @@ public:
 
 	list<PARAMETER_TYPE > parameters;
 
+	// this renders a unit taking into account the flags, so if a unit moves out
+	// of bounds and the level is set to repeat it will also get drawn on the
+	// opposite side of the screen
+	// specify offset to pass to updateScreenPosition
+	void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
+
+	// Used for collision checking and drawing
+	SDL_Surface* collisionLayer;
+
 protected:
 	// deletes the passed unit from the collision surface (to avoid checking
 	// the unit agains itself)
 	void clearUnitFromCollision(SDL_Surface* const surface, BaseUnit* const unit);
 
 	inline void clearRectangle(SDL_Surface* const surface, CRfloat posX, CRfloat posY, CRint width, CRint height);
-
-	// this renders a unit taking into account the flags, so if a unit moves out
-	// of bounds and the level is set to repeat it will also get drawn on the
-	// opposite side of the screen
-	// specify offset to pass to updateScreenPosition
-	void renderUnit(SDL_Surface* const surface, BaseUnit* const unit, const Vector2df& offset);
 
 	void renderTiling( SDL_Surface *src, SDL_Rect *srcRect, SDL_Surface *target, SDL_Rect *targetRect, SimpleDirection dir );
 
@@ -236,7 +239,6 @@ protected:
 	Text debugText;
 	bool frameLimiter;
 	#endif
-	SDL_Surface* collisionLayer;
 	int eventTimer; // used for fading in and out
 	enum LevelFinishState
 	{
