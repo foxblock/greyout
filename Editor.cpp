@@ -35,6 +35,8 @@
 
 #include "IMG_savepng.h"
 #include <SDL/SDL_gfxPrimitives.h>
+#include <iostream>
+#include <fstream>
 
 #define EDITOR_HEADLINE_SIZE 72
 #define EDITOR_TEXT_SIZE 48
@@ -171,6 +173,7 @@ Editor::Editor()
 	selectedUnitButton = -1;
 	currentUnit = NULL;
 	currentUnitPlaced = false;
+	movingCurrentUnit = false;
 	paramsPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	paramsPanel.pos.x = GFX::getXResolution() - EDITOR_PARAMS_PANEL_WIDTH;
 	paramsPanel.pos.y = 0;
@@ -487,10 +490,42 @@ void Editor::inputSettings()
 		case 4: // Save
 			if (l->name[0] != 0)
 			{
-                char filename[256] = "images/levels/";
-                strcat(filename, l->name.c_str());
-                strcat(filename, ".png");
-				IMG_SavePNG(filename, l->levelImage, IMG_COMPRESS_DEFAULT);
+                char imgFilename[256] = "images/levels/";
+                strcat(imgFilename, l->name.c_str());
+                strcat(imgFilename, ".png");
+				IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
+				l->imageFileName = imgFilename;
+				ofstream file;
+				char filename[256] = "levels/";
+				strcat(filename, l->name.c_str());
+                strcat(filename, ".txt");
+				file.open(filename, ios::out | ios::trunc);
+                file << "[Level]\n";
+                l->generateParameters();
+                for (list<PARAMETER_TYPE >::iterator I = l->parameters.begin(); I != l->parameters.end(); ++I)
+				{
+					file << I->first << VALUE_STRING << I->second << "\n";
+				}
+				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+				{
+					file << "[Player]\n";
+					(*I)->generateParameters();
+					for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
+					{
+						file << K->first << VALUE_STRING << K->second << "\n";
+					}
+				}
+				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+				{
+					file << "[Unit]\n";
+					(*I)->generateParameters();
+					for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
+					{
+						file << K->first << VALUE_STRING << K->second << "\n";
+					}
+				}
+				file.close();
+				l->levelFileName = filename;
 			}
 			break;
 		case 5: // Continue
@@ -1295,7 +1330,7 @@ void Editor::inputUnits()
 				}
 				if (!params.empty())
 				{
-					params.push_back(make_pair("position",StringUtility::vecToString(mousePos + editorOffset)));
+					params.push_back(make_pair("position",StringUtility::vecToString(editorOffset + Vector2di(GFX::getXResolution(), GFX::getYResolution())/2.0f)));
 					if (hoverUnitButton >= EDITOR_UNIT_PLAYER_START && hoverUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
 						currentUnit = LEVEL_LOADER->createPlayer(params, l, -1);
 					else
@@ -1330,26 +1365,65 @@ void Editor::inputUnits()
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	if (currentUnit)
 	{
-		// Place selected unit (either new or old)
-		currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
-		currentUnit->startingPosition = currentUnit->position;
-		currentUnit->generateParameters();
-		if (paramsPanel.active)
-			paramsPanel.changed = true;
+		// Mouse
 		if (input->isLeftClick())
 		{
 			if (!currentUnitPlaced)
 			{
+				currentUnitPlaced = true;
 				if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
 					l->players.push_back((ControlUnit*)currentUnit);
 				else
 					l->units.push_back(currentUnit);
+				selectedUnitButton = -1;
+				unitPanel.changed = true;
+				input->resetMouseButtons();
 			}
-			currentUnit = NULL;
-			selectedUnitButton = -1;
-			unitPanel.changed = true;
-			input->resetMouseButtons();
+			else if (!movingCurrentUnit)
+			{
+				if ((mousePos + editorOffset).inRect(currentUnit->getRect()))
+					movingCurrentUnit = true;
+				else
+				{
+					currentUnit = NULL;
+				}
+			}
 		}
+		else if (movingCurrentUnit)
+		{
+			movingCurrentUnit = false;
+		}
+		if (movingCurrentUnit || !currentUnitPlaced)
+		{
+			// Place selected unit (either new or old)
+			currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
+			currentUnit->startingPosition = currentUnit->position;
+			currentUnit->generateParameters();
+		}
+		// Keyboard
+		if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
+		{
+			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+			{
+				if (*I == currentUnit)
+				{
+					l->players.erase(I);
+					break;
+				}
+			}
+			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+			{
+				if (*I == currentUnit)
+				{
+					l->units.erase(I);
+					break;
+				}
+			}
+			delete currentUnit;
+			currentUnit = NULL;
+		}
+		if (paramsPanel.active)
+			paramsPanel.changed = true;
 	}
 	else
 	{

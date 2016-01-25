@@ -121,6 +121,7 @@ Level::Level()
 	drawOffset = Vector2df(0,0);
 	idCounter = 0;
 	PHYSICS->reset();
+	dialogueFile = "";
 
 	nameTimer = 0;
 	eventTimer = 0;
@@ -349,7 +350,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 	}
 	case lpBoundaries:
 	{
-		cam.disregardBoundaries = not StringUtility::stringToBool(value.second);
+		cam.disregardBoundaries = !StringUtility::stringToBool(value.second);
 		break;
 	}
 	case lpName:
@@ -372,6 +373,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 	{
 		if (ENGINE->currentState != STATE_LEVELSELECT)
 			DIALOGUE->loadFromFile(chapterPath + value.second);
+		dialogueFile = value.second;
 		break;
 	}
 	case lpGravity:
@@ -411,6 +413,51 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 		parsed = false;
 	}
 	return parsed;
+}
+
+void Level::generateParameters()
+{
+	if (!parameters.empty())
+		parameters.erase(++parameters.begin(), parameters.end()); // Keep class param
+	else
+		parameters.push_back(make_pair(CLASS_STRING, "generic"));
+	parameters.push_back(make_pair("image", imageFileName));
+	if (name[0] != 0)
+		parameters.push_back(make_pair("name", name));
+	if (!flags.empty())
+	{
+		string temp = "";
+		if (flags.hasFlag(lfScrollX)) temp += "scrollx,";
+		if (flags.hasFlag(lfScrollY)) temp += "scrolly,";
+		if (flags.hasFlag(lfRepeatX)) temp += "repeatx,";
+		if (flags.hasFlag(lfRepeatY)) temp += "repeaty,";
+		if (flags.hasFlag(lfDisableSwap)) temp += "disableswap,";
+		if (flags.hasFlag(lfKeepCentred)) temp += "keepcentred,";
+		if (flags.hasFlag(lfScaleX)) temp += "scalex,";
+		if (flags.hasFlag(lfScaleY)) temp += "scaley,";
+		if (flags.hasFlag(lfSplitX)) temp += "splitx,";
+		if (flags.hasFlag(lfSplitY)) temp += "splity,";
+		if (flags.hasFlag(lfDrawPattern)) temp += "drawpattern,";
+		if (flags.hasFlag(lfCyclePlayers)) temp += "cycleplayers,";
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("flags", temp));
+	}
+	if (MUSIC_CACHE->getPlaying()[0] == 0)
+		parameters.push_back(make_pair("music", MUSIC_CACHE->getPlaying()));
+	if (drawOffset.x != 0 || drawOffset.y != 0)
+		parameters.push_back(make_pair("offset", StringUtility::vecToString(drawOffset)));
+	if (GFX::getClearColour() != BLACK)
+	{
+		Colour c = GFX::getClearColour();
+		parameters.push_back(make_pair("background", StringUtility::intToString(c.red) + "r" +
+				StringUtility::intToString(c.green) + "g" +
+				StringUtility::intToString(c.blue) + "b"));
+	}
+	parameters.push_back(make_pair("boundaries", StringUtility::boolToString(cam.disregardBoundaries, true)));
+	if (dialogueFile[0] != 0)
+		parameters.push_back(make_pair("dialogue", dialogueFile));
+	parameters.push_back(make_pair("gravity", StringUtility::vecToString(PHYSICS->gravity)));
+	parameters.push_back(make_pair("terminalvelocity", StringUtility::vecToString(PHYSICS->maximum)));
 }
 
 void Level::reset()

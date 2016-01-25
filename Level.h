@@ -71,6 +71,9 @@ public:
 	// this function can be overwritten in child classes to allow for custom data fiels
 	// return true if the data has been successfully processed, false otherwise
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	// generate parameters from current variables (level image, flags, etc.)
+	// and store it in the parameters variable
+	virtual void generateParameters();
 
 	// reset level to initial state
 	virtual void reset();
@@ -147,6 +150,7 @@ public:
 	string chapterPath;
 	string imageFileName;
 	string name;
+	string dialogueFile;
 
 	#ifdef _DEBUG
 	virtual string debugInfo();

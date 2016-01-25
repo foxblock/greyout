@@ -38,6 +38,7 @@ ParticleEmitter::ParticleEmitter( Level *newParent ) :
 	particleLifetime(0,0),
 	nextParticleTime(0,0),
 	size(16,16),
+	screenPosition(0,0),
 	centred(true),
 	enabled(true)
 {
@@ -110,27 +111,33 @@ void ParticleEmitter::update()
 	}
 }
 
+void ParticleEmitter::updateScreenPosition(const Vector2di& offset)
+{
+	screenPosition.x = position.x - offset.x;
+	screenPosition.y = position.y - offset.y;
+}
+
 void ParticleEmitter::render(SDL_Surface* surf)
 {
 #ifdef _DEBUG
 	SDL_Rect temp;
 	if (centred)
 	{
-		temp.x = position.x;
-		temp.y = position.y - size.y / 2.0f;
+		temp.x = screenPosition.x;
+		temp.y = screenPosition.y - size.y / 2.0f;
 		temp.w = 1;
 		temp.h = size.y;
 		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
-		temp.x = position.x - size.x / 2.0f;
-		temp.y = position.y;
+		temp.x = screenPosition.x - size.x / 2.0f;
+		temp.y = screenPosition.y;
 		temp.w = size.x;
 		temp.h = 1;
 		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));
 	}
 	else
 	{
-		temp.x = position.x;
-		temp.y = position.y;
+		temp.x = screenPosition.x;
+		temp.y = screenPosition.y;
 		temp.w = size.x;
 		temp.h = 1;
 		SDL_FillRect(surf,&temp,col.getSDL_Uint32Colour(surf));

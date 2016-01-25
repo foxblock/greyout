@@ -320,7 +320,7 @@ Level* LevelLoader::createLevel(list<PARAMETER_TYPE >& params, CRstring chapterP
 
 	if (params.front().first != CLASS_STRING)
 	{
-		printf("ERROR: Level definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
+		printf("ERROR: Level definition ending on line %i missing mandatory parameter \"%s\" or parameter not placed first in list\n",lineNumber,CLASS_STRING.c_str());
 		return NULL;
 	}
 
@@ -366,7 +366,7 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
 
 	if (params.front().first != CLASS_STRING)
 	{
-		printf("ERROR: Player definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
+		printf("ERROR: Player definition ending on line %i missing mandatory parameter \"%s\" or parameter not placed first in list\n",lineNumber,CLASS_STRING.c_str());
 		return NULL;
 	}
 
@@ -455,7 +455,7 @@ BaseUnit* LevelLoader::createUnit(list<PARAMETER_TYPE >& params, Level* const pa
 
 	if (params.front().first != CLASS_STRING)
 	{
-		printf("ERROR: Unit definition ending on line %i missing mandatory parameter \"%s\"\n",lineNumber,CLASS_STRING.c_str());
+		printf("ERROR: Unit definition ending on line %i missing mandatory parameter \"%s\" or parameter not placed first in list\n",lineNumber,CLASS_STRING.c_str());
 		return NULL;
 	}
 

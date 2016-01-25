@@ -39,6 +39,7 @@ public:
 	virtual void reset();
 
 	virtual void update();
+	virtual void updateScreenPosition(const Vector2di& offset);
 	virtual void render(SDL_Surface* surf);
 
 	virtual bool processParameter(const PARAMETER_TYPE& value);
@@ -52,6 +53,7 @@ protected:
 	Vector2di nextParticleTime;
 	vector<int> multiplier;
 	Vector2di size;
+	Vector2di screenPosition;
 	bool centred;
 
 	bool enabled;

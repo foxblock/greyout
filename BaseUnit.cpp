@@ -398,7 +398,10 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 
 void BaseUnit::generateParameters()
 {
-	parameters.erase(++parameters.begin(), parameters.end()); // Keep class param
+	if (!parameters.empty())
+		parameters.erase(++parameters.begin(), parameters.end()); // Keep class param
+	else
+		parameters.push_back(make_pair(CLASS_STRING, "generic"));
 	if (startingState[0] != 0)
 		parameters.push_back(make_pair("startingstate", startingState));
 	parameters.push_back(make_pair("position", StringUtility::vecToString(position)));
