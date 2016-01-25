@@ -1114,6 +1114,14 @@ void Editor::inputUnits()
 			GFX::showCursor(false);
 			input->resetKeys();
 		}
+		if (input->isLeft())
+			editorOffset.x -= 2;
+		else if (input->isRight())
+			editorOffset.x += 2;
+		if (input->isUp())
+			editorOffset.y -= 2;
+		else if (input->isDown())
+			editorOffset.y += 2;
 		if (input->isKey("g"))
 		{
 			gridActive = !gridActive;
@@ -1138,6 +1146,31 @@ void Editor::inputUnits()
 				drawUnitPanel(unitPanel.surf);
 			input->resetKeys();
 		}
+		if (currentUnit)
+		{
+			if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
+			{
+				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+				{
+					if (*I == currentUnit)
+					{
+						l->players.erase(I);
+						break;
+					}
+				}
+				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+				{
+					if (*I == currentUnit)
+					{
+						l->units.erase(I);
+						break;
+					}
+				}
+				delete currentUnit;
+				currentUnit = NULL;
+				paramsPanel.changed = true;
+			}
+		}
 	}
 	else
 	{
@@ -1146,6 +1179,7 @@ void Editor::inputUnits()
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
 	mousePos = input->getMouse();
 	/// Panel interaction
+	// Units panel
 	if (unitPanel.active && (unitPanel.userIsInteracting || mousePos.inRect(unitPanel.pos.x, unitPanel.pos.y, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT)))
 	{
 		// Make transparent if user is drawing/cropping over panel, else show cursor
@@ -1344,7 +1378,7 @@ void Editor::inputUnits()
 				else
 					selectedUnitButton = -1;
 			}
-			if (input->isLeftClick())
+			if (input->isLeftClick() || input->isRightClick())
 				unitPanel.userIsInteracting = true;
 			else
 				unitPanel.userIsInteracting = false;
@@ -1362,6 +1396,31 @@ void Editor::inputUnits()
 		SDL_SetAlpha(unitPanel.surf, 0, 255);
 		unitPanel.transparent = false;
 	}
+	// END units panel
+	// Params panel
+	if (paramsPanel.active && (paramsPanel.userIsInteracting || mousePos.inRect(paramsPanel.pos.x, paramsPanel.pos.y, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT)))
+	{
+		// Make transparent if user is drawing/cropping over panel
+		if ((input->isLeftClick() == SimpleJoy::sjHELD || input->isRightClick() == SimpleJoy::sjHELD) && !paramsPanel.userIsInteracting)
+		{
+			SDL_SetAlpha(paramsPanel.surf, SDL_SRCALPHA, 128);
+			paramsPanel.transparent = true;
+		}
+		if (!paramsPanel.transparent && (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())) // user is actually interacting with the panel contents
+		{
+			if (input->isLeftClick() || input->isRightClick())
+				paramsPanel.userIsInteracting = true;
+			else
+				paramsPanel.userIsInteracting = false;
+			return;
+		}
+	}
+	if (paramsPanel.active && paramsPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(paramsPanel.pos.x, paramsPanel.pos.y, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT)))
+	{
+		SDL_SetAlpha(paramsPanel.surf, 0, 255);
+		paramsPanel.transparent = false;
+	}
+	// END params panel
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	if (currentUnit)
 	{
@@ -1399,28 +1458,6 @@ void Editor::inputUnits()
 			currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
 			currentUnit->startingPosition = currentUnit->position;
 			currentUnit->generateParameters();
-		}
-		// Keyboard
-		if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
-		{
-			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
-			{
-				if (*I == currentUnit)
-				{
-					l->players.erase(I);
-					break;
-				}
-			}
-			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
-			{
-				if (*I == currentUnit)
-				{
-					l->units.erase(I);
-					break;
-				}
-			}
-			delete currentUnit;
-			currentUnit = NULL;
 		}
 		if (paramsPanel.active)
 			paramsPanel.changed = true;
