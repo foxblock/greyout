@@ -114,6 +114,19 @@ bool Exit::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void Exit::generateParameters()
+{
+	BaseUnit::generateParameters();
+	if (!targetIDs.empty())
+	{
+		string temp = "";
+		for (vector<string>::iterator I = targetIDs.begin(); I != targetIDs.end(); ++I)
+			temp += (*I) + DELIMIT_STRING;
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("link", temp));
+	}
+}
+
 void Exit::reset()
 {
 	BaseUnit::reset();

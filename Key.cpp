@@ -102,6 +102,19 @@ bool Key::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void Key::generateParameters()
+{
+	BaseUnit::generateParameters();
+	if (!targetIDs.empty())
+	{
+		string temp = "";
+		for (vector<string>::iterator I = targetIDs.begin(); I != targetIDs.end(); ++I)
+			temp += (*I) + DELIMIT_STRING;
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("target", temp));
+	}
+}
+
 void Key::update()
 {
 	if (!targetIDs.empty())

@@ -121,6 +121,33 @@ bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 	return parsed;
 }
 
+void BaseTrigger::generateParameters()
+{
+	BaseUnit::generateParameters();
+	parameters.push_back(make_pair("size", StringUtility::vecToString(position)));
+	if (!enabled)
+		parameters.push_back(make_pair("enabled", StringUtility::boolToString(enabled)));
+	if (!targetIDs.empty())
+	{
+		string temp = "";
+		for (vector<string>::iterator I = targetIDs.begin(); I != targetIDs.end(); ++I)
+			temp += (*I) + DELIMIT_STRING;
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("target", temp));
+	}
+	if (targetParam.first[0] != 0 && targetParam.second[0] != 0)
+		parameters.push_back(make_pair("action", targetParam.first + VALUE_STRING + targetParam.second));
+	if (!activatorIDs.empty())
+	{
+		string temp = "";
+		for (vector<string>::iterator I = activatorIDs.begin(); I != activatorIDs.end(); ++I)
+			temp += (*I) + DELIMIT_STRING;
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("activator", temp));
+	}
+	parameters.push_back(make_pair("autoreenable", StringUtility::boolToString(autoReEnable)));
+}
+
 void BaseTrigger::reset()
 {
 	enabled = true;

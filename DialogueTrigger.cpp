@@ -68,6 +68,14 @@ bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void DialogueTrigger::generateParameters()
+{
+	BaseTrigger::generateParameters();
+	if (textKey[0] != 0)
+		parameters.push_back(make_pair("textkey", textKey));
+	parameters.push_back(make_pair("time", StringUtility::intToString(time)));
+}
+
 ///---protected---
 
 void DialogueTrigger::doTrigger(const UnitCollisionEntry& entry)

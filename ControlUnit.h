@@ -41,6 +41,7 @@ public:
 	~ControlUnit();
 
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	virtual void generateParameters();
 
 	virtual void control(SimpleJoy* input);
 

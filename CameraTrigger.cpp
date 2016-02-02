@@ -76,6 +76,14 @@ bool CameraTrigger::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void CameraTrigger::generateParameters()
+{
+	BaseTrigger::generateParameters();
+	if (dest.x != 0 || dest.y != 0)
+		parameters.push_back(make_pair("destination", StringUtility::vecToString(dest)));
+	parameters.push_back(make_pair("time", StringUtility::intToString(time)));
+}
+
 #ifdef _DEBUG
 string CameraTrigger::debugInfo()
 {

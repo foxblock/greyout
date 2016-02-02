@@ -35,6 +35,7 @@ FadingBox::FadingBox(Level* newParent) : PushableBox(newParent)
 	unitCollisionMode = 0;
 
 	stringToProp["farcolour"] = fpFarColour;
+	stringToProp["farcolor"] = fpFarColour;
 	stringToProp["faderadius"] = fpFadeRadius;
 	stringToProp["fadesteps"] = fpFadeSteps;
 
@@ -98,6 +99,15 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
 		return PushableBox::processParameter(value);
 
 	return parsed;
+}
+
+void FadingBox::generateParameters()
+{
+	PushableBox::generateParameters();
+	parameters.push_back(make_pair("farcolour", colourToString(col)));
+	parameters.push_back(make_pair("faderadius", StringUtility::vecToString(fadeRadius)));
+	if (fadeSteps != 0)
+		parameters.push_back(make_pair("fadesteps", StringUtility::intToString(fadeSteps)));
 }
 
 void FadingBox::update()

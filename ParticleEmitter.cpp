@@ -259,6 +259,34 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void ParticleEmitter::generateParameters()
+{
+	BaseUnit::generateParameters();
+	parameters.push_back(make_pair("size", StringUtility::vecToString(size)));
+	parameters.push_back(make_pair("direction", StringUtility::vecToString(emitDir)));
+	parameters.push_back(make_pair("power", StringUtility::floatToString(emitPower.x + (emitPower.y - emitPower.x) / 2.0f)));
+	parameters.push_back(make_pair("lifetime", StringUtility::intToString(particleLifetime.x + (particleLifetime.y - particleLifetime.x) / 2.0f) + "f"));
+	parameters.push_back(make_pair("delay", StringUtility::intToString(nextParticleTime.x + (nextParticleTime.y - nextParticleTime.x) / 2.0f) + "f"));
+	if (angleScatter != 0)
+		parameters.push_back(make_pair("directionscatter", StringUtility::floatToString(angleScatter)));
+	if (emitPower.x != emitPower.y)
+		parameters.push_back(make_pair("powerscatter", StringUtility::floatToString((emitPower.y - emitPower.x) / 2.0f)));
+	parameters.push_back(make_pair("lifetimescatter", StringUtility::intToString((particleLifetime.y - particleLifetime.x) / 2.0f)));
+	parameters.push_back(make_pair("delayscatter", StringUtility::intToString((nextParticleTime.y - nextParticleTime.x) / 2.0f)));
+	if (!enabled)
+		parameters.push_back(make_pair("enabled", StringUtility::boolToString(enabled)));
+	if (!multiplier.empty())
+	{
+		string temp = "";
+		for (vector<int>::iterator I = multiplier.begin(); I != multiplier.end(); ++I)
+			temp += StringUtility::intToString(*I) + DELIMIT_STRING;
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("multiplier", temp));	
+	}
+	if (!centred)
+		parameters.push_back(make_pair("centred", StringUtility::boolToString(centred)));
+
+}
 
 ///--- PROTECTED ---------------------------------------------------------------
 

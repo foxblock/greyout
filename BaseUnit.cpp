@@ -415,7 +415,7 @@ void BaseUnit::generateParameters()
 	{
 		string temp = "";
 		for (set<int>::iterator I = collisionColours.begin(); I != collisionColours.end(); ++I)
-			temp += StringUtility::intToString(*I) + ",";
+			temp += StringUtility::intToString(*I) + DELIMIT_STRING;
 		temp.erase(temp.length()-1);
 		parameters.push_back(make_pair("collision", temp));
 	}
@@ -451,7 +451,7 @@ void BaseUnit::generateParameters()
 		string temp = "";
 		for (vector<State>::iterator I = stateParams.begin(); I != stateParams.end(); ++I)
 		{
-			temp = I->name + "," + StringUtility::intToString(I->start) + "," +StringUtility::intToString(I->length) + "," + StringUtility::intToString(I->fps) + "," +StringUtility::intToString(I->loops) + ",";
+			temp = I->name + DELIMIT_STRING + StringUtility::intToString(I->start) + DELIMIT_STRING +StringUtility::intToString(I->length) + DELIMIT_STRING + StringUtility::intToString(I->fps) + DELIMIT_STRING +StringUtility::intToString(I->loops) + DELIMIT_STRING;
 			switch (I->mode)
 			{
 				case pmReverse: temp += "reverse"; break;

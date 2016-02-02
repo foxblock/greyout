@@ -60,6 +60,12 @@ bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void ControlUnit::generateParameters()
+{
+	BaseUnit::generateParameters();
+	parameters.push_back(make_pair("control", StringUtility::boolToString(takesControl)));
+}
+
 void ControlUnit::control(SimpleJoy* input)
 {
 	if (!input)

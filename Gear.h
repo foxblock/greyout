@@ -35,6 +35,7 @@ public:
 
 	virtual bool load(list<PARAMETER_TYPE >& params);
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	virtual void generateParameters();
 
 	virtual inline int getHeight() const;
 	virtual inline int getWidth() const;

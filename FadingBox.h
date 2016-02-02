@@ -34,6 +34,7 @@ public:
 	virtual ~FadingBox();
 
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	virtual void generateParameters();
 
 	virtual void update();
 

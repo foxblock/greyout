@@ -188,6 +188,30 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void Switch::generateParameters()
+{
+	BaseUnit::generateParameters();
+	if (switchOn != NULL)
+	{
+		if (switchOn == &Switch::movementOn)
+			parameters.push_back(make_pair("function", "movement"));
+		else if (switchOn == &Switch::parameterOn)
+		{
+			parameters.push_back(make_pair("function", "parameteron" + DELIMIT_STRING + paramOn.first + VALUE_STRING + paramOn.second));
+			if (switchOff != NULL)
+				parameters.push_back(make_pair("function", "parameteroff" + DELIMIT_STRING + paramOff.first + VALUE_STRING + paramOff.second));
+		}
+	}
+	if (!targetIDs.empty())
+	{
+		string temp = "";
+		for (vector<string>::iterator I = targetIDs.begin(); I != targetIDs.end(); ++I)
+			temp += (*I) + DELIMIT_STRING;
+		temp.erase(temp.length()-1);
+		parameters.push_back(make_pair("target", temp));
+	}
+}
+
 void Switch::reset()
 {
 	if (startingState == "off" && switchOff)

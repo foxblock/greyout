@@ -45,6 +45,7 @@ class PushableBox : public BaseUnit
 		virtual ~PushableBox();
 
 		virtual bool processParameter(const PARAMETER_TYPE& value);
+		virtual void generateParameters();
 
 		virtual void reset();
 

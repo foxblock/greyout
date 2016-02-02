@@ -104,6 +104,13 @@ bool Gear::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void Gear::generateParameters()
+{
+	BaseUnit::generateParameters();
+	parameters.push_back(make_pair("speed", StringUtility::floatToString(speed)));
+	parameters.push_back(make_pair("angle", StringUtility::floatToString(angle)));
+}
+
 int Gear::getHeight() const
 {
 	return img.getHeight();

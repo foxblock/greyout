@@ -35,6 +35,7 @@ public:
 
 	virtual bool load(list<PARAMETER_TYPE >& params);
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	virtual void generateParameters();
 	virtual void update();
 	virtual void reset();
 

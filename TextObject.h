@@ -37,6 +37,7 @@ public:
 
 	virtual bool load(list<PARAMETER_TYPE >& params);
 	virtual bool processParameter(const PARAMETER_TYPE& value);
+	virtual void generateParameters();
 
 	virtual void updateScreenPosition(const Vector2di& offset);
 	virtual void render(SDL_Surface* surf);
@@ -47,6 +48,7 @@ public:
 	virtual void explode();
 protected:
 	Text* currentText;
+	string fontFilename;
 	string line;
 	Vector2di size;
 	int fontSize;

@@ -77,6 +77,17 @@ bool SoundTrigger::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void SoundTrigger::generateParameters()
+{
+	BaseTrigger::generateParameters();
+	if (filename[0] != 0)
+		parameters.push_back(make_pair("file", filename));
+	if (playcount != 1)
+		parameters.push_back(make_pair("playcount", StringUtility::intToString(playcount)));
+	if (loops != 0)
+		parameters.push_back(make_pair("loops", StringUtility::intToString(loops)));
+}
+
 void SoundTrigger::reset()
 {
 	count = 0;

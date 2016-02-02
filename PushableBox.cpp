@@ -95,6 +95,12 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
 	return parsed;
 }
 
+void PushableBox::generateParameters()
+{
+	BaseUnit::generateParameters();
+	parameters.push_back(make_pair("size", StringUtility::intToString(rect.w) + DELIMIT_STRING + StringUtility::intToString(rect.h)));
+}
+
 void PushableBox::reset()
 {
 	rect.w = 32;
