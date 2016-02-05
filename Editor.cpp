@@ -808,7 +808,8 @@ void Editor::inputDraw()
 		colourPanel.transparent = false;
 	}
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
-	// Snap mouse to grid
+	// Snap mouse to grid (changes mousePos)
+	// Everything before works with the real mousePos, everything after works with a new virtual/aligned mousePos
 	if (gridActive)
 	{
 		if (drawTool == dtBrush)
@@ -1422,6 +1423,55 @@ void Editor::inputUnits()
 	}
 	// END params panel
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
+	// Snap mouse to grid
+	if (gridActive)
+	{
+		if (currentUnit)
+		{
+			mousePos -= currentUnit->getSize() / 2;
+			int temp = (mousePos.x + editorOffset.x) % gridSize;
+			if (temp != 0) // Possibly need to make a correction
+			{
+				if (temp < 0) // Wrap negative values (left of level area)
+					temp += gridSize;
+				if (temp <= snapDistance) // If in snap distance right side of grid line
+					mousePos.x -= temp;
+				else if (gridSize - temp <= snapDistance) // In snap distance left side of grid line
+					mousePos.x += gridSize - temp;
+				else // If not snapped to left of brush, check right side of brush
+				{
+					temp = (mousePos.x + editorOffset.x + currentUnit->getWidth()) % gridSize;
+					if (temp < 0)
+						temp += gridSize;
+					if (temp <= snapDistance)
+						mousePos.x -= temp;
+					else if (gridSize - temp <= snapDistance)
+						mousePos.x += gridSize - temp;
+				}
+			}
+			temp = (mousePos.y + editorOffset.y) % gridSize;
+			if (temp != 0)
+			{
+				if (temp < 0) // Wrap negative values (top of level area)
+					temp += gridSize;
+				if (temp <= snapDistance)
+					mousePos.y -= temp;
+				else if (gridSize - temp <= snapDistance)
+					mousePos.y += gridSize - temp;
+				else
+				{
+					temp = (mousePos.y + editorOffset.y + currentUnit->getHeight()) % gridSize;
+					if (temp < 0)
+						temp += gridSize;
+					if (temp <= snapDistance)
+						mousePos.y -= temp;
+					else if (gridSize - temp <= snapDistance)
+						mousePos.y += gridSize - temp;
+				}
+			}
+			mousePos += currentUnit->getSize() / 2;
+		}
+	}
 	if (currentUnit)
 	{
 		// Mouse
@@ -1746,6 +1796,31 @@ void Editor::renderUnits()
 		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y + currentUnit->getHeight(), 0x32D936FF);
 		vlineColor(GFX::getVideoSurface(), temp.x - 1, temp.y, temp.y + currentUnit->getHeight() - 1, 0x32D936FF);
 		vlineColor(GFX::getVideoSurface(), temp.x + currentUnit->getWidth(), temp.y, temp.y + currentUnit->getHeight() - 1, 0x32D936FF);
+	}
+
+	// Grid
+	if (gridActive)
+	{
+		int startX = -editorOffset.x % gridSize - 1;
+		if (startX < 0)
+			startX += gridSize;
+		for (int I = startX; I < GFX::getXResolution(); I += gridSize)
+		{
+			for (int K = 0; K < GFX::getYResolution(); K += EDITOR_GRID_SPACING+1)
+			{
+				pixelColor(screen, I, K, EDITOR_GRID_COLOUR);
+			}
+		}
+		int startY = -editorOffset.y % gridSize - 1;
+		if (startY < 0)
+			startY += gridSize;
+		for (int I = startY; I < GFX::getYResolution(); I += gridSize)
+		{
+			for (int K = 0; K < GFX::getXResolution(); K += EDITOR_GRID_SPACING+1)
+			{
+				pixelColor(screen, K, I, EDITOR_GRID_COLOUR);
+			}
+		}
 	}
 
 	if (unitPanel.active)
