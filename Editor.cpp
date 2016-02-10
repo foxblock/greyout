@@ -172,8 +172,10 @@ Editor::Editor()
 	hoverUnitButton = -1;
 	selectedUnitButton = -1;
 	currentUnit = NULL;
-	currentUnitPlaced = false;
 	movingCurrentUnit = false;
+	currentUnitPlaced = false;
+	unitMoveMouseOffset.x = 0;
+	unitMoveMouseOffset.y = 0;
 	paramsPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	paramsPanel.pos.x = GFX::getXResolution() - EDITOR_PARAMS_PANEL_WIDTH;
 	paramsPanel.pos.y = 0;
@@ -1491,7 +1493,10 @@ void Editor::inputUnits()
 			else if (!movingCurrentUnit)
 			{
 				if ((mousePos + editorOffset).inRect(currentUnit->getRect()))
+				{
 					movingCurrentUnit = true;
+					unitMoveMouseOffset = currentUnit->getPixel(diMIDDLE) - mousePos - editorOffset;
+				}
 				else
 				{
 					currentUnit = NULL;
@@ -1500,12 +1505,14 @@ void Editor::inputUnits()
 		}
 		else if (movingCurrentUnit)
 		{
+			unitMoveMouseOffset.x = 0;
+			unitMoveMouseOffset.y = 0;
 			movingCurrentUnit = false;
 		}
 		if (movingCurrentUnit || !currentUnitPlaced)
 		{
 			// Place selected unit (either new or old)
-			currentUnit->position = mousePos + editorOffset - currentUnit->getSize() / 2.0f;
+			currentUnit->position = mousePos + editorOffset + unitMoveMouseOffset - currentUnit->getSize() / 2.0f;
 			currentUnit->startingPosition = currentUnit->position;
 			currentUnit->generateParameters();
 		}

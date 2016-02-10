@@ -131,6 +131,7 @@ private:
 	BaseUnit *currentUnit;
 	bool movingCurrentUnit;
 	bool currentUnitPlaced;
+	Vector2di unitMoveMouseOffset;
 	void drawUnitPanel(SDL_Surface *target);
 	EditorPanel paramsPanel;
 	void drawParamsPanel(SDL_Surface *target);
