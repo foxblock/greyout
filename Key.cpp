@@ -26,6 +26,7 @@
 
 #include "Level.h"
 #include "Exit.h"
+#include "MyGame.h"
 
 Key::Key(Level* newParent) : BaseUnit(newParent)
 {
@@ -72,7 +73,7 @@ bool Key::load(list<PARAMETER_TYPE >& params)
 		startingState = "key";
 	setSpriteState(startingState,true);
 
-	if (targetIDs.empty())
+	if (targetIDs.empty() && ENGINE->currentState != STATE_EDITOR)
 	{
 		printf("ERROR: Key \"%s\" without a target exit!\n",id.c_str());
 		result = false;

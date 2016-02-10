@@ -27,6 +27,7 @@
 #include "Level.h"
 #include "ControlUnit.h"
 #include "MusicCache.h"
+#include "MyGame.h"
 
 #define SWITCH_TIMEOUT 30
 
@@ -92,16 +93,14 @@ bool Switch::load(list<PARAMETER_TYPE >& params)
 		startingState = "off";
 	setSpriteState(startingState,true);
 
-	if (!switchOn || !switchOff)
+	if ((!switchOn || !switchOff) && ENGINE->currentState != STATE_EDITOR)
 	{
-		if (!switchOn && !switchOff)
-			result = true;
 		printf("WARNING: No Function specified for switch with ID \"%s\"\n",id.c_str());
 	}
-	if (targetIDs.empty())
+	if (targetIDs.empty() && ENGINE->currentState != STATE_EDITOR)
 	{
-		result = false;
 		printf("ERROR: No targets specified for switch with ID \"%s\"\n",id.c_str());
+		result = false;
 	}
 
 	return result;
