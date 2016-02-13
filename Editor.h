@@ -57,15 +57,19 @@ public:
 private:
 	void inputStart();
 	void inputSettings();
+	void inputFlags(); // Child of inputSettings
 	void inputDraw();
 	void inputUnits();
 	void inputTest();
 
 	void renderStart();
 	void renderSettings();
+	void renderFlags();
 	void renderDraw();
 	void renderUnits();
 	void renderTest();
+
+	void save();
 
 	int editorState;
 	int lastState; // jump to out of test play
@@ -81,6 +85,7 @@ private:
 
 	vector<string> startItems;
 	vector<string> settingsItems;
+	vector<string> flagsItems;
 
 	/// Startup + Settings
 	AnimatedSprite bg;
@@ -92,6 +97,11 @@ private:
 	AnimatedSprite arrows;
 	int startSel;
 	int settingsSel;
+	int settingsOffset;
+	int flagsSel;
+	int flagsOffset;
+	string filename;
+	bool editingFlags;
 	/// Draw
 	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	Colour brushCol;

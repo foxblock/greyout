@@ -568,7 +568,7 @@ void Settings::renderGame(SDL_Surface* surf)
 		}
 		menuText->print(gameItems[I]);
 
-		if (I == 0 || ((I > 1) && (I < 5)))
+		if (I == 0 || ((I > 1) && (I < 5))) // Checkboxes
 		{
 			rect.w = SETTINGS_RECT_HEIGHT;
 			rect.x = (int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_RECT_HEIGHT / 2 - SETTINGS_MENU_OFFSET_X;
@@ -594,7 +594,7 @@ void Settings::renderGame(SDL_Surface* surf)
 			else if (I != sel && !temp)
 				SDL_FillRect(surf, &rect, 0);
 		}
-		else if (I == 1)
+		else if (I == 1) // Set of values
 		{
 			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
 									pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
@@ -918,6 +918,7 @@ void Settings::inputGame(SimpleJoy* input)
 			if (mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT)
 			{
 				sel = I;
+				// TODO: Move bounds check here (currently after checking accept key)
 				mouseInBounds = true;
 			}
 			if (I == gameItems.size()-2)

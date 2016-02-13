@@ -64,6 +64,14 @@ public:
 			return;
 		flags = (flags ^ (flags & var));
 	};
+
+	// If the flag is set it will be removed, else it will be set
+	inline void switchFlag(const int &var)
+	{
+		if (var <= 0)
+			return;
+		flags = (flags ^ var);
+	}
 };
 
 #endif // SIMPLEFLAGS_H

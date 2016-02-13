@@ -43,11 +43,12 @@
 #define EDITOR_RECT_HEIGHT 35
 #define EDITOR_CHECK_HEIGHT 27
 #define EDITOR_MENU_SPACING 10
-#define EDITOR_SETTINGS_OFFSET_Y 92
+#define EDITOR_SETTINGS_OFFSET_Y 20
 #define EDITOR_ENTRY_SIZE 400
 #define EDITOR_RETURN_Y_POS 400
 #define EDITOR_MENU_OFFSET_X 20
 #define EDITOR_MENU_SPACING_EXTRA 10
+#define EDITOR_MAX_MENU_ITEMS_SCREEN 10
 
 #define EDITOR_DEFAULT_WIDTH 400
 #define EDITOR_DEFAULT_HEIGHT 240
@@ -95,6 +96,10 @@ Editor::Editor()
 	debugString = "";
 	#endif
 
+	editorState = esStart;
+	lastState = esStart;
+	GFX::showCursor(true);
+
 	bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
 	bg.disableTransparentColour();
 	bg.setPosition(0,0);
@@ -114,14 +119,34 @@ Editor::Editor()
 	settingsItems.push_back("NAME:");
 	settingsItems.push_back("FILENAME:");
 	settingsItems.push_back("EDIT FLAGS");
+	settingsItems.push_back("MUSIC:");
+	settingsItems.push_back("CAM OFFSET:");
+	settingsItems.push_back("BACKGROUND:");
+	settingsItems.push_back("BOUNDARIES:");
+	settingsItems.push_back("DIALOGUE:");
 	settingsItems.push_back("GRAVITY:");
+	settingsItems.push_back("MAX SPEED:");
 	settingsItems.push_back("SAVE");
 	settingsItems.push_back("CONTINUE");
+	flagsItems.push_back("SCROLL X:");
+	flagsItems.push_back("SCROLL Y:");
+	flagsItems.push_back("REPEAT X:");
+	flagsItems.push_back("REPEAT Y:");
+	flagsItems.push_back("DISABLE SWAP:");
+	flagsItems.push_back("KEEP CENTRED:");
+	flagsItems.push_back("DRAW PATTERN:");
+	flagsItems.push_back("CYCLE PLAYERS:");
+	flagsItems.push_back("SCALE X:");
+	flagsItems.push_back("SCALE Y:");
+	flagsItems.push_back("SPLIT X:");
+	flagsItems.push_back("SPLIT Y:");
+	flagsItems.push_back("BACK");
 	startSel = 0;
 	settingsSel = 0;
-	editorState = esStart;
-	lastState = esStart;
-	GFX::showCursor(true);
+	settingsOffset = 0;
+	flagsSel = 0;
+	flagsOffset = 0;
+	editingFlags = false;
 
 	ownsImage = false;
 	brushCol.setColour(BLACK);
@@ -232,7 +257,10 @@ void Editor::userInput()
 		inputStart();
 		break;
 	case esSettings:
-		inputSettings();
+		if (editingFlags)
+			inputFlags();
+		else
+			inputSettings();
 		break;
 	case esDraw:
 		inputDraw();
@@ -289,7 +317,10 @@ void Editor::render()
 		renderStart();
 		break;
 	case esSettings:
-		renderSettings();
+		if (editingFlags)
+			renderFlags();
+		else
+			renderSettings();
 		break;
 	case esDraw:
 		renderDraw();
@@ -430,16 +461,16 @@ void Editor::inputSettings()
 	mouseInBounds = false;
 	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
 	{
-		for (int I = 0; I < settingsItems.size(); ++I)
+		for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 		{
 			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
 			{
 				settingsSel = I;
 				mouseInBounds = true;
 			}
-			if (I == settingsItems.size()-3)
-				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-			else
+//			if (I == settingsItems.size()-3)
+//				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+//			else
 				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
 		lastPos = input->getMouse();
@@ -448,11 +479,15 @@ void Editor::inputSettings()
 	if (input->isUp() && settingsSel > 0)
 	{
 		--settingsSel;
+		if (settingsSel < settingsOffset)
+			--settingsOffset;
 		input->resetUp();
 	}
 	else if (input->isDown() && settingsSel < settingsItems.size() - 1)
 	{
 		++settingsSel;
+		if (settingsSel >= settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN)
+			++settingsOffset;
 		input->resetDown();
 	}
 
@@ -469,6 +504,7 @@ void Editor::inputSettings()
 
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
+//// Input Code for selection box
 //		if (sel == 0)
 //		{
 //			if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X &&
@@ -484,53 +520,29 @@ void Editor::inputSettings()
 			input->pollKeyboardInput(&l->name, KEYBOARD_MASK_ASCII);
 			break;
 		case 1: // Filename
+			input->pollKeyboardInput(&filename, KEYBOARD_MASK_ASCII);
 			break;
 		case 2: // Flags
+			editingFlags = true;
 			break;
-		case 3: // Gravity
+		case 3: // Music
 			break;
-		case 4: // Save
-			if (l->name[0] != 0)
-			{
-                char imgFilename[256] = "images/levels/";
-                strcat(imgFilename, l->name.c_str());
-                strcat(imgFilename, ".png");
-				IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
-				l->imageFileName = imgFilename;
-				ofstream file;
-				char filename[256] = "levels/";
-				strcat(filename, l->name.c_str());
-                strcat(filename, ".txt");
-				file.open(filename, ios::out | ios::trunc);
-                file << "[Level]\n";
-                l->generateParameters();
-                for (list<PARAMETER_TYPE >::iterator I = l->parameters.begin(); I != l->parameters.end(); ++I)
-				{
-					file << I->first << VALUE_STRING << I->second << "\n";
-				}
-				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
-				{
-					file << "[Player]\n";
-					(*I)->generateParameters();
-					for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
-					{
-						file << K->first << VALUE_STRING << K->second << "\n";
-					}
-				}
-				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
-				{
-					file << "[Unit]\n";
-					(*I)->generateParameters();
-					for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
-					{
-						file << K->first << VALUE_STRING << K->second << "\n";
-					}
-				}
-				file.close();
-				l->levelFileName = filename;
-			}
+		case 4: // Offset
 			break;
-		case 5: // Continue
+		case 5: // Background colour
+			break;
+		case 6: // Bounmdaries
+			break;
+		case 7: // Dialogue
+			break;
+		case 8: // Gravity
+			break;
+		case 9: // Terminal velocity
+			break;
+		case 10: // Save
+			save();
+			break;
+		case 11: // Continue
 			editorState = esDraw;
 			GFX::showCursor(drawTool != dtBrush);
 			break;
@@ -543,6 +555,146 @@ void Editor::inputSettings()
 	{
 		input->resetKeys();
 		setNextState(STATE_MAIN);
+	}
+}
+
+void Editor::inputFlags()
+{
+	int pos = EDITOR_SETTINGS_OFFSET_Y;
+	mouseInBounds = false;
+	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
+	{
+		for (int I = flagsOffset; I < min((int)flagsItems.size(), flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
+		{
+			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
+			{
+				flagsSel = I;
+				int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+				if (I == flagsItems.size() - 1 || (input->getMouseX()  >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT))
+					mouseInBounds = true;
+			}
+//			if (I == settingsItems.size()-3)
+//				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+//			else
+				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		}
+		lastPos = input->getMouse();
+	}
+
+	if (input->isUp() && flagsSel > 0)
+	{
+		--flagsSel;
+		if (flagsSel < flagsOffset)
+			--flagsOffset;
+		input->resetUp();
+	}
+	else if (input->isDown() && flagsSel < flagsItems.size() - 1)
+	{
+		++flagsSel;
+		if (flagsSel >= flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN)
+			++flagsOffset;
+		input->resetDown();
+	}
+
+	if(input->isLeft() || input->isRight())
+	{
+		switch (flagsSel)
+		{
+		case 0: // scroll x
+			l->flags.switchFlag(Level::lfScrollX);
+			break;
+		case 1: // scroll y
+			l->flags.switchFlag(Level::lfScrollY);
+			break;
+		case 2: // repeat x
+			l->flags.switchFlag(Level::lfRepeatX);
+			break;
+		case 3: // repeat y
+			l->flags.switchFlag(Level::lfRepeatY);
+			break;
+		case 4: // disable swap
+			l->flags.switchFlag(Level::lfDisableSwap);
+			break;
+		case 5: // keep centred
+			l->flags.switchFlag(Level::lfKeepCentred);
+			break;
+		case 6: // draw pattern
+			l->flags.switchFlag(Level::lfDrawPattern);
+			break;
+		case 7: // cycle players
+			l->flags.switchFlag(Level::lfCyclePlayers);
+			break;
+		case 8: // scale x
+			l->flags.switchFlag(Level::lfScaleX);
+			break;
+		case 9: // scale y
+			l->flags.switchFlag(Level::lfScaleY);
+			break;
+		case 10: // split x
+			l->flags.switchFlag(Level::lfSplitX);
+			break;
+		case 11: // split y
+			l->flags.switchFlag(Level::lfSplitY);
+			break;
+		default:
+			break;
+		}
+		input->resetLeft();
+		input->resetRight();
+	}
+
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
+	{
+		switch (flagsSel)
+		{
+		case 0: // scroll x
+			l->flags.switchFlag(Level::lfScrollX);
+			break;
+		case 1: // scroll y
+			l->flags.switchFlag(Level::lfScrollY);
+			break;
+		case 2: // repeat x
+			l->flags.switchFlag(Level::lfRepeatX);
+			break;
+		case 3: // repeat y
+			l->flags.switchFlag(Level::lfRepeatY);
+			break;
+		case 4: // disable swap
+			l->flags.switchFlag(Level::lfDisableSwap);
+			break;
+		case 5: // keep centred
+			l->flags.switchFlag(Level::lfKeepCentred);
+			break;
+		case 6: // draw pattern
+			l->flags.switchFlag(Level::lfDrawPattern);
+			break;
+		case 7: // cycle players
+			l->flags.switchFlag(Level::lfCyclePlayers);
+			break;
+		case 8: // scale x
+			l->flags.switchFlag(Level::lfScaleX);
+			break;
+		case 9: // scale y
+			l->flags.switchFlag(Level::lfScaleY);
+			break;
+		case 10: // split x
+			l->flags.switchFlag(Level::lfSplitX);
+			break;
+		case 11: // split y
+			l->flags.switchFlag(Level::lfSplitY);
+			break;
+		case 12:
+			editingFlags = false;
+			break;
+		default:
+			break;
+		}
+		input->resetKeys();
+	}
+	else if (isCancelKey(input))
+	{
+		editingFlags = false;
+		input->resetKeys();
 	}
 }
 
@@ -1610,7 +1762,7 @@ void Editor::renderSettings()
 
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
 	// render text and selection
-	for (int I = 0; I < settingsItems.size(); ++I)
+	for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 	{
 		rect.x = 0;
 		rect.y = pos;
@@ -1650,10 +1802,113 @@ void Editor::renderSettings()
 				entriesText.setColour(WHITE);
 			entriesText.print(l->name);
 		}
+		else if (I == 1)
+		{
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X,
+									pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			if (I == settingsSel)
+				entriesText.setColour(BLACK);
+			else
+				entriesText.setColour(WHITE);
+			entriesText.print(filename);
+		}
 
-		if (I == settingsItems.size()-3)
-			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+//		if (I == settingsItems.size()-3)
+//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+//		else
+			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+	}
+}
+
+void Editor::renderFlags()
+{
+	SDL_Surface *screen = GFX::getVideoSurface();
+	bg.render(screen);
+
+	int pos = EDITOR_SETTINGS_OFFSET_Y;
+	// render text and selection
+	for (int I = flagsOffset; I < min((int)flagsItems.size(), flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
+	{
+		rect.x = 0;
+		rect.y = pos;
+		rect.w = GFX::getXResolution();
+		rect.h = EDITOR_RECT_HEIGHT;
+		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		if (I == flagsSel)
+		{
+			SDL_FillRect(screen, &rect, -1);
+			menuText.setColour(BLACK);
+		}
 		else
+		{
+			SDL_FillRect(screen, &rect, 0);
+			menuText.setColour(WHITE);
+		}
+		menuText.print(flagsItems[I]);
+
+		if (I != flagsItems.size() - 1) // Checkboxes
+		{
+			rect.w = EDITOR_RECT_HEIGHT;
+			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+			if (I == flagsSel)
+				SDL_FillRect(screen, &rect, 0);
+			else
+				SDL_FillRect(screen, &rect, -1);
+			rect.w = EDITOR_CHECK_HEIGHT;
+			rect.h = EDITOR_CHECK_HEIGHT;
+			rect.x += (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2;
+			rect.y += (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2;
+			bool temp = false;
+			switch (I)
+			{
+			case 0: // scroll x
+				temp = l->flags.hasFlag(Level::lfScrollX);
+				break;
+			case 1: // scroll y
+				temp = l->flags.hasFlag(Level::lfScrollY);
+				break;
+			case 2: // repeat x
+				temp = l->flags.hasFlag(Level::lfRepeatX);
+				break;
+			case 3: // repeat y
+				temp = l->flags.hasFlag(Level::lfRepeatY);
+				break;
+			case 4: // disable swap
+				temp = l->flags.hasFlag(Level::lfDisableSwap);
+				break;
+			case 5: // keep centred
+				temp = l->flags.hasFlag(Level::lfKeepCentred);
+				break;
+			case 6: // draw pattern
+				temp = l->flags.hasFlag(Level::lfDrawPattern);
+				break;
+			case 7: // cycle players
+				temp = l->flags.hasFlag(Level::lfCyclePlayers);
+				break;
+			case 8: // scale x
+				temp = l->flags.hasFlag(Level::lfScaleX);
+				break;
+			case 9: // scale y
+				temp = l->flags.hasFlag(Level::lfScaleY);
+				break;
+			case 10: // split x
+				temp = l->flags.hasFlag(Level::lfSplitX);
+				break;
+			case 11: // split y
+				temp = l->flags.hasFlag(Level::lfSplitY);
+				break;
+			default:
+				break;
+			}
+			if (I == flagsSel && !temp)
+				SDL_FillRect(screen, &rect, -1);
+			else if (I != flagsSel && !temp)
+				SDL_FillRect(screen, &rect, 0);
+		}
+
+//		if (I == settingsItems.size()-3)
+//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+//		else
 			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
 }
@@ -1856,6 +2111,51 @@ void Editor::renderTest()
 {
 	l->render(GFX::getVideoSurface());
 }
+
+void Editor::save()
+{
+	if (filename[0] != 0)
+	{
+		char imgFilename[256] = "images/levels/";
+		strcat(imgFilename, filename.c_str());
+		strcat(imgFilename, ".png");
+		IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
+		l->imageFileName = imgFilename;
+		ofstream file;
+		char lvlFilename[256] = "levels/";
+		strcat(lvlFilename, filename.c_str());
+		strcat(lvlFilename, ".txt");
+		file.open(lvlFilename, ios::out | ios::trunc);
+		file << "[Level]\n";
+		l->generateParameters();
+		for (list<PARAMETER_TYPE >::iterator I = l->parameters.begin(); I != l->parameters.end(); ++I)
+		{
+			file << I->first << VALUE_STRING << I->second << "\n";
+		}
+		for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+		{
+			file << "[Player]\n";
+			(*I)->generateParameters();
+			for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
+			{
+				file << K->first << VALUE_STRING << K->second << "\n";
+			}
+		}
+		for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+		{
+			file << "[Unit]\n";
+			(*I)->generateParameters();
+			for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
+			{
+				file << K->first << VALUE_STRING << K->second << "\n";
+			}
+		}
+		file.close();
+		l->levelFileName = lvlFilename;
+	}
+}
+
+/// Panel implementation
 
 void Editor::drawColourPanel(SDL_Surface *target)
 {
