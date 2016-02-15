@@ -102,6 +102,9 @@ private:
 	int flagsOffset;
 	string filename;
 	bool editingFlags;
+	bool inputVecXCoord;
+	string vecInputTemp;
+	string vecInputBackup;
 	/// Draw
 	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	Colour brushCol;

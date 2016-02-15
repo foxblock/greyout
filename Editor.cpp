@@ -32,6 +32,7 @@
 #include "ControlUnit.h"
 #include "LevelLoader.h"
 #include "fileTypeDefines.h"
+#include "Physics.h"
 
 #include "IMG_savepng.h"
 #include <SDL/SDL_gfxPrimitives.h>
@@ -45,6 +46,7 @@
 #define EDITOR_MENU_SPACING 10
 #define EDITOR_SETTINGS_OFFSET_Y 20
 #define EDITOR_ENTRY_SIZE 400
+#define EDITOR_VEC_ENTRY_SIZE 150
 #define EDITOR_RETURN_Y_POS 400
 #define EDITOR_MENU_OFFSET_X 20
 #define EDITOR_MENU_SPACING_EXTRA 10
@@ -147,6 +149,7 @@ Editor::Editor()
 	flagsSel = 0;
 	flagsOffset = 0;
 	editingFlags = false;
+	inputVecXCoord = false;
 
 	ownsImage = false;
 	brushCol.setColour(BLACK);
@@ -438,6 +441,7 @@ void Editor::inputStart()
 		default:
 			break;
 		}
+		GFX::showCursor(true);
 	}
 	else if (isCancelKey(input))
 	{
@@ -451,8 +455,113 @@ void Editor::inputSettings()
 {
 	if (input->isPollingKeyboard())
 	{
-		if (isAcceptKey(input) || isCancelKey(input))
+		if (input->keyboardBufferHasChanged())
+		{
+			if (settingsSel == 4)
+			{
+				if (inputVecXCoord)
+				{
+					l->drawOffset.x = StringUtility::stringToFloat(vecInputTemp);
+					vecInputTemp = StringUtility::floatToString(l->drawOffset.x);
+				}
+				else
+				{
+					l->drawOffset.y = StringUtility::stringToFloat(vecInputTemp);
+					vecInputTemp = StringUtility::floatToString(l->drawOffset.y);
+				}
+			}
+			else if (settingsSel == 8)
+			{
+				if (inputVecXCoord)
+				{
+					PHYSICS->gravity.x = StringUtility::stringToFloat(vecInputTemp);
+					vecInputTemp = StringUtility::floatToString(PHYSICS->gravity.x);
+				}
+				else
+				{
+					PHYSICS->gravity.y = StringUtility::stringToFloat(vecInputTemp);
+					vecInputTemp = StringUtility::floatToString(PHYSICS->gravity.y);
+				}
+			}
+			else if (settingsSel == 9)
+			{
+				if (inputVecXCoord)
+				{
+					PHYSICS->maximum.x = StringUtility::stringToFloat(vecInputTemp);
+					vecInputTemp = StringUtility::floatToString(PHYSICS->maximum.x);
+				}
+				else
+				{
+					PHYSICS->maximum.y = StringUtility::stringToFloat(vecInputTemp);
+					vecInputTemp = StringUtility::floatToString(PHYSICS->maximum.y);
+				}
+			}
+		}
+		if (input->isLeft() && !inputVecXCoord)
+		{
+			if (settingsSel == 4)
+			{
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.x);
+			}
+			else if (settingsSel == 8)
+			{
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.x);
+			}
+			else if (settingsSel == 9)
+			{
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.x);
+			}
+			inputVecXCoord = true;
+			input->resetLeft();
+		}
+		if (input->isRight() && inputVecXCoord)
+		{
+			if (settingsSel == 4)
+			{
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.y);
+			}
+			else if (settingsSel == 8)
+			{
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.y);
+			}
+			else if (settingsSel == 9)
+			{
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
+			}
+			inputVecXCoord = false;
+			input->resetRight();
+		}
+		if (isAcceptKey(input))
+		{	
 			input->stopKeyboardInput();
+			inputVecXCoord = true; 
+		}
+		else if (isCancelKey(input))
+		{
+			input->stopKeyboardInput();
+			inputVecXCoord = true;
+			if (settingsSel == 4)
+			{
+				if (inputVecXCoord)
+					l->drawOffset.x = StringUtility::stringToFloat(vecInputBackup);
+				else
+					l->drawOffset.y = StringUtility::stringToFloat(vecInputBackup);
+			}
+			else if (settingsSel == 8)
+			{
+				if (inputVecXCoord)
+					PHYSICS->gravity.x = StringUtility::stringToFloat(vecInputBackup);
+				else
+					PHYSICS->gravity.y = StringUtility::stringToFloat(vecInputBackup);
+			}
+			else if (settingsSel == 9)
+			{
+				if (inputVecXCoord)
+					PHYSICS->maximum.x = StringUtility::stringToFloat(vecInputBackup);
+				else
+					PHYSICS->maximum.y = StringUtility::stringToFloat(vecInputBackup);
+			}
+		}
 		input->resetKeys();
 		return;
 	}
@@ -463,10 +572,32 @@ void Editor::inputSettings()
 	{
 		for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 		{
+			// Check Y-Position - Mouse is on menu item vertically
 			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
 			{
 				settingsSel = I;
-				mouseInBounds = true;
+				// Check X-Position depending on menu item
+				if (I == 6) // Checkbox
+				{
+					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+					mouseInBounds = (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT);
+				}
+				else if (I == 4 || I == 8 || I == 9)
+				{
+					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE;
+					if (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE)
+					{
+						mouseInBounds = true;
+						inputVecXCoord = true;
+					}
+					else if (input->getMouseX() >= temp + EDITOR_VEC_ENTRY_SIZE + EDITOR_TEXT_SIZE && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE * 2 + EDITOR_TEXT_SIZE)
+					{
+						mouseInBounds = true;
+						inputVecXCoord = false;
+					}
+				}
+				else
+					mouseInBounds = true;
 			}
 //			if (I == settingsItems.size()-3)
 //				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
@@ -489,6 +620,15 @@ void Editor::inputSettings()
 		if (settingsSel >= settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN)
 			++settingsOffset;
 		input->resetDown();
+	}
+	if (input->getMouseWheelDelta())
+	{
+		settingsOffset -= input->getMouseWheelDelta();
+		if (settingsOffset < 0)
+			settingsOffset = 0;
+		else if (settingsOffset > settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+			settingsOffset = settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN;
+		input->resetMouseWheel();
 	}
 
 	if(input->isLeft())
@@ -528,16 +668,32 @@ void Editor::inputSettings()
 		case 3: // Music
 			break;
 		case 4: // Offset
+			if (inputVecXCoord)
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.x);
+			else
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.y);
+			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
 		case 5: // Background colour
 			break;
 		case 6: // Bounmdaries
+			l->cam.disregardBoundaries = !(l->cam.disregardBoundaries);
 			break;
 		case 7: // Dialogue
 			break;
 		case 8: // Gravity
+			if (inputVecXCoord)
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.x);
+			else
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.y);
+			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
 		case 9: // Terminal velocity
+			if (inputVecXCoord)
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.x);
+			else
+				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
+			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
 		case 10: // Save
 			save();
@@ -570,7 +726,7 @@ void Editor::inputFlags()
 			{
 				flagsSel = I;
 				int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
-				if (I == flagsItems.size() - 1 || (input->getMouseX()  >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT))
+				if (I == flagsItems.size() - 1 || (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT))
 					mouseInBounds = true;
 			}
 //			if (I == settingsItems.size()-3)
@@ -594,6 +750,15 @@ void Editor::inputFlags()
 		if (flagsSel >= flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN)
 			++flagsOffset;
 		input->resetDown();
+	}
+	if (input->getMouseWheelDelta())
+	{
+		flagsOffset -= input->getMouseWheelDelta();
+		if (flagsOffset < 0)
+			flagsOffset = 0;
+		else if (flagsOffset > flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+			flagsOffset = flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN;
+		input->resetMouseWheel();
 	}
 
 	if(input->isLeft() || input->isRight())
@@ -1761,22 +1926,40 @@ void Editor::renderSettings()
 	bg.render(screen);
 
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
-	// render text and selection
 	for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 	{
 		rect.x = 0;
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = EDITOR_RECT_HEIGHT;
+		// render text and selection
 		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
-		if (I == settingsSel)
+		if (I == settingsSel) // active selection (swap colours)
 		{
-			if (input->isPollingKeyboard())
+			if (input->isPollingKeyboard()) // Active input selection
 			{
 				SDL_FillRect(screen, &rect, 0);
-				rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X;
-				rect.w = EDITOR_ENTRY_SIZE;
-				SDL_FillRect(screen, &rect, -1);
+				if (I == 0 || I == 1) // Text input
+				{
+					rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X;
+					rect.w = EDITOR_ENTRY_SIZE;
+					SDL_FillRect(screen, &rect, -1);
+				}
+				else if (I == 4 || I == 8 || I == 9)
+				{
+					if (inputVecXCoord)
+					{
+						rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE;
+						rect.w = EDITOR_VEC_ENTRY_SIZE;
+						SDL_FillRect(screen, &rect, -1);
+					}
+					else
+					{
+						rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE;
+						rect.w = EDITOR_VEC_ENTRY_SIZE;
+						SDL_FillRect(screen, &rect, -1);
+					}
+				}
 				menuText.setColour(WHITE);
 			}
 			else
@@ -1792,25 +1975,70 @@ void Editor::renderSettings()
 		}
 		menuText.print(settingsItems[I]);
 
-		if (I == 0)
+		// render specific menu item content
+		if (I == 0 || I == 1) // Text entry
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X,
-									pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == settingsSel)
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			entriesText.print(l->name);
+			if (I == 0)
+				entriesText.print(l->name);
+			else
+				entriesText.print(filename);
 		}
-		else if (I == 1)
+		else if (I == 4 || I == 8 || I == 9) // Vec input
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X,
-									pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
-			if (I == settingsSel)
+			entriesText.setAlignment(LEFT_JUSTIFIED);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			if (I == settingsSel && !input->isPollingKeyboard())
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			entriesText.print(filename);
+			entriesText.print("X:");
+			entriesText.setPosition(entriesText.getStartPosition().x + EDITOR_TEXT_SIZE + EDITOR_VEC_ENTRY_SIZE, entriesText.getStartPosition().y);
+			entriesText.print("Y:");
+			if (I == settingsSel && (!input->isPollingKeyboard() || inputVecXCoord))
+				entriesText.setColour(BLACK);
+			else
+				entriesText.setColour(WHITE);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			if (I == 4)
+				entriesText.print(l->drawOffset.x);
+			else if (I == 8)
+				entriesText.print(PHYSICS->gravity.x);
+			else if (I == 9)
+				entriesText.print(PHYSICS->maximum.x);
+			if (I == settingsSel && (!input->isPollingKeyboard() || !inputVecXCoord))
+				entriesText.setColour(BLACK);
+			else
+				entriesText.setColour(WHITE);
+			entriesText.setPosition(entriesText.getStartPosition().x + EDITOR_TEXT_SIZE + EDITOR_VEC_ENTRY_SIZE, entriesText.getStartPosition().y);
+			if (I == 4)
+				entriesText.print(l->drawOffset.y);
+			else if (I == 8)
+				entriesText.print(PHYSICS->gravity.y);
+			else if (I == 9)
+				entriesText.print(PHYSICS->maximum.y);
+			entriesText.setAlignment(CENTRED);
+		}
+		else if (I == 6) // Checkbox
+		{
+			rect.w = EDITOR_RECT_HEIGHT;
+			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+			if (I == settingsSel)
+				SDL_FillRect(screen, &rect, 0);
+			else
+				SDL_FillRect(screen, &rect, -1);
+			rect.w = EDITOR_CHECK_HEIGHT;
+			rect.h = EDITOR_CHECK_HEIGHT;
+			rect.x += (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2;
+			rect.y += (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2;
+			if (I == settingsSel && !l->cam.disregardBoundaries)
+				SDL_FillRect(screen, &rect, -1);
+			else if (I != settingsSel && !l->cam.disregardBoundaries)
+				SDL_FillRect(screen, &rect, 0);
 		}
 
 //		if (I == settingsItems.size()-3)
