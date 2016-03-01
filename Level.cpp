@@ -1460,7 +1460,7 @@ void Level::pauseScreen()
 	for (int I = 0; I < pauseItems.size(); ++I)
 	{
 		// NOTE: do mouse selection handling here, so I don't have to copy code
-		if ( (mousePos.y >= pos && mousePos.y <= pos + NAME_RECT_HEIGHT) && ( mousePos != lastPos || input->isLeftClick() ) )
+		if ( (mousePos.y >= pos && mousePos.y < pos + NAME_RECT_HEIGHT) && ( mousePos != lastPos || input->isLeftClick() ) )
 		{
 			pauseSelection = I;
 			mouseInBounds = true;

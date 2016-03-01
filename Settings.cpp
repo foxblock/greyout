@@ -731,7 +731,7 @@ void Settings::inputCategories(SimpleJoy* input)
 	{
 		for (int I = 0; I < categoryItems.size(); ++I)
 		{
-			if (mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT)
+			if (mousePos.y >= pos && mousePos.y < pos + SETTINGS_RECT_HEIGHT)
 			{
 				sel = I;
 				mouseInBounds = true;
@@ -787,7 +787,7 @@ void Settings::inputAudio(SimpleJoy* input)
 	{
 		for (int I = 0; I < audioItems.size(); ++I)
 		{
-			if (mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT)
+			if (mousePos.y >= pos && mousePos.y < pos + SETTINGS_RECT_HEIGHT)
 			{
 				sel = I;
 				mouseInBounds = true;
@@ -915,7 +915,7 @@ void Settings::inputGame(SimpleJoy* input)
 	{
 		for (int I = 0; I < gameItems.size(); ++I)
 		{
-			if (mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT)
+			if (mousePos.y >= pos && mousePos.y < pos + SETTINGS_RECT_HEIGHT)
 			{
 				sel = I;
 				// TODO: Move bounds check here (currently after checking accept key)
@@ -1047,7 +1047,7 @@ void Settings::inputVideo(SimpleJoy* input)
 	{
 		for (int I = 0; I < videoItems.size(); ++I)
 		{
-			if (mousePos.y >= pos && mousePos.y <= pos + SETTINGS_RECT_HEIGHT)
+			if (mousePos.y >= pos && mousePos.y < pos + SETTINGS_RECT_HEIGHT)
 			{
 				sel = I;
 				mouseInBounds = true;

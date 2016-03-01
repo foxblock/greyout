@@ -389,7 +389,7 @@ void Editor::inputStart()
 		int temp = -1;
 		for (int I = 0; I < startItems.size(); ++I)
 		{
-			if (mousePos.y >= pos && mousePos.y <= pos + EDITOR_RECT_HEIGHT)
+			if (mousePos.y >= pos && mousePos.y < pos + EDITOR_RECT_HEIGHT)
 			{
 				temp = I;
 				break;
@@ -558,7 +558,7 @@ void Editor::inputSettings()
 		for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 		{
 			// Check Y-Position - Mouse is on menu item vertically
-			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
+			if (input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT)
 			{
 				settingsSel = I;
 				// Check X-Position depending on menu item
@@ -710,7 +710,7 @@ void Editor::inputFlags()
 	{
 		for (int I = flagsOffset; I < min((int)flagsItems.size(), flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 		{
-			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
+			if (input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT && input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
 			{
 				flagsSel = I;
 				// Last item in list is always back button
