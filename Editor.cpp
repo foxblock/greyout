@@ -710,17 +710,23 @@ void Editor::inputFlags()
 	{
 		for (int I = flagsOffset; I < min((int)flagsItems.size(), flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
 		{
-			if (input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT && input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
+			if (input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT)
 			{
-				flagsSel = I;
 				// Last item in list is always back button
-				if (flagsSel == flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1)
+				if (I == flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1)
+				{
 					flagsSel = flagsItems.size() - 1;
-				// Check whether mouse is on checkbox or back button area
-				int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
-				if (flagsSel == flagsItems.size() - 1 || (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT))
 					mouseInBounds = true;
-				break;
+				}
+				else if (input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
+				{
+					flagsSel = I;
+					// Check whether mouse is on checkbox or back button area
+					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+					if (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT)
+						mouseInBounds = true;
+					break;
+				}
 			}
 				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
@@ -732,6 +738,8 @@ void Editor::inputFlags()
 		--flagsSel;
 		if (flagsSel < flagsOffset)
 			--flagsOffset;
+		else if (flagsSel >= flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1) // Coming from fixed "back item" after moving there with the mouse
+			flagsOffset = flagsSel - EDITOR_MAX_MENU_ITEMS_SCREEN + 2;
 		input->resetUp();
 	}
 	else if (input->isDown() && flagsSel < flagsItems.size() - 1)
