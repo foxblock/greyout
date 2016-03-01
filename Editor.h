@@ -93,7 +93,7 @@ private:
 	bool mouseInBounds;
 	Text entriesText;
 	Text menuText;
-	SDL_Rect rect;
+	SDL_Rect rect; // Dummy rect object used for drawing
 	AnimatedSprite arrows;
 	int startSel;
 	int settingsSel;

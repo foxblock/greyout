@@ -701,6 +701,9 @@ void Editor::inputSettings()
 
 void Editor::inputFlags()
 {
+	// TODO: Mouse-Input für die Scrollbar. Variablen einführen: mouseOnScrollItem (0 - not, 1 - leiste, 2 - oberer button, 3 - unterer button)
+	// TODO: Grafik von Scrollbar entsprechend der mouseOnScrollItem Variable anpassen/invertieren
+	// TODO: Input für die anderen Menü-Items in X-Richtung beschränken
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
 	mouseInBounds = false;
 	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
@@ -710,13 +713,15 @@ void Editor::inputFlags()
 			if (input->getMouseY() >= pos && input->getMouseY() <= pos + EDITOR_RECT_HEIGHT)
 			{
 				flagsSel = I;
+				// Last item in list is always back button
+				if (flagsSel == flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1)
+					flagsSel = flagsItems.size() - 1;
+				// Check whether mouse is on checkbox or back button area
 				int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
-				if (I == flagsItems.size() - 1 || (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT))
+				if (flagsSel == flagsItems.size() - 1 || (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT))
 					mouseInBounds = true;
+				break;
 			}
-//			if (I == settingsItems.size()-3)
-//				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-//			else
 				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
 		lastPos = input->getMouse();
@@ -732,7 +737,7 @@ void Editor::inputFlags()
 	else if (input->isDown() && flagsSel < flagsItems.size() - 1)
 	{
 		++flagsSel;
-		if (flagsSel >= flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN)
+		if (flagsSel >= flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1 && flagsSel != flagsItems.size()-1)
 			++flagsOffset;
 		input->resetDown();
 	}
@@ -2040,11 +2045,11 @@ void Editor::renderFlags()
 
 	int pos = EDITOR_SETTINGS_OFFSET_Y;
 	// render text and selection
-	for (int I = flagsOffset; I < min((int)flagsItems.size(), flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
+	for (int I = flagsOffset; I < min((int)flagsItems.size(), flagsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1); ++I)
 	{
 		rect.x = 0;
 		rect.y = pos;
-		rect.w = GFX::getXResolution();
+		rect.w = GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 		rect.h = EDITOR_RECT_HEIGHT;
 		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 		if (I == flagsSel)
@@ -2062,7 +2067,7 @@ void Editor::renderFlags()
 		if (I != flagsItems.size() - 1) // Checkboxes
 		{
 			rect.w = EDITOR_RECT_HEIGHT;
-			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+			rect.x = (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2;
 			if (I == flagsSel)
 				SDL_FillRect(screen, &rect, 0);
 			else
@@ -2124,6 +2129,43 @@ void Editor::renderFlags()
 //		else
 			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
+	// render back menu item (always visible)
+	rect.x = 0;
+	rect.y = pos;
+	rect.w = GFX::getXResolution();
+	rect.h = EDITOR_RECT_HEIGHT;
+	menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+	if (flagsSel == flagsItems.size() - 1)
+	{
+		SDL_FillRect(screen, &rect, -1);
+		menuText.setColour(BLACK);
+	}
+	else
+	{
+		SDL_FillRect(screen, &rect, 0);
+		menuText.setColour(WHITE);
+	}
+	menuText.print(flagsItems.back());
+	// render scroll bar
+	rect.x = (int)GFX::getXResolution() - EDITOR_RECT_HEIGHT;
+	rect.y = EDITOR_SETTINGS_OFFSET_Y;
+	rect.w = EDITOR_RECT_HEIGHT;
+	rect.h = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING;
+	SDL_FillRect(screen, &rect, 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT / 2, EDITOR_SETTINGS_OFFSET_Y + EDITOR_RECT_HEIGHT / 3,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_SETTINGS_OFFSET_Y + EDITOR_RECT_HEIGHT / 1.5f,
+			(int)GFX::getXResolution() - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_SETTINGS_OFFSET_Y + EDITOR_RECT_HEIGHT / 1.5f,
+			-1);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT / 2, EDITOR_SETTINGS_OFFSET_Y + rect.h - EDITOR_RECT_HEIGHT / 3,
+			(int)GFX::getXResolution() - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_SETTINGS_OFFSET_Y + rect.h - EDITOR_RECT_HEIGHT / 1.5f,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_SETTINGS_OFFSET_Y + rect.h - EDITOR_RECT_HEIGHT / 1.5f,
+			-1);
+	int fullBarSize = (rect.h - EDITOR_RECT_HEIGHT * 2);
+	rect.y = EDITOR_SETTINGS_OFFSET_Y + EDITOR_RECT_HEIGHT + fullBarSize / (flagsItems.size() - 1) * flagsOffset;
+	rect.h = fullBarSize / (flagsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
+	SDL_FillRect(screen, &rect, -1);
 }
 
 void Editor::renderDraw()
