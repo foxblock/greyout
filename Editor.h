@@ -61,6 +61,7 @@ private:
 	void inputDraw();
 	void inputUnits();
 	void inputTest();
+	void inputMenu();
 
 	void renderStart();
 	void renderSettings();
@@ -68,8 +69,11 @@ private:
 	void renderDraw();
 	void renderUnits();
 	void renderTest();
+	void renderMenu();
 
 	void save();
+
+	void goToMenu();
 
 	int editorState;
 	int lastState; // jump to out of test play
@@ -81,11 +85,13 @@ private:
 		,esDraw
 		,esUnits
 		,esTest
+		,esMenu
 	};
 
 	vector<string> startItems;
 	vector<string> settingsItems;
 	vector<string> flagsItems;
+	vector<string> menuItems;
 
 	/// Startup + Settings
 	AnimatedSprite bg;
@@ -149,6 +155,9 @@ private:
 	void drawUnitPanel(SDL_Surface *target);
 	EditorPanel paramsPanel;
 	void drawParamsPanel(SDL_Surface *target);
+	/// Menu
+	SDL_Surface *menuBg;
+	int menuSel;
 };
 
 

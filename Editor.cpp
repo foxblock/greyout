@@ -128,8 +128,7 @@ Editor::Editor()
 	settingsItems.push_back("DIALOGUE:");
 	settingsItems.push_back("GRAVITY:");
 	settingsItems.push_back("MAX SPEED:");
-	settingsItems.push_back("SAVE");
-	settingsItems.push_back("CONTINUE");
+	settingsItems.push_back("MENU");
 	flagsItems.push_back("SCROLL X:");
 	flagsItems.push_back("SCROLL Y:");
 	flagsItems.push_back("REPEAT X:");
@@ -143,6 +142,13 @@ Editor::Editor()
 	flagsItems.push_back("SPLIT X:");
 	flagsItems.push_back("SPLIT Y:");
 	flagsItems.push_back("BACK");
+	menuItems.push_back("EDIT LEVEL PROPERTIES");
+	menuItems.push_back("DRAW LEVEL AREA");
+	menuItems.push_back("PLACE UNITS");
+	menuItems.push_back("TEST LEVEL");
+	menuItems.push_back("SAVE");
+	menuItems.push_back("BACK");
+	menuItems.push_back("EXIT");
 	startSel = 0;
 	settingsSel = 0;
 	settingsOffset = 0;
@@ -211,6 +217,8 @@ Editor::Editor()
 	paramsPanel.transparent = false;
 	paramsPanel.userIsInteracting = false;
 	paramsPanel.changed = false;
+
+	menuBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 }
 
 Editor::~Editor()
@@ -274,6 +282,9 @@ void Editor::userInput()
 	case esTest:
 		inputTest();
 		break;
+	case esMenu:
+		inputMenu();
+		break;
 	default:
 		return;
 	}
@@ -288,25 +299,17 @@ void Editor::update()
 	switch (editorState)
 	{
 	case esStart:
-	{
 		break;
-	}
 	case esSettings:
-	{
 		break;
-	}
 	case esDraw:
-	{
 		break;
-	}
 	case esUnits:
-	{
 		break;
-	}
 	case esTest:
-	{
 		break;
-	}
+	case esMenu:
+		break;
 	default:
 		return;
 	}
@@ -333,6 +336,9 @@ void Editor::render()
 		break;
 	case esTest:
 		renderTest();
+		break;
+	case esMenu:
+		renderMenu();
 		break;
 	default:
 		return;
@@ -411,9 +417,10 @@ void Editor::inputStart()
 		switch (startSel)
 		{
 		case 0: // New level
-			editorState = esSettings;
+			editorState = esDraw;
 			ownsImage = true;
 			l = new Level();
+			l->setSimpleJoy(input);
 			l->levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
 					GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 			SDL_FillRect(l->levelImage, NULL, -1);
@@ -426,6 +433,7 @@ void Editor::inputStart()
 			ownsImage = false;
 			string temp = "levels/playground.txt";
 			l = LEVEL_LOADER->loadLevelFromFile(temp);
+			l->setSimpleJoy(input);
 			if (!l)
 			{
 				printf("ERROR: Failed to load level file in editor: %s", temp.c_str());
@@ -584,10 +592,10 @@ void Editor::inputSettings()
 				else
 					mouseInBounds = true;
 			}
-//			if (I == settingsItems.size()-3)
-//				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-//			else
-				pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+			//			if (I == settingsItems.size()-3)
+			//				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+			//			else
+			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 		}
 		lastPos = input->getMouse();
 	}
@@ -629,16 +637,16 @@ void Editor::inputSettings()
 
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
-//// Input Code for selection box
-//		if (sel == 0)
-//		{
-//			if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X &&
-//					mousePos.x < (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE * 0.85f - EDITOR_MENU_OFFSET_X)
-//				setDrawPattern(getDrawPattern() - 1);
-//			else if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE * 0.15f - EDITOR_MENU_OFFSET_X &&
-//					mousePos.x < (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X)
-//				setDrawPattern(getDrawPattern() + 1);
-//		}
+		//// Input Code for selection box
+		//		if (sel == 0)
+		//		{
+		//			if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X &&
+		//					mousePos.x < (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE * 0.85f - EDITOR_MENU_OFFSET_X)
+		//				setDrawPattern(getDrawPattern() - 1);
+		//			else if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE * 0.15f - EDITOR_MENU_OFFSET_X &&
+		//					mousePos.x < (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X)
+		//				setDrawPattern(getDrawPattern() + 1);
+		//		}
 		switch (settingsSel)
 		{
 		case 0: // Name
@@ -680,12 +688,8 @@ void Editor::inputSettings()
 				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
 			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
-		case 10: // Save
-			save();
-			break;
-		case 11: // Continue
-			editorState = esDraw;
-			GFX::showCursor(drawTool != dtBrush);
+		case 10: // Menu
+			goToMenu();
 			break;
 		default:
 			break;
@@ -695,7 +699,7 @@ void Editor::inputSettings()
 	else if (isCancelKey(input))
 	{
 		input->resetKeys();
-		setNextState(STATE_MAIN);
+		goToMenu();
 	}
 }
 
@@ -904,17 +908,7 @@ void Editor::inputDraw()
 		{
 			panelActiveSlider = 0;
 			colourPanel.userIsInteracting = false;
-			editorState = esSettings;
-			GFX::showCursor(true);
-			input->resetKeys();
-			return;
-		}
-		if (isAcceptKey(input))
-		{
-			panelActiveSlider = 0;
-			colourPanel.userIsInteracting = false;
-			editorState = esUnits;
-			GFX::showCursor(true);
+			goToMenu();
 			input->resetKeys();
 			return;
 		}
@@ -1458,11 +1452,10 @@ void Editor::inputUnits()
 	{
 		if (isCancelKey(input))
 		{
-			editorState = esDraw;
 			if (currentUnit && !currentUnitPlaced)
 				delete currentUnit;
 			currentUnit = NULL;
-			GFX::showCursor(false);
+			goToMenu();
 			input->resetKeys();
 		}
 		if (input->isLeft())
@@ -1525,7 +1518,7 @@ void Editor::inputUnits()
 	}
 	else
 	{
-		return; // Skip over mouse handling entirely
+		return; // Polling keyboard - skip over mouse handling entirely
 	}
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
 	mousePos = input->getMouse();
@@ -1922,6 +1915,83 @@ void Editor::inputTest()
 		l->userInput();
 }
 
+void Editor::inputMenu()
+{
+	mousePos = input->getMouse();
+	if (input->isUp())
+	{
+		menuSel -= (menuSel > 0) ? 1 : 0;
+	}
+	else if (input->isDown())
+	{
+		menuSel += (menuSel < menuItems.size()-1) ? 1 : 0;
+	}
+
+	if (mousePos != lastPos)
+	{
+		int pos = (GFX::getYResolution() - EDITOR_MENU_SPACING * (menuItems.size()-1) - EDITOR_RECT_HEIGHT * menuItems.size()) / 2;
+		int temp = -1;
+		for (int I = 0; I < menuItems.size(); ++I)
+		{
+			if (mousePos.y >= pos && mousePos.y < pos + EDITOR_RECT_HEIGHT)
+			{
+				temp = I;
+				break;
+			}
+			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		}
+		if ( temp != -1 )
+		{
+			menuSel = temp;
+			mouseInBounds = true;
+		}
+		else
+			mouseInBounds = false;
+
+		lastPos = mousePos;
+	}
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
+	{
+		switch (menuSel)
+		{
+		case 0: // Go to level settings
+			editorState = esSettings;
+			GFX::showCursor(true);
+			break;
+		case 1: // Go to draw
+			editorState = esDraw;
+			GFX::showCursor(drawTool != dtBrush);
+			break;
+		case 2: // Go to units
+			editorState = esUnits;
+			GFX::showCursor(true);
+			break;
+		case 3: // Go to test
+			editorState = esTest;
+			break;
+		case 4: // save
+			save();
+			break;
+		case 5: // back
+			editorState = lastState;
+			// TODO: Remember whether cursor needs to be shown or hidden
+			break;
+		case 6: // exit
+			input->resetKeys();
+			setNextState(STATE_MAIN);
+			break;
+		default:
+			return;
+		}
+		GFX::showCursor(true);
+	}
+	else if (isCancelKey(input))
+	{
+		editorState = lastState;
+	}
+	input->resetKeys();
+}
+
 void Editor::renderStart()
 {
 	SDL_Surface *screen = GFX::getVideoSurface();
@@ -2072,10 +2142,10 @@ void Editor::renderSettings()
 				SDL_FillRect(screen, &rect, 0);
 		}
 
-//		if (I == settingsItems.size()-3)
-//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-//		else
-			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		//		if (I == settingsItems.size()-3)
+		//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+		//		else
+		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
 }
 
@@ -2165,9 +2235,9 @@ void Editor::renderFlags()
 				SDL_FillRect(screen, &rect, 0);
 		}
 
-//		if (I == settingsItems.size()-3)
-//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-//		else
+		//		if (I == settingsItems.size()-3)
+		//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+		//		else
 			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
 	// render back menu item (always visible)
@@ -2413,6 +2483,35 @@ void Editor::renderTest()
 	l->render(GFX::getVideoSurface());
 }
 
+void Editor::renderMenu()
+{
+	SDL_Surface *screen = GFX::getVideoSurface();
+	SDL_BlitSurface(menuBg, NULL, GFX::getVideoSurface(), NULL);
+
+	int pos = (GFX::getYResolution() - menuItems.size() * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) + EDITOR_MENU_SPACING) / 2;
+	for (int I = 0; I < menuItems.size(); ++I)
+	{
+		rect.x = 0;
+		rect.y = pos;
+		rect.w = GFX::getXResolution();
+		rect.h = EDITOR_RECT_HEIGHT;
+		entriesText.setPosition(EDITOR_MENU_OFFSET_X / 2, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		if (I == menuSel)
+		{
+			SDL_FillRect(screen, &rect, -1);
+			entriesText.setColour(BLACK);
+		}
+		else
+		{
+			SDL_FillRect(screen, &rect, 0);
+			entriesText.setColour(WHITE);
+		}
+		entriesText.print(menuItems[I]);
+
+		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+	}
+}
+
 void Editor::save()
 {
 	if (filename[0] != 0)
@@ -2454,6 +2553,15 @@ void Editor::save()
 		file.close();
 		l->levelFileName = lvlFilename;
 	}
+}
+
+void Editor::goToMenu()
+{
+	SDL_BlitSurface(GFX::getVideoSurface(), NULL, menuBg, NULL);
+	boxColor(menuBg, 0, 0, GFX::getXResolution()-1, GFX::getYResolution()-1, 0x00000080);
+	lastState = editorState;
+	editorState = esMenu;
+	GFX::showCursor(true);
 }
 
 /// Panel implementation
