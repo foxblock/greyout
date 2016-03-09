@@ -151,6 +151,7 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 
 	string className = params.front().second;
 
+	stateParams.clear();
 	for (list<PARAMETER_TYPE >::iterator value = params.begin(); value != params.end(); ++value)
 	{
 		if (not processParameter(*value))
@@ -179,7 +180,6 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 			{
 				loadState(surf, *I);
 			}
-			stateParams.clear();
 		}
 		else
 		{

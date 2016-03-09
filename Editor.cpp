@@ -307,6 +307,7 @@ void Editor::update()
 	case esUnits:
 		break;
 	case esTest:
+		l->update();
 		break;
 	case esMenu:
 		break;
@@ -689,6 +690,7 @@ void Editor::inputSettings()
 			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
 		case 10: // Menu
+			l->generateParameters();
 			goToMenu();
 			break;
 		default:
@@ -699,6 +701,7 @@ void Editor::inputSettings()
 	else if (isCancelKey(input))
 	{
 		input->resetKeys();
+		l->generateParameters();
 		goToMenu();
 	}
 }
@@ -1910,7 +1913,10 @@ void Editor::inputUnits()
 void Editor::inputTest()
 {
 	if (input->isSelect())
+	{
+		l->reset();
 		editorState = lastState;
+	}
 	else
 		l->userInput();
 }
@@ -1968,6 +1974,8 @@ void Editor::inputMenu()
 			break;
 		case 3: // Go to test
 			editorState = esTest;
+			l->generateParameters();
+			l->reset();
 			break;
 		case 4: // save
 			save();
@@ -2480,7 +2488,7 @@ void Editor::renderUnits()
 
 void Editor::renderTest()
 {
-	l->render(GFX::getVideoSurface());
+	l->render();
 }
 
 void Editor::renderMenu()
