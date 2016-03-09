@@ -45,8 +45,8 @@
 #define EDITOR_CHECK_HEIGHT 27
 #define EDITOR_MENU_SPACING 10
 #define EDITOR_MENU_OFFSET_Y 20
-#define EDITOR_ENTRY_SIZE 400
-#define EDITOR_VEC_ENTRY_SIZE 147
+#define EDITOR_ENTRY_SIZE 355
+#define EDITOR_VEC_ENTRY_SIZE 125
 #define EDITOR_RETURN_Y_POS 400
 #define EDITOR_MENU_OFFSET_X 20
 #define EDITOR_MENU_SPACING_EXTRA 10
@@ -462,6 +462,7 @@ void Editor::inputStart()
 
 void Editor::inputSettings()
 {
+	// Keyboard input before anything else
 	if (input->isPollingKeyboard())
 	{
 		if (input->isLeft() && !inputVecXCoord)
@@ -559,6 +560,31 @@ void Editor::inputSettings()
 		input->resetKeys();
 		return;
 	}
+	// Scrollbar
+	if (input->isLeftClick() && mouseOnScrollItem != 0)
+	{
+		if (mouseOnScrollItem == 2 && settingsOffset > 0)
+		{
+			--settingsOffset;
+			input->resetMouseButtons();
+		}
+		else if (mouseOnScrollItem == 3 && settingsOffset < settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+		{
+			++settingsOffset;
+			input->resetMouseButtons();
+		}
+		else if (mouseOnScrollItem == 1)
+		{
+			int barSize = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING - EDITOR_RECT_HEIGHT * 2;
+			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (settingsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
+			settingsOffset = round((float)(settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_RECT_HEIGHT - scrollSize / 2) / (float)(barSize - scrollSize));
+			if (settingsOffset < 0)
+				settingsOffset = 0;
+			else if (settingsOffset > settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+				settingsOffset = settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN;
+			return; // skip rest of input
+		}
+	}
 
 	int pos = EDITOR_MENU_OFFSET_Y;
 	mouseInBounds = false;
@@ -569,34 +595,53 @@ void Editor::inputSettings()
 			// Check Y-Position - Mouse is on menu item vertically
 			if (input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT)
 			{
-				settingsSel = I;
-				// Check X-Position depending on menu item
-				if (I == 6) // Checkbox
+				if (I == settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1)
 				{
-					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
-					mouseInBounds = (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT);
-				}
-				else if (I == 4 || I == 8 || I == 9)
-				{
-					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE;
-					if (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE)
-					{
-						mouseInBounds = true;
-						inputVecXCoord = true;
-					}
-					else if (input->getMouseX() >= temp + EDITOR_VEC_ENTRY_SIZE + EDITOR_TEXT_SIZE + EDITOR_MENU_SPACING && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE * 2 + EDITOR_TEXT_SIZE + EDITOR_MENU_SPACING)
-					{
-						mouseInBounds = true;
-						inputVecXCoord = false;
-					}
-				}
-				else
+					settingsSel = settingsItems.size() - 1;
 					mouseInBounds = true;
+				}
+				else if (input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
+				{
+					settingsSel = I;
+					// Check X-Position depending on menu item
+					if (I == 6) // Checkbox
+					{
+						int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+						mouseInBounds = (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT);
+					}
+					else if (I == 4 || I == 8 || I == 9)
+					{
+						int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE;
+						if (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE)
+						{
+							mouseInBounds = true;
+							inputVecXCoord = true;
+						}
+						else if (input->getMouseX() >= temp + EDITOR_VEC_ENTRY_SIZE + EDITOR_TEXT_SIZE + EDITOR_MENU_SPACING && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE * 2 + EDITOR_TEXT_SIZE + EDITOR_MENU_SPACING)
+						{
+							mouseInBounds = true;
+							inputVecXCoord = false;
+						}
+					}
+					else
+						mouseInBounds = true;
+				}
+				break;
 			}
 			//			if (I == settingsItems.size()-3)
 			//				pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 			//			else
 			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		}
+		mouseOnScrollItem = 0;
+		if (input->getMouseX() >= GFX::getXResolution() - EDITOR_RECT_HEIGHT)
+		{
+			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT)
+				mouseOnScrollItem = 2;
+			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2))
+				mouseOnScrollItem = 1;
+			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2) + EDITOR_RECT_HEIGHT)
+				mouseOnScrollItem = 3;
 		}
 		lastPos = input->getMouse();
 	}
@@ -606,12 +651,14 @@ void Editor::inputSettings()
 		--settingsSel;
 		if (settingsSel < settingsOffset)
 			--settingsOffset;
+		else if (settingsSel >= settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1) // Coming from fixed "back item" after moving there with the mouse
+			settingsOffset = settingsSel - EDITOR_MAX_MENU_ITEMS_SCREEN + 2;
 		input->resetUp();
 	}
 	else if (input->isDown() && settingsSel < settingsItems.size() - 1)
 	{
 		++settingsSel;
-		if (settingsSel >= settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN)
+		if (settingsSel >= settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1 && settingsSel != settingsItems.size()-1)
 			++settingsOffset;
 		input->resetDown();
 	}
@@ -753,7 +800,7 @@ void Editor::inputFlags()
 				{
 					flagsSel = I;
 					// Check whether mouse is on checkbox or back button area
-					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+					int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 					if (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT)
 						mouseInBounds = true;
 					break;
@@ -2035,11 +2082,11 @@ void Editor::renderSettings()
 	bg.render(screen);
 
 	int pos = EDITOR_MENU_OFFSET_Y;
-	for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
+	for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1); ++I)
 	{
 		rect.x = 0;
 		rect.y = pos;
-		rect.w = GFX::getXResolution();
+		rect.w = GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 		rect.h = EDITOR_RECT_HEIGHT;
 		// render text and selection
 		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
@@ -2050,7 +2097,7 @@ void Editor::renderSettings()
 				SDL_FillRect(screen, &rect, 0);
 				if (I == 0 || I == 1) // Text input
 				{
-					rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X;
+					rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 					rect.w = EDITOR_ENTRY_SIZE;
 					SDL_FillRect(screen, &rect, -1);
 				}
@@ -2058,13 +2105,14 @@ void Editor::renderSettings()
 				{
 					if (inputVecXCoord)
 					{
-						rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE;
+						rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE;
 						rect.w = EDITOR_VEC_ENTRY_SIZE;
 						SDL_FillRect(screen, &rect, -1);
 					}
 					else
 					{
-						rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING;
+						rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING
+								+ EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING;
 						rect.w = EDITOR_VEC_ENTRY_SIZE;
 						SDL_FillRect(screen, &rect, -1);
 					}
@@ -2087,7 +2135,8 @@ void Editor::renderSettings()
 		// render specific menu item content
 		if (I == 0 || I == 1) // Text entry
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == settingsSel)
 				entriesText.setColour(BLACK);
 			else
@@ -2100,7 +2149,8 @@ void Editor::renderSettings()
 		else if (I == 4 || I == 8 || I == 9) // Vec input
 		{
 			entriesText.setAlignment(LEFT_JUSTIFIED);
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == settingsSel && !input->isPollingKeyboard())
 				entriesText.setColour(BLACK);
 			else
@@ -2112,7 +2162,8 @@ void Editor::renderSettings()
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X + EDITOR_TEXT_SIZE, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE,
+					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == 4)
 				entriesText.print((input->isPollingKeyboard() && settingsSel == 4 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.x));
 			else if (I == 8)
@@ -2135,7 +2186,7 @@ void Editor::renderSettings()
 		else if (I == 6) // Checkbox
 		{
 			rect.w = EDITOR_RECT_HEIGHT;
-			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X;
+			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 			if (I == settingsSel)
 				SDL_FillRect(screen, &rect, 0);
 			else
@@ -2155,6 +2206,48 @@ void Editor::renderSettings()
 		//		else
 		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
+	// render back menu item (always visible)
+	rect.x = 0;
+	rect.y = pos;
+	rect.w = GFX::getXResolution();
+	rect.h = EDITOR_RECT_HEIGHT;
+	menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+	if (settingsSel == settingsItems.size() - 1)
+	{
+		SDL_FillRect(screen, &rect, -1);
+		menuText.setColour(BLACK);
+	}
+	else
+	{
+		SDL_FillRect(screen, &rect, 0);
+		menuText.setColour(WHITE);
+	}
+	menuText.print(settingsItems.back());
+	// render scroll bar
+	int fullBarSize = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING;
+	rect.x = (int)GFX::getXResolution() - EDITOR_RECT_HEIGHT;
+	rect.y = EDITOR_MENU_OFFSET_Y;
+	rect.w = EDITOR_RECT_HEIGHT;
+	rect.h = EDITOR_RECT_HEIGHT;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 2 ? -1 : 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT / 2, EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT / 3,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT / 1.5f,
+			(int)GFX::getXResolution() - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT / 1.5f,
+			mouseOnScrollItem == 2 ? 0x000000FF : -1);
+	rect.y = EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 3 ? -1 : 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT / 3,
+			(int)GFX::getXResolution() - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			mouseOnScrollItem == 3 ? 0x000000FF : -1);
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT;
+	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? -1 : 0);
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT + rect.h / (settingsItems.size() - 1) * settingsOffset;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)(settingsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) + 1;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? 0 : -1);
 }
 
 void Editor::renderFlags()
@@ -2186,7 +2279,7 @@ void Editor::renderFlags()
 		if (I != flagsItems.size() - 1) // Checkboxes
 		{
 			rect.w = EDITOR_RECT_HEIGHT;
-			rect.x = (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2;
+			rect.x = (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 			if (I == flagsSel)
 				SDL_FillRect(screen, &rect, 0);
 			else
@@ -2288,7 +2381,7 @@ void Editor::renderFlags()
 	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
 	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? -1 : 0);
 	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT + rect.h / (flagsItems.size() - 1) * flagsOffset;
-	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (flagsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) + 1;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)(flagsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) + 1;
 	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? 0 : -1);
 }
 
