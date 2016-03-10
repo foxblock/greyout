@@ -62,6 +62,7 @@ private:
 	void inputUnits();
 	void inputTest();
 	void inputMenu();
+	void inputFileList();
 
 	void renderStart();
 	void renderSettings();
@@ -70,10 +71,12 @@ private:
 	void renderUnits();
 	void renderTest();
 	void renderMenu();
+	void renderFileList();
 
 	void save();
 
 	void goToMenu();
+	void setUpFileList(string path, string filters, string *target);
 
 	int editorState;
 	int lastState; // jump to out of test play
@@ -112,6 +115,12 @@ private:
 	bool inputVecXCoord;
 	string vecInputTemp;
 	string vecInputBackup;
+	FileLister fileList;
+	bool fileListActive;
+	int fileListOffset;
+	int fileListSel;
+	string *fileListTarget;
+	string musicFile;
 	/// Draw
 	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
 	Colour brushCol;

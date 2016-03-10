@@ -33,6 +33,7 @@
 #include "LevelLoader.h"
 #include "fileTypeDefines.h"
 #include "Physics.h"
+#include "FileLister.h"
 
 #include "IMG_savepng.h"
 #include <SDL/SDL_gfxPrimitives.h>
@@ -51,6 +52,7 @@
 #define EDITOR_MENU_OFFSET_X 20
 #define EDITOR_MENU_SPACING_EXTRA 10
 #define EDITOR_MAX_MENU_ITEMS_SCREEN 10
+#define EDITOR_MAX_FILES_SCREEN 11
 
 #define EDITOR_DEFAULT_WIDTH 400
 #define EDITOR_DEFAULT_HEIGHT 240
@@ -156,6 +158,11 @@ Editor::Editor()
 	flagsOffset = 0;
 	editingFlags = false;
 	inputVecXCoord = false;
+	fileListActive = false;
+	fileListOffset = 0;
+	fileListSel = 0;
+	fileListTarget = NULL;
+	musicFile = "";
 
 	ownsImage = false;
 	brushCol.setColour(BLACK);
@@ -270,6 +277,8 @@ void Editor::userInput()
 	case esSettings:
 		if (editingFlags)
 			inputFlags();
+		else if (fileListActive)
+			inputFileList();
 		else
 			inputSettings();
 		break;
@@ -326,6 +335,8 @@ void Editor::render()
 	case esSettings:
 		if (editingFlags)
 			renderFlags();
+		else if (fileListActive)
+			renderFileList();
 		else
 			renderSettings();
 		break;
@@ -568,7 +579,7 @@ void Editor::inputSettings()
 			--settingsOffset;
 			input->resetMouseButtons();
 		}
-		else if (mouseOnScrollItem == 3 && settingsOffset < settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+		else if (mouseOnScrollItem == 3 && settingsOffset < (int)settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
 		{
 			++settingsOffset;
 			input->resetMouseButtons();
@@ -576,12 +587,12 @@ void Editor::inputSettings()
 		else if (mouseOnScrollItem == 1)
 		{
 			int barSize = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING - EDITOR_RECT_HEIGHT * 2;
-			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (settingsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
+			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (float)(settingsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
 			settingsOffset = round((float)(settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_RECT_HEIGHT - scrollSize / 2) / (float)(barSize - scrollSize));
 			if (settingsOffset < 0)
 				settingsOffset = 0;
-			else if (settingsOffset > settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
-				settingsOffset = settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN;
+			else if (settingsOffset > (int)settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+				settingsOffset = max((int)settingsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN, 0);
 			return; // skip rest of input
 		}
 	}
@@ -707,6 +718,7 @@ void Editor::inputSettings()
 			editingFlags = true;
 			break;
 		case 3: // Music
+			setUpFileList("music","mp3|ogg|wav",&musicFile);
 			break;
 		case 4: // Offset
 			if (inputVecXCoord)
@@ -721,6 +733,7 @@ void Editor::inputSettings()
 			l->cam.disregardBoundaries = !(l->cam.disregardBoundaries);
 			break;
 		case 7: // Dialogue
+			setUpFileList("data","txt",&l->dialogueFile);
 			break;
 		case 8: // Gravity
 			if (inputVecXCoord)
@@ -763,7 +776,7 @@ void Editor::inputFlags()
 			--flagsOffset;
 			input->resetMouseButtons();
 		}
-		else if (mouseOnScrollItem == 3 && flagsOffset < flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+		else if (mouseOnScrollItem == 3 && flagsOffset < (int)flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
 		{
 			++flagsOffset;
 			input->resetMouseButtons();
@@ -771,12 +784,12 @@ void Editor::inputFlags()
 		else if (mouseOnScrollItem == 1)
 		{
 			int barSize = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING - EDITOR_RECT_HEIGHT * 2;
-			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (flagsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
+			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (float)(flagsItems.size() - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
 			flagsOffset = round((float)(flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_RECT_HEIGHT - scrollSize / 2) / (float)(barSize - scrollSize));
 			if (flagsOffset < 0)
 				flagsOffset = 0;
-			else if (flagsOffset > flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
-				flagsOffset = flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN;
+			else if (flagsOffset > (int)flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN)
+				flagsOffset = max((int)flagsItems.size() - EDITOR_MAX_MENU_ITEMS_SCREEN, 0);
 			return; // skip rest of input
 		}
 	}
@@ -2047,6 +2060,104 @@ void Editor::inputMenu()
 	input->resetKeys();
 }
 
+void Editor::inputFileList()
+{
+	// Scrollbar
+	if (input->isLeftClick() && mouseOnScrollItem != 0)
+	{
+		if (mouseOnScrollItem == 2 && fileListOffset > 0)
+		{
+			--fileListOffset;
+			input->resetMouseButtons();
+		}
+		else if (mouseOnScrollItem == 3 && fileListOffset < (int)fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN)
+		{
+			++fileListOffset;
+			input->resetMouseButtons();
+		}
+		else if (mouseOnScrollItem == 1)
+		{
+			int barSize = EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT - EDITOR_RECT_HEIGHT * 2;
+			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (float)fileList.getListing().size() * EDITOR_MAX_FILES_SCREEN;
+			fileListOffset = round((float)(fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_RECT_HEIGHT - scrollSize / 2) / (float)(barSize - scrollSize));
+			if (fileListOffset < 0)
+				fileListOffset = 0;
+			else if (fileListOffset > (int)fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN)
+				fileListOffset = max((int)fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN, 0);
+			return; // skip rest of input
+		}
+	}
+
+	mouseInBounds = false;
+	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
+	{
+		if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y + EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING
+				&& input->getMouseY() < EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING + EDITOR_RECT_HEIGHT)
+		{
+			fileListSel = fileList.getListing().size();
+			mouseInBounds = true;
+		}
+		else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + min((int)fileList.getListing().size(), EDITOR_MAX_FILES_SCREEN) * EDITOR_RECT_HEIGHT
+				&& input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
+		{
+			fileListSel = (input->getMouseY() - EDITOR_MENU_OFFSET_Y) / EDITOR_RECT_HEIGHT;
+			mouseInBounds = true;
+		}
+		mouseOnScrollItem = 0;
+		if (input->getMouseX() >= GFX::getXResolution() - EDITOR_RECT_HEIGHT)
+		{
+			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT)
+				mouseOnScrollItem = 2;
+			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2))
+				mouseOnScrollItem = 1;
+			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2) + EDITOR_RECT_HEIGHT)
+				mouseOnScrollItem = 3;
+		}
+		lastPos = input->getMouse();
+	}
+
+	if (input->isUp() && fileListSel > 0)
+	{
+		--fileListSel;
+		if (fileListSel < fileListOffset)
+			--fileListOffset;
+		else if (fileListSel >= fileListOffset + EDITOR_MAX_FILES_SCREEN) // Coming from fixed "back item" after moving there with the mouse
+			fileListOffset = fileListSel - EDITOR_MAX_FILES_SCREEN + 1;
+		input->resetUp();
+	}
+	else if (input->isDown() && fileListSel < fileList.getListing().size())
+	{
+		++fileListSel;
+		if (fileListSel >= fileListOffset + EDITOR_MAX_FILES_SCREEN - 1 && fileListSel != fileList.getListing().size()-1)
+			++fileListOffset;
+		input->resetDown();
+	}
+	if (input->getMouseWheelDelta())
+	{
+		fileListOffset -= input->getMouseWheelDelta();
+		if (fileListOffset < 0)
+			fileListOffset = 0;
+		else if (fileListOffset > fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN)
+			settingsOffset = fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN;
+		input->resetMouseWheel();
+	}
+
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
+	{
+		if (fileListSel < fileList.getListing().size())
+			*fileListTarget = fileList.getListing()[fileListSel];
+		fileListTarget = NULL;
+		fileListActive = false;
+		input->resetKeys();
+	}
+	else if (isCancelKey(input))
+	{
+		fileListTarget = NULL;
+		fileListActive = false;
+		input->resetKeys();
+	}
+}
+
 void Editor::renderStart()
 {
 	SDL_Surface *screen = GFX::getVideoSurface();
@@ -2133,7 +2244,7 @@ void Editor::renderSettings()
 		menuText.print(settingsItems[I]);
 
 		// render specific menu item content
-		if (I == 0 || I == 1) // Text entry
+		if (I == 0 || I == 1 || I == 3 || I == 7) // Text
 		{
 			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
 					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
@@ -2141,10 +2252,14 @@ void Editor::renderSettings()
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			if (I == 0)
-				entriesText.print(l->name);
-			else
-				entriesText.print(filename);
+			switch (I)
+			{
+				case 0: entriesText.print(l->name); break;
+				case 1: entriesText.print(filename); break;
+				case 3: entriesText.print(musicFile); break;
+				case 7: break;
+				default: break;
+			}
 		}
 		else if (I == 4 || I == 8 || I == 9) // Vec input
 		{
@@ -2613,6 +2728,78 @@ void Editor::renderMenu()
 	}
 }
 
+void Editor::renderFileList()
+{
+	SDL_Surface *screen = GFX::getVideoSurface();
+	bg.render(screen);
+
+	int pos = EDITOR_MENU_OFFSET_Y;
+	for (int I = fileListOffset; I < min((int)fileList.getListing().size(), fileListOffset + EDITOR_MAX_FILES_SCREEN); ++I)
+	{
+		rect.x = 0;
+		rect.y = pos;
+		rect.w = GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+		rect.h = EDITOR_RECT_HEIGHT;
+		// render text and selection
+		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		if (I == fileListSel) // active selection (swap colours)
+		{
+			SDL_FillRect(screen, &rect, -1);
+			menuText.setColour(BLACK);
+		}
+		else
+		{
+			SDL_FillRect(screen, &rect, 0);
+			menuText.setColour(WHITE);
+		}
+		menuText.print(fileList.getListing()[I]);
+
+		pos += EDITOR_RECT_HEIGHT;
+	}
+	// render back menu item (always visible)
+	rect.x = 0;
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+	rect.w = GFX::getXResolution();
+	rect.h = EDITOR_RECT_HEIGHT;
+	menuText.setPosition(EDITOR_MENU_OFFSET_X, rect.y + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+	if (fileListSel == fileList.getListing().size())
+	{
+		SDL_FillRect(screen, &rect, -1);
+		menuText.setColour(BLACK);
+	}
+	else
+	{
+		SDL_FillRect(screen, &rect, 0);
+		menuText.setColour(WHITE);
+	}
+	menuText.print("BACK");
+	// render scroll bar
+	int fullBarSize = EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT;
+	rect.x = (int)GFX::getXResolution() - EDITOR_RECT_HEIGHT;
+	rect.y = EDITOR_MENU_OFFSET_Y;
+	rect.w = EDITOR_RECT_HEIGHT;
+	rect.h = EDITOR_RECT_HEIGHT;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 2 ? -1 : 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT / 2, EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT / 3,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT / 1.5f,
+			(int)GFX::getXResolution() - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT / 1.5f,
+			mouseOnScrollItem == 2 ? 0x000000FF : -1);
+	rect.y = EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 3 ? -1 : 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT / 3,
+			(int)GFX::getXResolution() - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			(int)GFX::getXResolution() - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			mouseOnScrollItem == 3 ? 0x000000FF : -1);
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT;
+	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? -1 : 0);
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT + rect.h / fileList.getListing().size() * fileListOffset;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)fileList.getListing().size() * min((int)fileList.getListing().size(), EDITOR_MAX_FILES_SCREEN) + 1;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? 0 : -1);
+}
+
 void Editor::save()
 {
 	if (filename[0] != 0)
@@ -2663,6 +2850,20 @@ void Editor::goToMenu()
 	lastState = editorState;
 	editorState = esMenu;
 	GFX::showCursor(true);
+}
+
+void Editor::setUpFileList(string path, string filters, string *target)
+{
+	fileList.clearFilters();
+	vector<string> temp;
+	StringUtility::tokenize(filters, temp, "|");
+	for (vector<string>::iterator I = temp.begin(); I != temp.end(); ++I)
+		fileList.addFilter(*I);
+	fileList.setPath(path);
+	fileListOffset = 0;
+	fileListSel = 0;
+	fileListTarget = target;
+	fileListActive = true;
 }
 
 /// Panel implementation

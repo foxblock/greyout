@@ -422,7 +422,8 @@ void Level::generateParameters()
 		parameters.erase(++parameters.begin(), parameters.end()); // Keep class param
 	else
 		parameters.push_back(make_pair(CLASS_STRING, "generic"));
-	parameters.push_back(make_pair("image", imageFileName));
+	if (imageFileName[0] != 0)
+		parameters.push_back(make_pair("image", imageFileName));
 	if (name[0] != 0)
 		parameters.push_back(make_pair("name", name));
 	if (!flags.empty())
