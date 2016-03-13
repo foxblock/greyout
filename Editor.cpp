@@ -108,6 +108,8 @@ Editor::Editor()
 	bg.disableTransparentColour();
 	bg.setPosition(0,0);
 
+	loadFile = "";
+
 	menuText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
 	menuText.setColour(WHITE);
 	menuText.setAlignment(LEFT_JUSTIFIED);
@@ -272,7 +274,10 @@ void Editor::userInput()
 	switch (editorState)
 	{
 	case esStart:
-		inputStart();
+		if (fileListActive)
+			inputFileList();
+		else
+			inputStart();
 		break;
 	case esSettings:
 		if (editingFlags)
@@ -308,6 +313,7 @@ void Editor::update()
 	switch (editorState)
 	{
 	case esStart:
+		updateStart();
 		break;
 	case esSettings:
 		break;
@@ -330,7 +336,10 @@ void Editor::render()
 	switch (editorState)
 	{
 	case esStart:
-		renderStart();
+		if (fileListActive)
+			renderFileList();
+		else
+			renderStart();
 		break;
 	case esSettings:
 		if (editingFlags)
@@ -441,17 +450,7 @@ void Editor::inputStart()
 			break;
 		case 1: // Open level
 		{
-			editorState = esSettings;
-			ownsImage = false;
-			string temp = "levels/playground.txt";
-			l = LEVEL_LOADER->loadLevelFromFile(temp);
-			l->setSimpleJoy(input);
-			if (!l)
-			{
-				printf("ERROR: Failed to load level file in editor: %s", temp.c_str());
-				input->resetKeys();
-				setNextState(STATE_MAIN);
-			}
+			setUpFileList("levels", "txt", &loadFile);
 			break;
 		}
 		case 2: // New chapter
@@ -683,15 +682,12 @@ void Editor::inputSettings()
 		input->resetMouseWheel();
 	}
 
-	if(input->isLeft())
+	if (input->isSelect() && settingsSel == 4) // Shortcut for centering the level
 	{
-		//
-		input->resetLeft();
-	}
-	else if(input->isRight())
-	{
-		//
-		input->resetRight();
+		if (l->levelImage->w < GFX::getXResolution())
+			l->drawOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2.0f;
+		if (l->levelImage->h < GFX::getYResolution())
+			l->drawOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2.0f;
 	}
 
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
@@ -1972,7 +1968,11 @@ void Editor::inputUnits()
 
 void Editor::inputTest()
 {
-	if (input->isSelect())
+	// Pressing this will not pause the level, since its pause status is never read
+	// and therefore disregarded (MyGame reads the pause status, but since Level
+	// is nested inside the Editor class, it reads the Editor's pause status
+	// instead. Editor does not read the nested Level's pause status)
+	if (input->isStart() || input->isKey("ESCAPE"))
 	{
 		l->reset();
 		editorState = lastState;
@@ -2155,6 +2155,23 @@ void Editor::inputFileList()
 		fileListTarget = NULL;
 		fileListActive = false;
 		input->resetKeys();
+	}
+}
+
+void Editor::updateStart()
+{
+	if (loadFile[0] != 0)
+	{
+		editorState = esSettings;
+		ownsImage = false;
+		l = LEVEL_LOADER->loadLevelFromFile("levels/" + loadFile);
+		l->setSimpleJoy(input);
+		if (!l)
+		{
+			printf("ERROR: Failed to load level file in editor: %s", loadFile.c_str());
+			input->resetKeys();
+			setNextState(STATE_MAIN);
+		}
 	}
 }
 

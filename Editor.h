@@ -64,6 +64,8 @@ private:
 	void inputMenu();
 	void inputFileList();
 
+	void updateStart();
+
 	void renderStart();
 	void renderSettings();
 	void renderFlags();
@@ -97,6 +99,8 @@ private:
 	vector<string> menuItems;
 
 	/// Startup + Settings
+	string loadFile;
+
 	AnimatedSprite bg;
 	Vector2di lastPos;
 	bool mouseInBounds;
