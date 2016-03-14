@@ -34,6 +34,7 @@
 #include "fileTypeDefines.h"
 #include "Physics.h"
 #include "FileLister.h"
+#include "MyGame.h"
 
 #include "IMG_savepng.h"
 #include <SDL/SDL_gfxPrimitives.h>
@@ -160,9 +161,11 @@ Editor::Editor()
 	flagsOffset = 0;
 	editingFlags = false;
 	inputVecXCoord = false;
+	fileList.setCheckFolderDepth(false);
+	fileList.includeThisDirInListing(false);
 	fileListActive = false;
 	fileListOffset = 0;
-	fileListSel = 0;
+	fileListSel = 1;
 	fileListTarget = NULL;
 	musicFile = "";
 
@@ -228,6 +231,7 @@ Editor::Editor()
 	paramsPanel.changed = false;
 
 	menuBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+	menuSel = 0;
 }
 
 Editor::~Editor()
@@ -450,7 +454,10 @@ void Editor::inputStart()
 			break;
 		case 1: // Open level
 		{
-			setUpFileList("levels", "txt", &loadFile);
+			char* temp;
+			temp = new char[_MAX_PATH];
+			temp = getcwd(temp,_MAX_PATH);
+			setUpFileList((string)temp + "/levels", "DIR|txt", &loadFile);
 			break;
 		}
 		case 2: // New chapter
@@ -1976,6 +1983,7 @@ void Editor::inputTest()
 	{
 		l->reset();
 		editorState = lastState;
+		input->resetKeys();
 	}
 	else
 		l->userInput();
@@ -2092,16 +2100,20 @@ void Editor::inputFileList()
 	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
 	{
 		if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y + EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING
-				&& input->getMouseY() < EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING + EDITOR_RECT_HEIGHT)
+				&& input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_MAX_FILES_SCREEN + 1) * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING)
 		{
+			// Back item (always visible at the bottom)
 			fileListSel = fileList.getListing().size();
 			mouseInBounds = true;
 		}
 		else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + min((int)fileList.getListing().size(), EDITOR_MAX_FILES_SCREEN) * EDITOR_RECT_HEIGHT
 				&& input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
 		{
-			fileListSel = (input->getMouseY() - EDITOR_MENU_OFFSET_Y) / EDITOR_RECT_HEIGHT;
-			mouseInBounds = true;
+			fileListSel = fileListOffset + (input->getMouseY() - EDITOR_MENU_OFFSET_Y) / EDITOR_RECT_HEIGHT;
+			if (fileListSel == 0) // Top label item
+				fileListSel = 1;
+			else
+				mouseInBounds = true;
 		}
 		mouseOnScrollItem = 0;
 		if (input->getMouseX() >= GFX::getXResolution() - EDITOR_RECT_HEIGHT)
@@ -2116,7 +2128,7 @@ void Editor::inputFileList()
 		lastPos = input->getMouse();
 	}
 
-	if (input->isUp() && fileListSel > 0)
+	if (input->isUp() && fileListSel > 1)
 	{
 		--fileListSel;
 		if (fileListSel < fileListOffset)
@@ -2144,10 +2156,27 @@ void Editor::inputFileList()
 
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
-		if (fileListSel < fileList.getListing().size())
-			*fileListTarget = fileList.getListing()[fileListSel];
-		fileListTarget = NULL;
-		fileListActive = false;
+		if (fileListSel < fileList.getListing().size()) // If not on "back" button
+		{
+			fileList.setSelection(fileListSel);
+			if (fileList.getSelectedType() == DT_DIR)
+			{
+				fileList.enter();
+				fileListSel = 1;
+				fileListOffset = 0;
+			}
+			else
+			{
+				*fileListTarget = fileList.enter();
+				fileListTarget = NULL;
+				fileListActive = false;
+			}
+		}
+		else
+		{
+			fileListTarget = NULL;
+			fileListActive = false;
+		}
 		input->resetKeys();
 	}
 	else if (isCancelKey(input))
@@ -2158,19 +2187,24 @@ void Editor::inputFileList()
 	}
 }
 
+// TODO: ChapterPath wird aktuell beim Laden eines Levels nicht gesetzt (ist aber eig. okay, da nur einzelne Levels geladen werden sollen)
+
 void Editor::updateStart()
 {
 	if (loadFile[0] != 0)
 	{
-		editorState = esSettings;
+		editorState = esDraw;
 		ownsImage = false;
-		l = LEVEL_LOADER->loadLevelFromFile("levels/" + loadFile);
-		l->setSimpleJoy(input);
+		l = LEVEL_LOADER->loadLevelFromFile(loadFile);
 		if (!l)
 		{
-			printf("ERROR: Failed to load level file in editor: %s", loadFile.c_str());
 			input->resetKeys();
-			setNextState(STATE_MAIN);
+			ENGINE->stateParameter = "ERROR: Failed to load level file in editor: " + loadFile;
+			setNextState(STATE_ERROR);
+		}
+		else
+		{
+			l->setSimpleJoy(input);
 		}
 	}
 }
@@ -2878,7 +2912,7 @@ void Editor::setUpFileList(string path, string filters, string *target)
 		fileList.addFilter(*I);
 	fileList.setPath(path);
 	fileListOffset = 0;
-	fileListSel = 0;
+	fileListSel = 1;
 	fileListTarget = target;
 	fileListActive = true;
 }
