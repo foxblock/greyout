@@ -49,9 +49,7 @@
 #define EDITOR_MENU_OFFSET_Y 20
 #define EDITOR_ENTRY_SIZE 355
 #define EDITOR_VEC_ENTRY_SIZE 125
-#define EDITOR_RETURN_Y_POS 400
 #define EDITOR_MENU_OFFSET_X 20
-#define EDITOR_MENU_SPACING_EXTRA 10
 #define EDITOR_MAX_MENU_ITEMS_SCREEN 10
 #define EDITOR_MAX_FILES_SCREEN 11
 
@@ -2003,7 +2001,7 @@ void Editor::inputMenu()
 
 	if (mousePos != lastPos)
 	{
-		int pos = (GFX::getYResolution() - EDITOR_MENU_SPACING * (menuItems.size()-1) - EDITOR_RECT_HEIGHT * menuItems.size()) / 2;
+		int pos = (GFX::getYResolution() - (EDITOR_MENU_SPACING + EDITOR_RECT_HEIGHT) * menuItems.size() - EDITOR_MENU_SPACING) / 2;
 		int temp = -1;
 		for (int I = 0; I < menuItems.size(); ++I)
 		{
@@ -2013,6 +2011,8 @@ void Editor::inputMenu()
 				break;
 			}
 			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+			if (I == 3)
+				pos += EDITOR_MENU_SPACING * 2;
 		}
 		if ( temp != -1 )
 		{
@@ -2193,8 +2193,6 @@ void Editor::updateStart()
 {
 	if (loadFile[0] != 0)
 	{
-		editorState = esDraw;
-		ownsImage = false;
 		l = LEVEL_LOADER->loadLevelFromFile(loadFile);
 		if (!l)
 		{
@@ -2205,6 +2203,10 @@ void Editor::updateStart()
 		else
 		{
 			l->setSimpleJoy(input);
+			editorOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2;
+			editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
+			editorState = esDraw;
+			ownsImage = false;
 		}
 	}
 }
@@ -2755,7 +2757,7 @@ void Editor::renderMenu()
 	SDL_Surface *screen = GFX::getVideoSurface();
 	SDL_BlitSurface(menuBg, NULL, GFX::getVideoSurface(), NULL);
 
-	int pos = (GFX::getYResolution() - menuItems.size() * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) + EDITOR_MENU_SPACING) / 2;
+	int pos = (GFX::getYResolution() - menuItems.size() * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING) / 2;
 	for (int I = 0; I < menuItems.size(); ++I)
 	{
 		rect.x = 0;
@@ -2776,6 +2778,8 @@ void Editor::renderMenu()
 		entriesText.print(menuItems[I]);
 
 		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		if (I == 3) // Last "state" item -> add extra offset before back,save,exit items
+			pos += EDITOR_MENU_SPACING * 2;
 	}
 }
 
