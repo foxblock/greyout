@@ -168,6 +168,11 @@ private:
 	void drawUnitPanel(SDL_Surface *target);
 	EditorPanel paramsPanel;
 	void drawParamsPanel(SDL_Surface *target);
+	int paramsSel;
+	int paramsOffset; // in pixels (all others are in # of menu items)
+	vector<int> paramsYPos;
+	int paramsSize;
+	vector<PARAMETER_TYPE > currentParamsBackup;
 	/// Menu
 	SDL_Surface *menuBg;
 	int menuSel;

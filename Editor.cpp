@@ -86,7 +86,7 @@
 #define EDITOR_UNIT_TRIGGER_START 48
 #define EDITOR_UNIT_TRIGGER_COUNT 6
 
-#define EDITOR_PARAMS_PANEL_WIDTH 200
+#define EDITOR_PARAMS_PANEL_WIDTH 250
 #define EDITOR_PARAMS_PANEL_HEIGHT 300
 #define EDITOR_PARAMS_SPACING 4
 
@@ -227,6 +227,8 @@ Editor::Editor()
 	paramsPanel.transparent = false;
 	paramsPanel.userIsInteracting = false;
 	paramsPanel.changed = false;
+	paramsSel = -1;
+	paramsOffset = 0;
 
 	menuBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 	menuSel = 0;
@@ -651,12 +653,15 @@ void Editor::inputSettings()
 		mouseOnScrollItem = 0;
 		if (input->getMouseX() >= GFX::getXResolution() - EDITOR_RECT_HEIGHT)
 		{
-			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT)
-				mouseOnScrollItem = 2;
-			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2))
-				mouseOnScrollItem = 1;
-			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2) + EDITOR_RECT_HEIGHT)
-				mouseOnScrollItem = 3;
+			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y)
+			{
+				if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT)
+					mouseOnScrollItem = 2;
+				else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2))
+					mouseOnScrollItem = 1;
+				else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2) + EDITOR_RECT_HEIGHT)
+					mouseOnScrollItem = 3;
+			}
 		}
 		lastPos = input->getMouse();
 	}
@@ -1582,6 +1587,16 @@ void Editor::inputUnits()
 	}
 	else
 	{
+		if (input->keyboardBufferHasChanged())
+			paramsPanel.changed = true;
+		if (isAcceptKey(input) || isCancelKey(input))
+		{
+			input->stopKeyboardInput();
+			currentUnit->reset(); // Reload changed parameters
+			paramsSel = -1;
+			paramsPanel.changed = true;
+			input->resetKeys();
+		}
 		return; // Polling keyboard - skip over mouse handling entirely
 	}
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
@@ -1816,13 +1831,80 @@ void Editor::inputUnits()
 		}
 		if (!paramsPanel.transparent && (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())) // user is actually interacting with the panel contents
 		{
+			int tempItem = mouseOnScrollItem;
+			if (input->isLeftClick() && mouseOnScrollItem != 0)
+			{
+				int tempPos = paramsOffset;
+				if (mouseOnScrollItem == 2 && paramsOffset > 0)
+				{
+					paramsOffset -= min(paramsOffset, 10);
+					input->resetMouseButtons();
+				}
+				else if (mouseOnScrollItem == 3 && paramsOffset < paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2)
+				{
+					paramsOffset += min(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2 - paramsOffset, 10);
+					input->resetMouseButtons();
+				}
+				else if (mouseOnScrollItem == 1)
+				{
+					int barSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT * 2;
+					int scrollSize = barSize / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2) + 1;
+					paramsOffset = round((paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2) * (input->getMouseY() - EDITOR_PARAMS_SPACING - EDITOR_RECT_HEIGHT - scrollSize / 2.0f) / (float)(barSize - scrollSize));
+					if (paramsOffset < 0)
+						paramsOffset = 0;
+					else if (paramsOffset > paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2)
+						paramsOffset = max(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2, 0);
+				}
+				paramsPanel.changed = (paramsOffset != tempPos);
+			}
+			else if (input->getMouseX() < paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PARAMS_SPACING &&
+					(input->isLeftClick() == SimpleJoy::sjPRESSED))
+			{
+				int tempYPos = input->getMouse().y;
+				for (int I = 0; I < paramsYPos.size() - 1; ++I)
+				{
+					if (tempYPos >= paramsYPos[I] && tempYPos < paramsYPos[I+1])
+					{
+						paramsSel = I;
+						// Here I fucked myself over by chosing list over vector for the parameter container
+						// TODO: Revisit this descision, at this point vector is more useful and I don't see a real advantage of list in other cases.
+						// These lists usually don't get changed much in-game (main advanatge of a list) and are only set-up once in loading.
+						// Even there a list should not be much faster than vector.
+						// In fact, iterating over the vector everywhere else could even be slightly faster.
+						list<PARAMETER_TYPE >::iterator temp = currentUnit->parameters.begin();
+						for (int K = 0; K < paramsSel; ++K)
+							++temp;
+						input->pollKeyboardInput(&temp->second);
+						paramsPanel.changed = true;
+						break;
+					}
+				}
+			}
+			else if (input->getMouseX() >= paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT)
+			{
+				mouseOnScrollItem = 0;
+				if (input->getMouseY() >= EDITOR_PARAMS_SPACING)
+				{
+					if (input->getMouseY() < EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT)
+						mouseOnScrollItem = 2;
+					else if (input->getMouseY() < EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT)
+						mouseOnScrollItem = 1;
+					else if (input->getMouseY() < EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING)
+						mouseOnScrollItem = 3;
+				}
+			}
+			else
+				mouseOnScrollItem = 0;
 			if (input->isLeftClick() || input->isRightClick())
 				paramsPanel.userIsInteracting = true;
 			else
 				paramsPanel.userIsInteracting = false;
-			return;
+			if (mouseOnScrollItem != tempItem)
+				paramsPanel.changed = true;
+			return; // Skip over rest of mouse handling
 		}
 	}
+	// Reset panel transparency
 	if (paramsPanel.active && paramsPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(paramsPanel.pos.x, paramsPanel.pos.y, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT)))
 	{
 		SDL_SetAlpha(paramsPanel.surf, 0, 255);
@@ -2118,12 +2200,15 @@ void Editor::inputFileList()
 		mouseOnScrollItem = 0;
 		if (input->getMouseX() >= GFX::getXResolution() - EDITOR_RECT_HEIGHT)
 		{
-			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT)
-				mouseOnScrollItem = 2;
-			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2))
-				mouseOnScrollItem = 1;
-			else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 2) + EDITOR_RECT_HEIGHT)
-				mouseOnScrollItem = 3;
+			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y)
+			{
+				if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT)
+					mouseOnScrollItem = 2;
+				else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT * (EDITOR_MAX_FILES_SCREEN - 1))
+					mouseOnScrollItem = 1;
+				else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT * EDITOR_MAX_FILES_SCREEN)
+					mouseOnScrollItem = 3;
+			}
 		}
 		lastPos = input->getMouse();
 	}
@@ -2787,6 +2872,7 @@ void Editor::renderFileList()
 {
 	SDL_Surface *screen = GFX::getVideoSurface();
 	bg.render(screen);
+	menuText.setWrapping(false); // Temporarily disable wrapping
 
 	int pos = EDITOR_MENU_OFFSET_Y;
 	for (int I = fileListOffset; I < min((int)fileList.getListing().size(), fileListOffset + EDITOR_MAX_FILES_SCREEN); ++I)
@@ -2828,6 +2914,7 @@ void Editor::renderFileList()
 		menuText.setColour(WHITE);
 	}
 	menuText.print("BACK");
+	menuText.setWrapping(true);
 	// render scroll bar
 	int fullBarSize = EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT;
 	rect.x = (int)GFX::getXResolution() - EDITOR_RECT_HEIGHT;
@@ -3123,14 +3210,57 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 void Editor::drawParamsPanel(SDL_Surface* target)
 {
 	bg.render(target);
+	paramsYPos.clear();
 	if (!currentUnit)
 		return;
-	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2);
+	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2);
 	panelText.setWrapping(true);
 	panelText.setAlignment(LEFT_JUSTIFIED);
-	panelText.setPosition(EDITOR_PARAMS_SPACING, EDITOR_PARAMS_SPACING);
+	panelText.setPosition(EDITOR_PARAMS_SPACING, EDITOR_PARAMS_SPACING - paramsOffset);
+	panelText.setRelativity(true);
 	string temp;
+	int counter = 0;
 	for (list<PARAMETER_TYPE >::iterator I = currentUnit->parameters.begin(); I != currentUnit->parameters.end(); ++I)
-		temp += I->first + VALUE_STRING + I->second + "\n";
-	panelText.print(target, temp);
+	{
+		paramsYPos.push_back(panelText.getPosition().y);
+		temp = I->first + VALUE_STRING + I->second + "\n";
+		panelText.print(target, temp);
+		// We only know the text dimensions after printing it. So we can only draw the selection box now (and need to print the text again)
+		if (counter == paramsSel)
+		{
+			boxColor(target, 0, paramsYPos.back(), EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PARAMS_SPACING - 1, panelText.getPosition().y, -1);
+			panelText.setColour(BLACK);
+			panelText.setPosition(panelText.getPosition().x, paramsYPos.back());
+			panelText.print(target, temp);
+			panelText.setColour(WHITE);
+		}
+		++counter;
+	}
+	paramsYPos.push_back(panelText.getPosition().y);
+	paramsSize = panelText.getPosition().y - EDITOR_PARAMS_SPACING + paramsOffset;
+	// render scroll bar
+	int fullBarSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2;
+	rect.x = EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT;
+	rect.y = EDITOR_PARAMS_SPACING;
+	rect.w = EDITOR_RECT_HEIGHT;
+	rect.h = EDITOR_RECT_HEIGHT;
+	SDL_FillRect(target, &rect, mouseOnScrollItem == 2 ? -1 : 0);
+	filledTrigonColor(target,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT / 2, EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT / 3,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT / 1.5f,
+			EDITOR_PARAMS_PANEL_WIDTH - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT / 1.5f,
+			mouseOnScrollItem == 2 ? 0x000000FF : -1);
+	rect.y = EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT;
+	SDL_FillRect(target, &rect, mouseOnScrollItem == 3 ? -1 : 0);
+	filledTrigonColor(target,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT / 2, EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 3,
+			EDITOR_PARAMS_PANEL_WIDTH - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			mouseOnScrollItem == 3 ? 0x000000FF : -1);
+	rect.y = EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT;
+	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
+	SDL_FillRect(target, &rect, mouseOnScrollItem == 1 ? -1 : 0);
+	rect.y = EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT + rect.h / (float)paramsSize * paramsOffset;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2) + 1;
+	SDL_FillRect(target, &rect, mouseOnScrollItem == 1 ? 0 : -1);
 }

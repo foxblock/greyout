@@ -401,7 +401,7 @@ ControlUnit* LevelLoader::createPlayer(list<PARAMETER_TYPE >& params, Level* con
 		temp.push_back(make_pair("state","runleft,24,6,10,-1,pulse"));
 		temp.push_back(make_pair("state","jumpleft,66,2,10,0,normal"));
 		temp.push_back(make_pair("state","flyleft,67,1,10,0,normal"));
-		params.insert(++params.begin(), temp.begin(), temp.end());
+		params.insert(++params.begin(), temp.begin(), temp.end()); // Keep class paramter at beginning of list
 		result = new BasePlayer(parent);
 		break;
 	}
