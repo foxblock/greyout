@@ -1858,24 +1858,35 @@ void Editor::inputUnits()
 				paramsPanel.changed = (paramsOffset != tempPos);
 			}
 			else if (input->getMouseX() < paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PARAMS_SPACING &&
-					(input->isLeftClick() == SimpleJoy::sjPRESSED))
+					(input->isLeftClick() == SimpleJoy::sjPRESSED || input->isRightClick() == SimpleJoy::sjPRESSED))
 			{
 				int tempYPos = input->getMouse().y;
 				for (int I = 0; I < paramsYPos.size() - 1; ++I)
 				{
 					if (tempYPos >= paramsYPos[I] && tempYPos < paramsYPos[I+1])
 					{
-						paramsSel = I;
+						if (I == 0) // class parameter
+							break;
 						// Here I fucked myself over by chosing list over vector for the parameter container
 						// TODO: Revisit this descision, at this point vector is more useful and I don't see a real advantage of list in other cases.
 						// These lists usually don't get changed much in-game (main advanatge of a list) and are only set-up once in loading.
 						// Even there a list should not be much faster than vector.
 						// In fact, iterating over the vector everywhere else could even be slightly faster.
 						list<PARAMETER_TYPE >::iterator temp = currentUnit->parameters.begin();
-						for (int K = 0; K < paramsSel; ++K)
+						for (int K = 0; K < I; ++K)
 							++temp;
-						input->pollKeyboardInput(&temp->second);
+						if (input->isLeftClick())
+						{
+							paramsSel = I;
+							input->pollKeyboardInput(&temp->second);
+						}
+						else // Remove parameter when right clicked
+						{
+							currentUnit->parameters.erase(temp);
+							currentUnit->reset();
+						}
 						paramsPanel.changed = true;
+						input->resetMouseButtons();
 						break;
 					}
 				}
@@ -2768,13 +2779,10 @@ void Editor::renderUnits()
 	src.w = min((int)GFX::getXResolution(), l->getWidth() - src.x);
 	src.h = min((int)GFX::getYResolution(), l->getHeight() - src.y);
 	SDL_BlitSurface(l->levelImage, &src, screen, &dst);
-	if (drawUnits)
-	{
-		for (vector<BaseUnit*>::const_iterator I = l->units.begin(); I != l->units.end(); ++I)
-			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
-		for (vector<ControlUnit*>::const_iterator I = l->players.begin(); I != l->players.end(); ++I)
-			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
-	}
+	for (vector<BaseUnit*>::const_iterator I = l->units.begin(); I != l->units.end(); ++I)
+		l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+	for (vector<ControlUnit*>::const_iterator I = l->players.begin(); I != l->players.end(); ++I)
+		l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
 	if (currentUnit)
 	{
 		l->renderUnit(GFX::getVideoSurface(), currentUnit, editorOffset);

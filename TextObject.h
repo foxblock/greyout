@@ -52,6 +52,7 @@ protected:
 	string line;
 	Vector2di size;
 	int fontSize;
+	bool userSetSize;
 
 	enum TextProps
 	{

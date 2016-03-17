@@ -45,6 +45,7 @@ TextObject::TextObject(Level* newParent) : BaseUnit(newParent)
 	fontFilename = "";
 	fontSize = 24;
 	size = Vector2di(-1,-1);
+	userSetSize = false;
 }
 
 TextObject::~TextObject()
@@ -72,7 +73,7 @@ bool TextObject::load(list<PARAMETER_TYPE >& params)
 	currentText->setWrapping(false);
 
 	// calculate automatically if not passed in level file (often inaccurate!)
-	if (size.x == -1 && size.y == -1)
+	if (!userSetSize)
 	{
 		SDL_Surface *dummy = SDL_CreateRGBSurface(SDL_SWSURFACE,1,1,
 				GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
@@ -128,6 +129,7 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
 		// overwrite the value to prevent drawing errors
 		// Bloody inconvenient, I am a lazy fuck, deal with it
 		size = StringUtility::stringToVec<Vector2di>(value.second);
+		userSetSize = true;
 		break;
 	}
 	case tpText:
