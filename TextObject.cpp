@@ -150,7 +150,7 @@ void TextObject::generateParameters()
 	if (fontFilename[0] != 0)
 		parameters.push_back(make_pair("font", fontFilename));
 	parameters.push_back(make_pair("fontsize", StringUtility::intToString(fontSize)));
-	if (size.x != -1 && size.y != -1)
+	if (userSetSize)
 		parameters.push_back(make_pair("size", StringUtility::vecToString(size)));
 	if (line[0] != 0)
 		parameters.push_back(make_pair("text", line));
