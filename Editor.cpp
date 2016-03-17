@@ -116,7 +116,7 @@ Editor::Editor()
 	entriesText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
 	entriesText.setColour(WHITE);
 	entriesText.setAlignment(CENTRED);
-	entriesText.setUpBoundary(Vector2di((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X, GFX::getYResolution()));
+	entriesText.setUpBoundary(Vector2di((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING, GFX::getYResolution()));
 	startItems.push_back("NEW LEVEL");
 	startItems.push_back("LOAD LEVEL");
 	startItems.push_back("NEW CHAPTER");
@@ -229,6 +229,8 @@ Editor::Editor()
 	paramsPanel.changed = false;
 	paramsSel = -1;
 	paramsOffset = 0;
+	addingParam = false;
+	addingParamTemp = "";
 
 	menuBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 	menuSel = 0;
@@ -1589,13 +1591,37 @@ void Editor::inputUnits()
 	{
 		if (input->keyboardBufferHasChanged())
 			paramsPanel.changed = true;
-		if (isAcceptKey(input) || isCancelKey(input))
+		if(addingParam)
 		{
-			input->stopKeyboardInput();
-			currentUnit->reset(); // Reload changed parameters
-			paramsSel = -1;
-			paramsPanel.changed = true;
-			input->resetKeys();
+			if (isAcceptKey(input))
+			{
+				vector<string> temp;
+				StringUtility::tokenize(addingParamTemp, temp, "=", 2);
+				if (temp.size() == 2)
+				{
+					currentUnit->parameters.push_back(make_pair(temp.front(), temp.back()));
+					currentUnit->reset();
+				}
+			}
+			if (isAcceptKey(input) || isCancelKey(input))
+			{
+				input->stopKeyboardInput();
+				addingParam = false;
+				addingParamTemp = "";
+				paramsPanel.changed = true;
+				input->resetKeys();
+			}
+		}
+		else // editing parameter
+		{
+			if (isAcceptKey(input) || isCancelKey(input))
+			{
+				input->stopKeyboardInput();
+				currentUnit->reset(); // Reload changed parameters
+				paramsSel = -1;
+				paramsPanel.changed = true;
+				input->resetKeys();
+			}
 		}
 		return; // Polling keyboard - skip over mouse handling entirely
 	}
@@ -1847,19 +1873,22 @@ void Editor::inputUnits()
 				}
 				else if (mouseOnScrollItem == 1)
 				{
-					int barSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT * 2;
-					int scrollSize = barSize / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2) + 1;
-					paramsOffset = round((paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2) * (input->getMouseY() - EDITOR_PARAMS_SPACING - EDITOR_RECT_HEIGHT - scrollSize / 2.0f) / (float)(barSize - scrollSize));
+					int barSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 4 - EDITOR_RECT_HEIGHT * 2 - EDITOR_PANEL_TEXT_SIZE;
+					int scrollSize = barSize / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 4 - EDITOR_PANEL_TEXT_SIZE) + 1;
+					paramsOffset = round((paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE) * (input->getMouseY() - EDITOR_PARAMS_SPACING - EDITOR_RECT_HEIGHT - scrollSize / 2.0f) / (float)(barSize - scrollSize));
 					if (paramsOffset < 0)
 						paramsOffset = 0;
-					else if (paramsOffset > paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2)
-						paramsOffset = max(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2, 0);
+					else if (paramsOffset > paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE)
+						paramsOffset = max(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE, 0);
 				}
 				paramsPanel.changed = (paramsOffset != tempPos);
 			}
 			else if (input->getMouseX() < paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PARAMS_SPACING &&
+					input->getMouseY() > paramsPanel.pos.y + EDITOR_PARAMS_SPACING &&
+					input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE &&
 					(input->isLeftClick() == SimpleJoy::sjPRESSED || input->isRightClick() == SimpleJoy::sjPRESSED))
 			{
+				mouseOnScrollItem = 0;
 				int tempYPos = input->getMouse().y;
 				for (int I = 0; I < paramsYPos.size() - 1; ++I)
 				{
@@ -1891,18 +1920,28 @@ void Editor::inputUnits()
 					}
 				}
 			}
-			else if (input->getMouseX() >= paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT)
+			else if (input->getMouseX() >= paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT &&
+					input->getMouseY() <  paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE)
 			{
 				mouseOnScrollItem = 0;
-				if (input->getMouseY() >= EDITOR_PARAMS_SPACING)
+				if (input->getMouseY() >= paramsPanel.pos.y + EDITOR_PARAMS_SPACING)
 				{
-					if (input->getMouseY() < EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT)
+					if (input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT)
 						mouseOnScrollItem = 2;
-					else if (input->getMouseY() < EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT)
+					else if (input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE - EDITOR_RECT_HEIGHT)
 						mouseOnScrollItem = 1;
-					else if (input->getMouseY() < EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING)
+					else
 						mouseOnScrollItem = 3;
 				}
+			}
+			else if (input->getMouseY() >= paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2 - EDITOR_PANEL_TEXT_SIZE &&
+					input->isLeftClick())
+			{
+				mouseOnScrollItem = 0;
+				addingParam = true;
+				input->pollKeyboardInput(&addingParamTemp);
+				input->resetMouseButtons();
+				paramsPanel.changed = true;
 			}
 			else
 				mouseOnScrollItem = 0;
@@ -3221,7 +3260,8 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 	paramsYPos.clear();
 	if (!currentUnit)
 		return;
-	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2);
+	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT,
+			EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING * 4);
 	panelText.setWrapping(true);
 	panelText.setAlignment(LEFT_JUSTIFIED);
 	panelText.setPosition(EDITOR_PARAMS_SPACING, EDITOR_PARAMS_SPACING - paramsOffset);
@@ -3247,7 +3287,7 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 	paramsYPos.push_back(panelText.getPosition().y);
 	paramsSize = panelText.getPosition().y - EDITOR_PARAMS_SPACING + paramsOffset;
 	// render scroll bar
-	int fullBarSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2;
+	int fullBarSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING * 4;
 	rect.x = EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT;
 	rect.y = EDITOR_PARAMS_SPACING;
 	rect.w = EDITOR_RECT_HEIGHT;
@@ -3269,6 +3309,15 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
 	SDL_FillRect(target, &rect, mouseOnScrollItem == 1 ? -1 : 0);
 	rect.y = EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT + rect.h / (float)paramsSize * paramsOffset;
-	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2) + 1;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 4 - EDITOR_PANEL_TEXT_SIZE) + 1;
 	SDL_FillRect(target, &rect, mouseOnScrollItem == 1 ? 0 : -1);
+	// Add Button
+	boxColor(target, 0, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING * 2,
+			EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT, addingParam ? 0xFFFFFFFF : 0x000000FF);
+	panelText.setColour(addingParam ? BLACK : WHITE);
+	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2, EDITOR_PARAMS_PANEL_HEIGHT);
+	panelText.setAlignment(CENTRED);
+	panelText.setPosition(-EDITOR_PANEL_TEXT_SIZE / 2, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING);
+	panelText.print(target, addingParam ? addingParamTemp : "CLICK HERE AND TYPE TO ADD");
+	panelText.setColour(WHITE);
 }

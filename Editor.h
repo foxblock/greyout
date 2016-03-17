@@ -172,7 +172,8 @@ private:
 	int paramsOffset; // in pixels (all others are in # of menu items)
 	vector<int> paramsYPos;
 	int paramsSize;
-	vector<PARAMETER_TYPE > currentParamsBackup;
+	bool addingParam;
+	string addingParamTemp;
 	/// Menu
 	SDL_Surface *menuBg;
 	int menuSel;
