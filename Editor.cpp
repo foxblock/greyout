@@ -67,15 +67,14 @@
 #define EDITOR_SLIDER_HEIGHT 16
 #define EDITOR_SLIDER_WIDTH 128
 #define EDITOR_SLIDER_INDICATOR_WIDTH 2
+#define EDITOR_PANEL_SPACING 4 // Border around panel UI elements in pixels
 
 #define EDITOR_COLOUR_PANEL_WIDTH 212
 #define EDITOR_COLOUR_PANEL_HEIGHT 84
-#define EDITOR_COLOUR_PANEL_SPACING 4 // Border around UI elements in pixels
 #define EDITOR_COLOUR_PANEL_OFFSET 48 // X-Offset of the colour sliders
 
-#define EDITOR_UNIT_PANEL_WIDTH 200
-#define EDITOR_UNIT_PANEL_HEIGHT 380
-#define EDITOR_UNIT_PANEL_SPACING 4
+#define EDITOR_UNIT_PANEL_WIDTH 180
+#define EDITOR_UNIT_PANEL_HEIGHT 372
 #define EDITOR_UNIT_BUTTON_SIZE 32
 #define EDITOR_UNIT_BUTTON_BORDER 4
 #define EDITOR_UNIT_BUTTONS_IMAGE "images/general/editor_buttons.png"
@@ -88,7 +87,6 @@
 
 #define EDITOR_PARAMS_PANEL_WIDTH 250
 #define EDITOR_PARAMS_PANEL_HEIGHT 300
-#define EDITOR_PARAMS_SPACING 4
 
 Editor::Editor()
 {
@@ -159,6 +157,7 @@ Editor::Editor()
 	flagsOffset = 0;
 	editingFlags = false;
 	inputVecXCoord = false;
+	menuActive = false;
 	fileList.setCheckFolderDepth(false);
 	fileList.includeThisDirInListing(false);
 	fileListActive = false;
@@ -277,19 +276,24 @@ Editor::~Editor()
 
 void Editor::userInput()
 {
+	if (fileListActive)
+	{
+		inputFileList();
+		return;
+	}
+	else if (menuActive)
+	{
+		inputMenu();
+		return;
+	}
 	switch (editorState)
 	{
 	case esStart:
-		if (fileListActive)
-			inputFileList();
-		else
-			inputStart();
+		inputStart();
 		break;
 	case esSettings:
 		if (editingFlags)
 			inputFlags();
-		else if (fileListActive)
-			inputFileList();
 		else
 			inputSettings();
 		break;
@@ -301,9 +305,6 @@ void Editor::userInput()
 		break;
 	case esTest:
 		inputTest();
-		break;
-	case esMenu:
-		inputMenu();
 		break;
 	default:
 		return;
@@ -330,8 +331,6 @@ void Editor::update()
 	case esTest:
 		l->update();
 		break;
-	case esMenu:
-		break;
 	default:
 		return;
 	}
@@ -339,19 +338,24 @@ void Editor::update()
 
 void Editor::render()
 {
+	if (fileListActive)
+	{
+		renderFileList();
+		return;
+	}
+	else if (menuActive)
+	{
+		renderMenu();
+		return;
+	}
 	switch (editorState)
 	{
 	case esStart:
-		if (fileListActive)
-			renderFileList();
-		else
-			renderStart();
+		renderStart();
 		break;
 	case esSettings:
 		if (editingFlags)
 			renderFlags();
-		else if (fileListActive)
-			renderFileList();
 		else
 			renderSettings();
 		break;
@@ -363,9 +367,6 @@ void Editor::render()
 		break;
 	case esTest:
 		renderTest();
-		break;
-	case esMenu:
-		renderMenu();
 		break;
 	default:
 		return;
@@ -444,7 +445,6 @@ void Editor::inputStart()
 		switch (startSel)
 		{
 		case 0: // New level
-			editorState = esDraw;
 			ownsImage = true;
 			l = new Level();
 			l->setSimpleJoy(input);
@@ -453,13 +453,14 @@ void Editor::inputStart()
 			SDL_FillRect(l->levelImage, NULL, -1);
 			editorOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2;
 			editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
+			switchState(esDraw);
 			break;
 		case 1: // Open level
 		{
 			char* temp;
 			temp = new char[_MAX_PATH];
 			temp = getcwd(temp,_MAX_PATH);
-			setUpFileList((string)temp + "/levels", "DIR|txt", &loadFile);
+			goToFileList((string)temp + "/levels", "DIR|txt", &loadFile);
 			break;
 		}
 		case 2: // New chapter
@@ -726,7 +727,7 @@ void Editor::inputSettings()
 			editingFlags = true;
 			break;
 		case 3: // Music
-			setUpFileList("music","mp3|ogg|wav",&musicFile);
+			goToFileList("music","mp3|ogg|wav",&musicFile);
 			break;
 		case 4: // Offset
 			if (inputVecXCoord)
@@ -741,7 +742,7 @@ void Editor::inputSettings()
 			l->cam.disregardBoundaries = !(l->cam.disregardBoundaries);
 			break;
 		case 7: // Dialogue
-			setUpFileList("data","txt",&l->dialogueFile);
+			goToFileList("data","txt",&l->dialogueFile);
 			break;
 		case 8: // Gravity
 			if (inputVecXCoord)
@@ -758,7 +759,6 @@ void Editor::inputSettings()
 			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
 		case 10: // Menu
-			l->generateParameters();
 			goToMenu();
 			break;
 		default:
@@ -768,9 +768,8 @@ void Editor::inputSettings()
 	}
 	else if (isCancelKey(input))
 	{
-		input->resetKeys();
-		l->generateParameters();
 		goToMenu();
+		input->resetKeys();
 	}
 }
 
@@ -977,8 +976,6 @@ void Editor::inputDraw()
 		// Hotkeys
 		if (isCancelKey(input))
 		{
-			panelActiveSlider = 0;
-			colourPanel.userIsInteracting = false;
 			goToMenu();
 			input->resetKeys();
 			return;
@@ -1141,20 +1138,20 @@ void Editor::inputDraw()
 			if (input->isLeftClick() == SimpleJoy::sjPRESSED) // Initial mouse press on the panel
 			{
 				// Text fields
-				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH + EDITOR_COLOUR_PANEL_SPACING &&
-					mousePos.x < EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING)
+				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH + EDITOR_PANEL_SPACING &&
+					mousePos.x < EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING)
 				{
-					if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING && mousePos.y < EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
+					if (mousePos.y >= EDITOR_PANEL_SPACING && mousePos.y < EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
 					{
 						panelInputTarget = 1;
 						panelInputTemp = panelInputBackup = StringUtility::intToString(brushCol.red);
 					}
-					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
 					{
 						panelInputTarget = 2;
 						panelInputTemp = panelInputBackup = StringUtility::intToString(brushCol.green);
 					}
-					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
 					{
 						panelInputTarget = 3;
 						panelInputTemp = panelInputBackup = StringUtility::intToString(brushCol.blue);
@@ -1171,16 +1168,16 @@ void Editor::inputDraw()
 				// Sliders
 				if (mousePos.x >= EDITOR_COLOUR_PANEL_OFFSET && mousePos.x < EDITOR_COLOUR_PANEL_OFFSET + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH)
 				{
-					if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING && mousePos.y < EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
+					if (mousePos.y >= EDITOR_PANEL_SPACING && mousePos.y < EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT)
 						panelActiveSlider = 1;
-					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 2)
 						panelActiveSlider = 2;
-					else if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
 						panelActiveSlider = 3;
 				}
-				if (mousePos.y >= EDITOR_COLOUR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 3 && mousePos.y < EDITOR_COLOUR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 4)
+				if (mousePos.y >= EDITOR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 3 && mousePos.y < EDITOR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 4)
 				{
-					if ((mousePos.x - EDITOR_COLOUR_PANEL_SPACING) % (EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT) < EDITOR_SLIDER_HEIGHT)
+					if ((mousePos.x - EDITOR_PANEL_SPACING) % (EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT) < EDITOR_SLIDER_HEIGHT)
 					{
 						brushCol.setColour(GFX::getPixel(colourPanel.surf, mousePos.x, mousePos.y));
 						colourPanel.changed = true;
@@ -1523,9 +1520,6 @@ void Editor::inputUnits()
 	{
 		if (isCancelKey(input))
 		{
-			if (currentUnit && !currentUnitPlaced)
-				delete currentUnit;
-			currentUnit = NULL;
 			goToMenu();
 			input->resetKeys();
 		}
@@ -1642,7 +1636,7 @@ void Editor::inputUnits()
 			Vector2di backupPos = mousePos;
 			backupPos -= unitPanel.pos;
 			hoverUnitButton = -1; // Reset selection
-			float columns = EDITOR_UNIT_PANEL_WIDTH / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING);
+			float columns = EDITOR_UNIT_PANEL_WIDTH / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
 			for (int I = 0; I <= 2; ++I) // Go through categories (players, units, triggers)
 			{
 				int tempCount = 0;
@@ -1650,17 +1644,17 @@ void Editor::inputUnits()
 				switch (I)
 				{
 					case 0: // Offset by selected unit text and "Players:" label
-						backupPos.y -= (EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING) * 2;
+						backupPos.y -= (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING) * 2;
 						tempCount = EDITOR_UNIT_PLAYER_COUNT;
 						tempOffset = EDITOR_UNIT_PLAYER_START;
 						break;
 					case 1: // Offset by player buttons and "units" label
-						backupPos.y -= ceil(EDITOR_UNIT_PLAYER_COUNT / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING);
+						backupPos.y -= ceil(EDITOR_UNIT_PLAYER_COUNT / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING);
 						tempCount = EDITOR_UNIT_UNITS_COUNT;
 						tempOffset = EDITOR_UNIT_UNITS_START;
 						break;
 					case 2: // Offset by unit buttons and "triggers" label
-						backupPos.y -= ceil(EDITOR_UNIT_UNITS_COUNT / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING);
+						backupPos.y -= ceil(EDITOR_UNIT_UNITS_COUNT / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING);
 						tempCount = EDITOR_UNIT_TRIGGER_COUNT;
 						tempOffset = EDITOR_UNIT_TRIGGER_START;
 						break;
@@ -1669,11 +1663,11 @@ void Editor::inputUnits()
 				{
 					break; // outside of any buttons
 				}
-				else if (backupPos.y < ceil(tempCount / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING))
+				else if (backupPos.y < ceil(tempCount / columns) * (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING))
 				{
-					backupPos.x -= EDITOR_UNIT_PANEL_SPACING; // Button x offset
-					int x = backupPos.x / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING);
-					int y = backupPos.y / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING);
+					backupPos.x -= EDITOR_PANEL_SPACING; // Button x offset
+					int x = backupPos.x / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
+					int y = backupPos.y / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
 					if (x < columns && y * columns + x < tempCount)
 						hoverUnitButton = tempOffset + y * columns + x;
 					break;
@@ -1866,26 +1860,26 @@ void Editor::inputUnits()
 					paramsOffset -= min(paramsOffset, 10);
 					input->resetMouseButtons();
 				}
-				else if (mouseOnScrollItem == 3 && paramsOffset < paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2)
+				else if (mouseOnScrollItem == 3 && paramsOffset < paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 2)
 				{
-					paramsOffset += min(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 2 - paramsOffset, 10);
+					paramsOffset += min(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 2 - paramsOffset, 10);
 					input->resetMouseButtons();
 				}
 				else if (mouseOnScrollItem == 1)
 				{
-					int barSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 4 - EDITOR_RECT_HEIGHT * 2 - EDITOR_PANEL_TEXT_SIZE;
-					int scrollSize = barSize / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 4 - EDITOR_PANEL_TEXT_SIZE) + 1;
-					paramsOffset = round((paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE) * (input->getMouseY() - EDITOR_PARAMS_SPACING - EDITOR_RECT_HEIGHT - scrollSize / 2.0f) / (float)(barSize - scrollSize));
+					int barSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 4 - EDITOR_RECT_HEIGHT * 2 - EDITOR_PANEL_TEXT_SIZE;
+					int scrollSize = barSize / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 4 - EDITOR_PANEL_TEXT_SIZE) + 1;
+					paramsOffset = round((paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE) * (input->getMouseY() - EDITOR_PANEL_SPACING - EDITOR_RECT_HEIGHT - scrollSize / 2.0f) / (float)(barSize - scrollSize));
 					if (paramsOffset < 0)
 						paramsOffset = 0;
-					else if (paramsOffset > paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE)
-						paramsOffset = max(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PARAMS_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE, 0);
+					else if (paramsOffset > paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE)
+						paramsOffset = max(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE, 0);
 				}
 				paramsPanel.changed = (paramsOffset != tempPos);
 			}
-			else if (input->getMouseX() < paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PARAMS_SPACING &&
-					input->getMouseY() > paramsPanel.pos.y + EDITOR_PARAMS_SPACING &&
-					input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE &&
+			else if (input->getMouseX() < paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PANEL_SPACING &&
+					input->getMouseY() > paramsPanel.pos.y + EDITOR_PANEL_SPACING &&
+					input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE &&
 					(input->isLeftClick() == SimpleJoy::sjPRESSED || input->isRightClick() == SimpleJoy::sjPRESSED))
 			{
 				mouseOnScrollItem = 0;
@@ -1921,20 +1915,20 @@ void Editor::inputUnits()
 				}
 			}
 			else if (input->getMouseX() >= paramsPanel.pos.x + EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT &&
-					input->getMouseY() <  paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE)
+					input->getMouseY() <  paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE)
 			{
 				mouseOnScrollItem = 0;
-				if (input->getMouseY() >= paramsPanel.pos.y + EDITOR_PARAMS_SPACING)
+				if (input->getMouseY() >= paramsPanel.pos.y + EDITOR_PANEL_SPACING)
 				{
-					if (input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT)
+					if (input->getMouseY() < paramsPanel.pos.y + EDITOR_PANEL_SPACING + EDITOR_RECT_HEIGHT)
 						mouseOnScrollItem = 2;
-					else if (input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE - EDITOR_RECT_HEIGHT)
+					else if (input->getMouseY() < paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 3 - EDITOR_PANEL_TEXT_SIZE - EDITOR_RECT_HEIGHT)
 						mouseOnScrollItem = 1;
 					else
 						mouseOnScrollItem = 3;
 				}
 			}
-			else if (input->getMouseY() >= paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 2 - EDITOR_PANEL_TEXT_SIZE &&
+			else if (input->getMouseY() >= paramsPanel.pos.y + EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 2 - EDITOR_PANEL_TEXT_SIZE &&
 					input->isLeftClick())
 			{
 				mouseOnScrollItem = 0;
@@ -2111,8 +2105,7 @@ void Editor::inputTest()
 	// instead. Editor does not read the nested Level's pause status)
 	if (input->isStart() || input->isKey("ESCAPE"))
 	{
-		l->reset();
-		editorState = lastState;
+		switchState(lastState);
 		input->resetKeys();
 	}
 	else
@@ -2160,29 +2153,16 @@ void Editor::inputMenu()
 	{
 		switch (menuSel)
 		{
-		case 0: // Go to level settings
-			editorState = esSettings;
-			GFX::showCursor(true);
-			break;
-		case 1: // Go to draw
-			editorState = esDraw;
-			GFX::showCursor(drawTool != dtBrush);
-			break;
-		case 2: // Go to units
-			editorState = esUnits;
-			GFX::showCursor(true);
-			break;
-		case 3: // Go to test
-			editorState = esTest;
-			l->generateParameters();
-			l->reset();
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			switchState(esSettings + menuSel);
 			break;
 		case 4: // save
 			save();
 			break;
 		case 5: // back
-			editorState = lastState;
-			// TODO: Remember whether cursor needs to be shown or hidden
 			break;
 		case 6: // exit
 			input->resetKeys();
@@ -2191,11 +2171,12 @@ void Editor::inputMenu()
 		default:
 			return;
 		}
+		menuActive = false;
 		GFX::showCursor(true);
 	}
 	else if (isCancelKey(input))
 	{
-		editorState = lastState;
+		menuActive = false;
 	}
 	input->resetKeys();
 }
@@ -3036,12 +3017,11 @@ void Editor::goToMenu()
 {
 	SDL_BlitSurface(GFX::getVideoSurface(), NULL, menuBg, NULL);
 	boxColor(menuBg, 0, 0, GFX::getXResolution()-1, GFX::getYResolution()-1, 0x00000080);
-	lastState = editorState;
-	editorState = esMenu;
+	menuActive = true;
 	GFX::showCursor(true);
 }
 
-void Editor::setUpFileList(string path, string filters, string *target)
+void Editor::goToFileList(string path, string filters, string *target)
 {
 	fileList.clearFilters();
 	vector<string> temp;
@@ -3055,20 +3035,69 @@ void Editor::setUpFileList(string path, string filters, string *target)
 	fileListActive = true;
 }
 
+void Editor::switchState(int toState)
+{
+	// Clean up
+	switch (editorState)
+	{
+	case esStart:
+		break;
+	case esSettings:
+		l->generateParameters();
+		break;
+	case esDraw:
+		panelActiveSlider = 0;
+		colourPanel.userIsInteracting = false;
+		break;
+	case esUnits:
+		if (currentUnit && !currentUnitPlaced)
+			delete currentUnit;
+		currentUnit = NULL;
+		break;
+	case esTest:
+		l->reset();
+		break;
+	}
+	// Preparation
+	switch (toState)
+	{
+	case esStart:
+		break;
+	case esSettings:
+		editorState = esSettings;
+		GFX::showCursor(true);
+		break;
+	case esDraw:
+		editorState = esDraw;
+		GFX::showCursor(drawTool != dtBrush);
+		break;
+	case esUnits:
+		editorState = esUnits;
+		GFX::showCursor(true);
+		break;
+	case esTest:
+		lastState = editorState;
+		editorState = esTest;
+		l->generateParameters();
+		l->reset();
+		break;
+	}
+}
+
 /// Panel implementation
 
 void Editor::drawColourPanel(SDL_Surface *target)
 {
 	bg.render(target);
 	// Draw primary and secondary colour panel
-	int xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT / 2;
-	int yPos = EDITOR_COLOUR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 1.25f;
+	int xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT / 2;
+	int yPos = EDITOR_PANEL_SPACING * 2 + EDITOR_SLIDER_HEIGHT * 1.25f;
 	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, brushCol2.getRGBAvalue());
 	xPos -= EDITOR_SLIDER_HEIGHT / 2;
 	yPos -= EDITOR_SLIDER_HEIGHT / 2;
 	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, brushCol.getRGBAvalue());
-    xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
-	yPos = EDITOR_COLOUR_PANEL_SPACING;
+    xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
+	yPos = EDITOR_PANEL_SPACING;
 	// Draw sliders
 	int indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.red / 255;
     panelText.setAlignment(LEFT_JUSTIFIED);
@@ -3078,49 +3107,49 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
 	if (panelInputTarget == 1)
 	{
-		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 		panelText.setColour(BLACK);
 		panelText.print(target, brushCol.red);
 		panelText.setColour(WHITE);
 	}
 	else
 		panelText.print(target, brushCol.red);
-    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
-    xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
+    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+    xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "G");
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
 	indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.green / 255;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
 	if (panelInputTarget == 2)
 	{
-		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 		panelText.setColour(BLACK);
 		panelText.print(target, brushCol.green);
 		panelText.setColour(WHITE);
 	}
 	else
 		panelText.print(target, brushCol.green);
-    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
-    xPos = EDITOR_COLOUR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_COLOUR_PANEL_SPACING;
+    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+    xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "B");
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
 	indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.blue / 255;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
     boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_WIDTH + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
     panelText.setPosition(xPos + 2, yPos);
 	if (panelInputTarget == 3)
 	{
-		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_COLOUR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 		panelText.setColour(BLACK);
 		panelText.print(target, brushCol.blue);
 		panelText.setColour(WHITE);
@@ -3128,26 +3157,26 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	else
 		panelText.print(target, brushCol.blue);
 	// Draw colour presets
-	xPos = EDITOR_COLOUR_PANEL_SPACING;
-    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+	xPos = EDITOR_PANEL_SPACING;
+    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x939598FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF0000FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x32D936FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF9900FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFDCA8FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x0033FFFF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xB2C1FFFF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_COLOUR_PANEL_SPACING;
+    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xD8CED4FF);
 }
 
@@ -3187,11 +3216,11 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 		default: panelText.print(target, "-NONE SELECTED-");
 	}
 	panelText.setAlignment(LEFT_JUSTIFIED);
-	int xPos = EDITOR_UNIT_PANEL_SPACING;
-	int yPos = EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+	int xPos = EDITOR_PANEL_SPACING;
+	int yPos = EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 	panelText.setPosition(xPos, yPos);
 	panelText.print(target, "PLAYERS:");
-	yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+	yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 	for (int I = 0; I < 64; ++I)
 	{
 		if (I == selectedUnitButton)
@@ -3221,20 +3250,20 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 		if (I == EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT - 1) // Last "player" index
 		{
 			I = EDITOR_UNIT_UNITS_START - 1;
-			xPos = EDITOR_UNIT_PANEL_SPACING;
-			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+			xPos = EDITOR_PANEL_SPACING;
+			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			panelText.setPosition(xPos, yPos);
 			panelText.print(target, "UNITS:");
-			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 		}
 		else if (I == EDITOR_UNIT_UNITS_START + EDITOR_UNIT_UNITS_COUNT - 1) // Last "unit" index
 		{
 			I = EDITOR_UNIT_TRIGGER_START - 1; // First "trigger" index - 1
-			xPos = EDITOR_UNIT_PANEL_SPACING;
-			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+			xPos = EDITOR_PANEL_SPACING;
+			yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			panelText.setPosition(xPos, yPos);
 			panelText.print(target, "TRIGGERS:");
-			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_UNIT_PANEL_SPACING;
+			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 		}
 		else if (I == EDITOR_UNIT_TRIGGER_START + EDITOR_UNIT_TRIGGER_COUNT - 1) // Last "trigger" index
 		{
@@ -3242,14 +3271,14 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 		}
 		else
 		{
-			xPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
-			if (xPos > EDITOR_UNIT_PANEL_WIDTH - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_UNIT_PANEL_SPACING)
+			xPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+			if (xPos > EDITOR_UNIT_PANEL_WIDTH - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
 			{
-				xPos = EDITOR_UNIT_PANEL_SPACING;
-				yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_UNIT_PANEL_SPACING;
+				xPos = EDITOR_PANEL_SPACING;
+				yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			}
 		}
-		if (yPos > EDITOR_UNIT_PANEL_HEIGHT - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_UNIT_PANEL_SPACING)
+		if (yPos > EDITOR_UNIT_PANEL_HEIGHT - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
 			break;
 	}
 }
@@ -3260,11 +3289,11 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 	paramsYPos.clear();
 	if (!currentUnit)
 		return;
-	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2 - EDITOR_RECT_HEIGHT,
-			EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING * 4);
+	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PANEL_SPACING * 2 - EDITOR_RECT_HEIGHT,
+			EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PANEL_SPACING * 4);
 	panelText.setWrapping(true);
 	panelText.setAlignment(LEFT_JUSTIFIED);
-	panelText.setPosition(EDITOR_PARAMS_SPACING, EDITOR_PARAMS_SPACING - paramsOffset);
+	panelText.setPosition(EDITOR_PANEL_SPACING, EDITOR_PANEL_SPACING - paramsOffset);
 	panelText.setRelativity(true);
 	string temp;
 	int counter = 0;
@@ -3276,7 +3305,7 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 		// We only know the text dimensions after printing it. So we can only draw the selection box now (and need to print the text again)
 		if (counter == paramsSel)
 		{
-			boxColor(target, 0, paramsYPos.back(), EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PARAMS_SPACING - 1, panelText.getPosition().y, -1);
+			boxColor(target, 0, paramsYPos.back(), EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT - EDITOR_PANEL_SPACING - 1, panelText.getPosition().y, -1);
 			panelText.setColour(BLACK);
 			panelText.setPosition(panelText.getPosition().x, paramsYPos.back());
 			panelText.print(target, temp);
@@ -3285,39 +3314,39 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 		++counter;
 	}
 	paramsYPos.push_back(panelText.getPosition().y);
-	paramsSize = panelText.getPosition().y - EDITOR_PARAMS_SPACING + paramsOffset;
+	paramsSize = panelText.getPosition().y - EDITOR_PANEL_SPACING + paramsOffset;
 	// render scroll bar
-	int fullBarSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING * 4;
+	int fullBarSize = EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PANEL_SPACING * 4;
 	rect.x = EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT;
-	rect.y = EDITOR_PARAMS_SPACING;
+	rect.y = EDITOR_PANEL_SPACING;
 	rect.w = EDITOR_RECT_HEIGHT;
 	rect.h = EDITOR_RECT_HEIGHT;
 	SDL_FillRect(target, &rect, mouseOnScrollItem == 2 ? -1 : 0);
 	filledTrigonColor(target,
-			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT / 2, EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT / 3,
-			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT / 1.5f,
-			EDITOR_PARAMS_PANEL_WIDTH - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT / 1.5f,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT / 2, EDITOR_PANEL_SPACING + EDITOR_RECT_HEIGHT / 3,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PANEL_SPACING + EDITOR_RECT_HEIGHT / 1.5f,
+			EDITOR_PARAMS_PANEL_WIDTH - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PANEL_SPACING + EDITOR_RECT_HEIGHT / 1.5f,
 			mouseOnScrollItem == 2 ? 0x000000FF : -1);
-	rect.y = EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT;
+	rect.y = EDITOR_PANEL_SPACING + fullBarSize - EDITOR_RECT_HEIGHT;
 	SDL_FillRect(target, &rect, mouseOnScrollItem == 3 ? -1 : 0);
 	filledTrigonColor(target,
-			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT / 2, EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 3,
-			EDITOR_PARAMS_PANEL_WIDTH - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
-			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PARAMS_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT / 2, EDITOR_PANEL_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 3,
+			EDITOR_PARAMS_PANEL_WIDTH - (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PANEL_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
+			EDITOR_PARAMS_PANEL_WIDTH - EDITOR_RECT_HEIGHT + (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2, EDITOR_PANEL_SPACING + fullBarSize - EDITOR_RECT_HEIGHT / 1.5f,
 			mouseOnScrollItem == 3 ? 0x000000FF : -1);
-	rect.y = EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT;
+	rect.y = EDITOR_PANEL_SPACING + EDITOR_RECT_HEIGHT;
 	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
 	SDL_FillRect(target, &rect, mouseOnScrollItem == 1 ? -1 : 0);
-	rect.y = EDITOR_PARAMS_SPACING + EDITOR_RECT_HEIGHT + rect.h / (float)paramsSize * paramsOffset;
-	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PARAMS_SPACING * 4 - EDITOR_PANEL_TEXT_SIZE) + 1;
+	rect.y = EDITOR_PANEL_SPACING + EDITOR_RECT_HEIGHT + rect.h / (float)paramsSize * paramsOffset;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)paramsSize * min(paramsSize, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_SPACING * 4 - EDITOR_PANEL_TEXT_SIZE) + 1;
 	SDL_FillRect(target, &rect, mouseOnScrollItem == 1 ? 0 : -1);
 	// Add Button
-	boxColor(target, 0, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING * 2,
+	boxColor(target, 0, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PANEL_SPACING * 2,
 			EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT, addingParam ? 0xFFFFFFFF : 0x000000FF);
 	panelText.setColour(addingParam ? BLACK : WHITE);
-	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PARAMS_SPACING * 2, EDITOR_PARAMS_PANEL_HEIGHT);
+	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PANEL_SPACING * 2, EDITOR_PARAMS_PANEL_HEIGHT);
 	panelText.setAlignment(CENTRED);
-	panelText.setPosition(-EDITOR_PANEL_TEXT_SIZE / 2, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PARAMS_SPACING);
+	panelText.setPosition(-EDITOR_PANEL_TEXT_SIZE / 2, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PANEL_SPACING);
 	panelText.print(target, addingParam ? addingParamTemp : "CLICK HERE AND TYPE TO ADD");
 	panelText.setColour(WHITE);
 }

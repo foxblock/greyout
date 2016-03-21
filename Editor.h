@@ -78,7 +78,8 @@ private:
 	void save();
 
 	void goToMenu();
-	void setUpFileList(string path, string filters, string *target);
+	void goToFileList(string path, string filters, string *target);
+	void switchState(int toState); // Change editor state, do clean-up and preparation
 
 	int editorState;
 	int lastState; // jump to out of test play
@@ -90,7 +91,6 @@ private:
 		,esDraw
 		,esUnits
 		,esTest
-		,esMenu
 	};
 
 	vector<string> startItems;
@@ -100,7 +100,6 @@ private:
 
 	/// Startup + Settings
 	string loadFile;
-
 	AnimatedSprite bg;
 	Vector2di lastPos;
 	bool mouseInBounds;
@@ -119,6 +118,7 @@ private:
 	bool inputVecXCoord;
 	string vecInputTemp;
 	string vecInputBackup;
+	bool menuActive;
 	FileLister fileList;
 	bool fileListActive;
 	int fileListOffset;
