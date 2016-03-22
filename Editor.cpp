@@ -77,7 +77,7 @@
 #define EDITOR_UNIT_PANEL_HEIGHT 372
 #define EDITOR_UNIT_BUTTON_SIZE 32
 #define EDITOR_UNIT_BUTTON_BORDER 4
-#define EDITOR_UNIT_BUTTONS_IMAGE "images/general/editor_buttons.png"
+#define EDITOR_UNIT_BUTTONS_IMAGE "images/general/editor_units.png"
 #define EDITOR_UNIT_PLAYER_START 0
 #define EDITOR_UNIT_PLAYER_COUNT 4
 #define EDITOR_UNIT_UNITS_START 16
@@ -1857,13 +1857,11 @@ void Editor::inputUnits()
 				int tempPos = paramsOffset;
 				if (mouseOnScrollItem == 2 && paramsOffset > 0)
 				{
-					paramsOffset -= min(paramsOffset, 10);
-					input->resetMouseButtons();
+					paramsOffset -= min(paramsOffset, 5);
 				}
-				else if (mouseOnScrollItem == 3 && paramsOffset < paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 2)
+				else if (mouseOnScrollItem == 3 && paramsOffset < paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE)
 				{
-					paramsOffset += min(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 2 - paramsOffset, 10);
-					input->resetMouseButtons();
+					paramsOffset += min(paramsSize - EDITOR_PARAMS_PANEL_HEIGHT + EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE - paramsOffset, 5);
 				}
 				else if (mouseOnScrollItem == 1)
 				{

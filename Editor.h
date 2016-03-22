@@ -142,6 +142,8 @@ private:
 		 dtNone=0
 		,dtBrush
 		,dtCrop
+		,dtStamp
+		,dtSelect
 	};
 	bool gridActive;
 	int gridSize;
