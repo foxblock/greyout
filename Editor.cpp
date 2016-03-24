@@ -88,6 +88,12 @@
 #define EDITOR_PARAMS_PANEL_WIDTH 250
 #define EDITOR_PARAMS_PANEL_HEIGHT 300
 
+#define EDITOR_TOOL_PANEL_WIDTH 116
+#define EDITOR_TOOL_PANEL_HEIGHT 32
+#define EDITOR_TOOL_BUTTONS_IMAGE "images/general/editor_tools.png"
+#define EDITOR_TOOL_BUTTON_SIZE 16
+#define EDITOR_TOOL_BUTTON_BORDER 4
+
 Editor::Editor()
 {
 	l = NULL;
@@ -202,6 +208,15 @@ Editor::Editor()
 	colourPanel.userIsInteracting = false;
 	colourPanel.changed = false;
 	drawUnits = false;
+	toolPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_TOOL_PANEL_WIDTH, EDITOR_TOOL_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	toolPanel.pos.x = 100;
+	toolPanel.pos.y = 0;
+	toolPanel.active = false;
+	toolPanel.transparent = false;
+	toolPanel.userIsInteracting = false;
+	toolPanel.changed = false;
+	toolButtons.loadFrames(SURFACE_CACHE->loadSurface(EDITOR_TOOL_BUTTONS_IMAGE), 2, 10, 0, 0, true);
+	toolButtons.setTransparentColour(MAGENTA);
 
 	unitPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	unitPanel.pos.x = 0;
@@ -242,8 +257,12 @@ Editor::~Editor()
 	delete l;
 	if (colourPanel.surf)
 		SDL_FreeSurface(colourPanel.surf);
+	if (toolPanel.surf)
+		SDL_FreeSurface(toolPanel.surf);
 	if (unitPanel.surf)
 		SDL_FreeSurface(unitPanel.surf);
+	if (paramsPanel.surf)
+		SDL_FreeSurface(paramsPanel.surf);
 }
 
 ///---public---
@@ -996,15 +1015,24 @@ void Editor::inputDraw()
 				drawColourPanel(colourPanel.surf);
 			input->resetKeys();
 		}
+		if (input->isKey("1") && !toolPanel.userIsInteracting)
+		{
+			toolPanel.active = !toolPanel.active;
+			if (toolPanel.active)
+				drawToolPanel(toolPanel.surf);
+			input->resetKeys();
+		}
 		if (input->isKey("b"))
 		{
 			drawTool = dtBrush;
+			toolPanel.changed = true;
 			GFX::showCursor(false);
 			input->resetKeys();
 		}
 		else if (input->isKey("c"))
 		{
 			drawTool = dtCrop;
+			toolPanel.changed = true;
 			GFX::showCursor(true);
 			cropOffset.x = 0;
 			cropOffset.y = 0;
@@ -1012,9 +1040,17 @@ void Editor::inputDraw()
 			cropSize.y = l->levelImage->h;
 			input->resetKeys();
 		}
+		if (input->isKey("d"))
+		{
+			brushCol = BLACK;
+			brushCol2 = WHITE;
+			colourPanel.changed = true;
+			input->resetKeys();
+		}
 		if (input->isKey("g"))
 		{
 			gridActive = !gridActive;
+			toolPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("m"))
@@ -1031,6 +1067,7 @@ void Editor::inputDraw()
 		if (input->isKey("u"))
 		{
 			drawUnits = !drawUnits;
+			toolPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("v"))
@@ -1120,6 +1157,9 @@ void Editor::inputDraw()
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
 	mousePos = input->getMouse();
 	/// Panel interaction
+	// Reset cursor (might be overridden when cursor is on panel)
+	GFX::showCursor(drawTool == dtCrop);
+	// Colour panel
 	if (colourPanel.active && (colourPanel.userIsInteracting || mousePos.inRect(colourPanel.pos.x, colourPanel.pos.y, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT)))
 	{
 		// Make transparent if user is drawing/cropping over panel, else show cursor
@@ -1175,6 +1215,7 @@ void Editor::inputDraw()
 					else if (mousePos.y >= EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
 						panelActiveSlider = 3;
 				}
+				// Colour fields
 				if (mousePos.y >= EDITOR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 3 && mousePos.y < EDITOR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 4)
 				{
 					if ((mousePos.x - EDITOR_PANEL_SPACING) % (EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT) < EDITOR_SLIDER_HEIGHT)
@@ -1209,15 +1250,70 @@ void Editor::inputDraw()
 			colourPanel.userIsInteracting = false;
 		}
 	}
-	else
-	{
-		GFX::showCursor(drawTool != dtBrush);
-	}
 	// Reset panel transparency
 	if (colourPanel.active && colourPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(colourPanel.pos.x, colourPanel.pos.y, EDITOR_COLOUR_PANEL_WIDTH, EDITOR_COLOUR_PANEL_HEIGHT)))
 	{
 		SDL_SetAlpha(colourPanel.surf, 0, 255);
 		colourPanel.transparent = false;
+	}
+	// Tool panel
+	if (toolPanel.active && (toolPanel.userIsInteracting || mousePos.inRect(toolPanel.pos.x, toolPanel.pos.y, EDITOR_TOOL_PANEL_WIDTH, EDITOR_TOOL_PANEL_HEIGHT)))
+	{
+		// Make transparent if user is drawing/cropping over panel, else show cursor
+		if ((input->isLeftClick() == SimpleJoy::sjHELD || input->isRightClick() == SimpleJoy::sjHELD) && !toolPanel.userIsInteracting)
+		{
+			SDL_SetAlpha(toolPanel.surf, SDL_SRCALPHA, 128);
+			toolPanel.transparent = true;
+		}
+		else
+		{
+			GFX::showCursor(true);
+		}
+		if (input->isLeftClick() && !toolPanel.transparent) // user is actually interacting with the panel contents
+		{
+			mousePos -= toolPanel.pos;
+			if (mousePos.y >= EDITOR_PANEL_SPACING && mousePos.y < EDITOR_PANEL_SPACING + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2)
+			{
+				if (mousePos.x >= EDITOR_PANEL_SPACING && mousePos.x < EDITOR_PANEL_SPACING + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2)
+				{
+					drawTool = dtBrush;
+					toolPanel.changed = true;
+				}
+				else if (mousePos.x >= EDITOR_PANEL_SPACING * 2 + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 && mousePos.x < EDITOR_PANEL_SPACING * 2 + EDITOR_TOOL_BUTTON_SIZE * 2 + EDITOR_TOOL_BUTTON_BORDER * 4)
+				{
+					drawTool = dtCrop;
+					cropOffset.x = 0;
+					cropOffset.y = 0;
+					cropSize.x = l->levelImage->w;
+					cropSize.y = l->levelImage->h;
+					toolPanel.changed = true;
+				}
+				else if (mousePos.x >= EDITOR_PANEL_SPACING * 3 + EDITOR_TOOL_BUTTON_SIZE * 2 + EDITOR_TOOL_BUTTON_BORDER * 4 && mousePos.x < EDITOR_PANEL_SPACING * 3 + EDITOR_TOOL_BUTTON_SIZE * 3 + EDITOR_TOOL_BUTTON_BORDER * 6)
+				{
+					gridActive = !gridActive;
+					toolPanel.changed = true;
+				}
+				else if (mousePos.x >= EDITOR_PANEL_SPACING * 4 + EDITOR_TOOL_BUTTON_SIZE * 2 + EDITOR_TOOL_BUTTON_BORDER * 4 && mousePos.x < EDITOR_PANEL_SPACING * 4 + EDITOR_TOOL_BUTTON_SIZE * 4 + EDITOR_TOOL_BUTTON_BORDER * 8)
+				{
+					drawUnits = !drawUnits;
+					toolPanel.changed = true;
+				}
+			}
+			toolPanel.userIsInteracting = true;
+			input->resetKeys();
+			mousePos += toolPanel.pos;
+			return; // Skip over rest of mouse handling
+		}
+		else
+		{
+			toolPanel.userIsInteracting = false;
+		}
+	}
+	// Reset panel transparency
+	if (toolPanel.active && toolPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(toolPanel.pos.x, toolPanel.pos.y, EDITOR_TOOL_PANEL_WIDTH, EDITOR_TOOL_PANEL_HEIGHT)))
+	{
+		SDL_SetAlpha(toolPanel.surf, 0, 255);
+		toolPanel.transparent = false;
 	}
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	// Snap mouse to grid (changes mousePos)
@@ -2781,6 +2877,16 @@ void Editor::renderDraw()
 		SDL_Rect temp = {colourPanel.pos.x, colourPanel.pos.y, 0, 0};
 		SDL_BlitSurface(colourPanel.surf, NULL, GFX::getVideoSurface(), &temp);
 	}
+	if (toolPanel.active)
+	{
+		if (toolPanel.changed)
+		{
+			drawToolPanel(toolPanel.surf);
+			toolPanel.changed = false;
+		}
+		SDL_Rect temp = {toolPanel.pos.x, toolPanel.pos.y, 0, 0};
+		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+	}
 }
 
 void Editor::renderUnits()
@@ -3176,6 +3282,56 @@ void Editor::drawColourPanel(SDL_Surface *target)
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xB2C1FFFF);
     xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
     boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xD8CED4FF);
+}
+
+void Editor::drawToolPanel(SDL_Surface *target)
+{
+	bg.render(target);
+	int xPos = EDITOR_PANEL_SPACING;
+	int yPos = EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, (drawTool == dtBrush) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, (drawTool == dtBrush) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (drawTool == dtBrush) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (drawTool == dtBrush) ? 0xFFFFFFFF : 0x000000FF);
+	if (drawTool == dtBrush)
+		toolButtons.setCurrentFrame(0);
+	else
+		toolButtons.setCurrentFrame(1);
+	toolButtons.setPosition(xPos + EDITOR_TOOL_BUTTON_BORDER, yPos + EDITOR_TOOL_BUTTON_BORDER);
+	toolButtons.render(target);
+	xPos += EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, (drawTool == dtCrop) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, (drawTool == dtCrop) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (drawTool == dtCrop) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (drawTool == dtCrop) ? 0xFFFFFFFF : 0x000000FF);
+	if (drawTool == dtCrop)
+		toolButtons.setCurrentFrame(2);
+	else
+		toolButtons.setCurrentFrame(3);
+	toolButtons.setPosition(xPos + EDITOR_TOOL_BUTTON_BORDER, yPos + EDITOR_TOOL_BUTTON_BORDER);
+	toolButtons.render(target);
+	xPos += EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
+	if (gridActive)
+		toolButtons.setCurrentFrame(4);
+	else
+		toolButtons.setCurrentFrame(5);
+	toolButtons.setPosition(xPos + EDITOR_TOOL_BUTTON_BORDER, yPos + EDITOR_TOOL_BUTTON_BORDER);
+	toolButtons.render(target);
+	xPos += EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, (drawUnits) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, (drawUnits) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (drawUnits) ? 0xFFFFFFFF : 0x000000FF);
+	boxColor(target, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (drawUnits) ? 0xFFFFFFFF : 0x000000FF);
+	if (drawUnits)
+		toolButtons.setCurrentFrame(8);
+	else
+		toolButtons.setCurrentFrame(9);
+	toolButtons.setPosition(xPos + EDITOR_TOOL_BUTTON_BORDER, yPos + EDITOR_TOOL_BUTTON_BORDER);
+	toolButtons.render(target);
 }
 
 void Editor::drawUnitPanel(SDL_Surface *target)

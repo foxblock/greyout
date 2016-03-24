@@ -158,6 +158,9 @@ private:
 	EditorPanel colourPanel;
 	bool drawUnits;
 	void drawColourPanel(SDL_Surface *target);
+	EditorPanel toolPanel;
+	AnimatedSprite toolButtons;
+	void drawToolPanel(SDL_Surface *target);
 	/// Units
 	EditorPanel unitPanel;
 	AnimatedSprite unitButtons;
