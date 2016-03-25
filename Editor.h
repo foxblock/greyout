@@ -153,14 +153,16 @@ private:
 	Text panelText;
 	string panelInputTemp;
 	string panelInputBackup;
-	int panelActiveSlider; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
-	int panelInputTarget; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue
+	int panelActiveSlider; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue, 4 - brushSize, 5 - gridSize, 6 - snapDistance
+	int panelInputTarget; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue, 4 - brushSize, 5 - gridSize, 6 - snapDistance
 	EditorPanel colourPanel;
 	bool drawUnits;
 	void drawColourPanel(SDL_Surface *target);
 	EditorPanel toolPanel;
 	AnimatedSprite toolButtons;
 	void drawToolPanel(SDL_Surface *target);
+	EditorPanel toolSettingPanel;
+	void drawToolSettingPanel(SDL_Surface *target);
 	/// Units
 	EditorPanel unitPanel;
 	AnimatedSprite unitButtons;

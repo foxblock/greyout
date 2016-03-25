@@ -68,6 +68,9 @@
 #define EDITOR_SLIDER_WIDTH 128
 #define EDITOR_SLIDER_INDICATOR_WIDTH 2
 #define EDITOR_PANEL_SPACING 4 // Border around panel UI elements in pixels
+#define EDITOR_MAX_BRUSH_SIZE 128
+#define EDITOR_MAX_GRID_SIZE 128
+#define EDITOR_MIN_GRID_SIZE 4
 
 #define EDITOR_COLOUR_PANEL_WIDTH 212
 #define EDITOR_COLOUR_PANEL_HEIGHT 84
@@ -88,11 +91,14 @@
 #define EDITOR_PARAMS_PANEL_WIDTH 250
 #define EDITOR_PARAMS_PANEL_HEIGHT 300
 
-#define EDITOR_TOOL_PANEL_WIDTH 116
-#define EDITOR_TOOL_PANEL_HEIGHT 32
+#define EDITOR_TOOL_PANEL_WIDTH 153
+#define EDITOR_TOOL_PANEL_HEIGHT 40
 #define EDITOR_TOOL_BUTTONS_IMAGE "images/general/editor_tools.png"
-#define EDITOR_TOOL_BUTTON_SIZE 16
+#define EDITOR_TOOL_BUTTON_SIZE 24
 #define EDITOR_TOOL_BUTTON_BORDER 4
+
+#define EDITOR_TOOL_SET_PANEL_WIDTH 170
+#define EDITOR_TOOL_SET_PANEL_HEIGHT 114
 
 Editor::Editor()
 {
@@ -217,6 +223,13 @@ Editor::Editor()
 	toolPanel.changed = false;
 	toolButtons.loadFrames(SURFACE_CACHE->loadSurface(EDITOR_TOOL_BUTTONS_IMAGE), 2, 10, 0, 0, true);
 	toolButtons.setTransparentColour(MAGENTA);
+	toolSettingPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_TOOL_SET_PANEL_WIDTH, EDITOR_TOOL_SET_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	toolSettingPanel.pos.x = GFX::getXResolution() - EDITOR_TOOL_SET_PANEL_WIDTH;
+	toolSettingPanel.pos.y = 0;
+	toolSettingPanel.active = false;
+	toolSettingPanel.transparent = false;
+	toolSettingPanel.userIsInteracting = false;
+	toolSettingPanel.changed = false;
 
 	unitPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	unitPanel.pos.x = 0;
@@ -1012,14 +1025,21 @@ void Editor::inputDraw()
 		{
 			colourPanel.active = !colourPanel.active;
 			if (colourPanel.active)
-				drawColourPanel(colourPanel.surf);
+				colourPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("1") && !toolPanel.userIsInteracting)
 		{
 			toolPanel.active = !toolPanel.active;
 			if (toolPanel.active)
-				drawToolPanel(toolPanel.surf);
+				toolPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("2") && !toolSettingPanel.userIsInteracting)
+		{
+			toolSettingPanel.active = !toolSettingPanel.active;
+			if (toolSettingPanel.active)
+				toolSettingPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("b"))
@@ -1051,17 +1071,22 @@ void Editor::inputDraw()
 		{
 			gridActive = !gridActive;
 			toolPanel.changed = true;
+			toolSettingPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("m"))
 		{
 			++brushSize;
+			toolSettingPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("n"))
 		{
 			if (brushSize > 1)
+			{
 				--brushSize;
+				toolSettingPanel.changed = true;
+			}
 			input->resetKeys();
 		}
 		if (input->isKey("u"))
@@ -1114,6 +1139,21 @@ void Editor::inputDraw()
 				panelInputTemp = StringUtility::intToString(brushCol.blue);
 				colourPanel.changed = true;
 				break;
+			case 4:
+				brushSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_BRUSH_SIZE), 1);
+				panelInputTemp = StringUtility::intToString(brushSize);
+				toolSettingPanel.changed = true;
+				break;
+			case 5:
+				gridSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE);
+				panelInputTemp = StringUtility::intToString(gridSize);
+				toolSettingPanel.changed = true;
+				break;
+			case 6:
+				snapDistance = std::min(StringUtility::stringToInt(panelInputTemp), gridSize / 2);
+				panelInputTemp = StringUtility::intToString(snapDistance);
+				toolSettingPanel.changed = true;
+				break;
 			}
 		}
 		else if (input->isKey("RETURN"))
@@ -1124,6 +1164,11 @@ void Editor::inputDraw()
 				colourPanel.userIsInteracting = false;
 				colourPanel.changed = true;
 			}
+			else if (panelInputTarget >= 4 && panelInputTarget <= 6)
+			{
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+			}
 			panelInputTarget = 0;
 			input->resetKeys();
 		}
@@ -1133,19 +1178,34 @@ void Editor::inputDraw()
 			switch (panelInputTarget)
 			{
 			case 1:
-				brushCol.red = std::min(StringUtility::stringToInt(panelInputBackup), 255);
+				brushCol.red = StringUtility::stringToInt(panelInputBackup);
 				colourPanel.changed = true;
 				colourPanel.userIsInteracting = false;
 				break;
 			case 2:
-				brushCol.green = std::min(StringUtility::stringToInt(panelInputBackup), 255);
+				brushCol.green = StringUtility::stringToInt(panelInputBackup);
 				colourPanel.changed = true;
 				colourPanel.userIsInteracting = false;
 				break;
 			case 3:
-				brushCol.blue = std::min(StringUtility::stringToInt(panelInputBackup), 255);
+				brushCol.blue = StringUtility::stringToInt(panelInputBackup);
 				colourPanel.changed = true;
 				colourPanel.userIsInteracting = false;
+				break;
+			case 4:
+				brushSize = StringUtility::stringToInt(panelInputBackup);
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+				break;
+			case 5:
+				gridSize = StringUtility::stringToInt(panelInputBackup);
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+				break;
+			case 6:
+				snapDistance = StringUtility::stringToInt(panelInputBackup);
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
 				break;
 			}
 			panelInputTarget = 0;
@@ -1314,6 +1374,95 @@ void Editor::inputDraw()
 	{
 		SDL_SetAlpha(toolPanel.surf, 0, 255);
 		toolPanel.transparent = false;
+	}
+	// Tool Settings panel
+	if (toolSettingPanel.active && (toolSettingPanel.userIsInteracting || mousePos.inRect(toolSettingPanel.pos.x, toolSettingPanel.pos.y, EDITOR_TOOL_SET_PANEL_WIDTH, EDITOR_TOOL_SET_PANEL_HEIGHT)))
+	{
+		// Make transparent if user is drawing/cropping over panel, else show cursor
+		if ((input->isLeftClick() == SimpleJoy::sjHELD || input->isRightClick() == SimpleJoy::sjHELD) && !toolSettingPanel.userIsInteracting)
+		{
+			SDL_SetAlpha(toolSettingPanel.surf, SDL_SRCALPHA, 128);
+			toolSettingPanel.transparent = true;
+		}
+		else
+		{
+			GFX::showCursor(true);
+		}
+		if (input->isLeftClick() && !toolSettingPanel.transparent) // user is actually interacting with the panel contents
+		{
+			mousePos -= toolSettingPanel.pos;
+			if (input->isLeftClick() == SimpleJoy::sjPRESSED) // Initial mouse press on the panel
+			{
+				// Text fields
+				if (mousePos.x >= EDITOR_PANEL_SPACING + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH + EDITOR_PANEL_SPACING &&
+					mousePos.x < EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING)
+				{
+					if (mousePos.y >= EDITOR_PANEL_SPACING * 2 + EDITOR_PANEL_TEXT_SIZE && mousePos.y < EDITOR_PANEL_SPACING * 2 + EDITOR_PANEL_TEXT_SIZE + EDITOR_SLIDER_HEIGHT)
+					{
+						panelInputTarget = 4;
+						panelInputTemp = panelInputBackup = StringUtility::intToString(brushSize);
+					}
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE * 2 + EDITOR_SLIDER_HEIGHT * 2)
+					{
+						panelInputTarget = 5;
+						panelInputTemp = panelInputBackup = StringUtility::intToString(gridSize);
+					}
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 6 + EDITOR_PANEL_TEXT_SIZE * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_PANEL_SPACING * 6 + EDITOR_PANEL_TEXT_SIZE * 3 + EDITOR_SLIDER_HEIGHT * 4)
+					{
+						panelInputTarget = 6;
+						panelInputTemp = panelInputBackup = StringUtility::intToString(snapDistance);
+					}
+					if (panelInputTarget > 0)
+					{
+						input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS);
+						toolSettingPanel.userIsInteracting = true;
+						toolSettingPanel.changed = true;
+						mousePos += toolSettingPanel.pos;
+						return;
+					}
+				}
+				// Sliders
+				if (mousePos.x >= EDITOR_PANEL_SPACING && mousePos.x < EDITOR_PANEL_SPACING + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH)
+				{
+					if (mousePos.y >= EDITOR_PANEL_SPACING * 2 + EDITOR_PANEL_TEXT_SIZE && mousePos.y < EDITOR_PANEL_SPACING * 2 + EDITOR_PANEL_TEXT_SIZE + EDITOR_SLIDER_HEIGHT)
+						panelActiveSlider = 4;
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE * 2 + EDITOR_SLIDER_HEIGHT && mousePos.y < EDITOR_PANEL_SPACING * 4 + EDITOR_PANEL_TEXT_SIZE * 2 + EDITOR_SLIDER_HEIGHT * 2)
+						panelActiveSlider = 5;
+					else if (mousePos.y >= EDITOR_PANEL_SPACING * 6 + EDITOR_PANEL_TEXT_SIZE * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_PANEL_SPACING * 6 + EDITOR_PANEL_TEXT_SIZE * 3 + EDITOR_SLIDER_HEIGHT * 4)
+						panelActiveSlider = 6;
+				}
+				toolSettingPanel.userIsInteracting = true;
+			}
+			switch (panelActiveSlider)
+			{
+			case 4:
+				brushSize = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * EDITOR_MAX_BRUSH_SIZE), 1), EDITOR_MAX_BRUSH_SIZE);
+				toolSettingPanel.changed = true;
+				break;
+			case 5:
+				gridSize = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE), EDITOR_MAX_GRID_SIZE);
+				toolSettingPanel.changed = true;
+				break;
+			case 6:
+				// TODO: Snap distance as % instead of px
+				snapDistance = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * gridSize / 2), 0), gridSize / 2);
+				toolSettingPanel.changed = true;
+				break;
+			}
+			mousePos += toolSettingPanel.pos;
+			return; // Skip over rest of mouse handling
+		}
+		else
+		{
+			panelActiveSlider = 0;
+			toolSettingPanel.userIsInteracting = false;
+		}
+	}
+	// Reset panel transparency
+	if (toolSettingPanel.active && toolSettingPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(toolSettingPanel.pos.x, toolSettingPanel.pos.y, EDITOR_TOOL_SET_PANEL_WIDTH, EDITOR_TOOL_SET_PANEL_HEIGHT)))
+	{
+		SDL_SetAlpha(toolSettingPanel.surf, 0, 255);
+		toolSettingPanel.transparent = false;
 	}
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	// Snap mouse to grid (changes mousePos)
@@ -2887,6 +3036,16 @@ void Editor::renderDraw()
 		SDL_Rect temp = {toolPanel.pos.x, toolPanel.pos.y, 0, 0};
 		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &temp);
 	}
+	if (toolSettingPanel.active)
+	{
+		if (toolSettingPanel.changed)
+		{
+			drawToolSettingPanel(toolSettingPanel.surf);
+			toolSettingPanel.changed = false;
+		}
+		SDL_Rect temp = {toolSettingPanel.pos.x, toolSettingPanel.pos.y, 0, 0};
+		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+	}
 }
 
 void Editor::renderUnits()
@@ -3311,6 +3470,8 @@ void Editor::drawToolPanel(SDL_Surface *target)
 	toolButtons.setPosition(xPos + EDITOR_TOOL_BUTTON_BORDER, yPos + EDITOR_TOOL_BUTTON_BORDER);
 	toolButtons.render(target);
 	xPos += EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+	lineColor(target, xPos, yPos, xPos, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, 0x000000FF);
+	xPos += EDITOR_PANEL_SPACING + 1;
 	boxColor(target, xPos, yPos, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
 	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f, xPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
 	boxColor(target, xPos, yPos + EDITOR_TOOL_BUTTON_BORDER / 2, xPos + EDITOR_TOOL_BUTTON_BORDER / 2 - 1, yPos + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 1.5f - 1, (gridActive) ? 0xFFFFFFFF : 0x000000FF);
@@ -3332,6 +3493,79 @@ void Editor::drawToolPanel(SDL_Surface *target)
 		toolButtons.setCurrentFrame(9);
 	toolButtons.setPosition(xPos + EDITOR_TOOL_BUTTON_BORDER, yPos + EDITOR_TOOL_BUTTON_BORDER);
 	toolButtons.render(target);
+}
+
+void Editor::drawToolSettingPanel(SDL_Surface *target)
+{
+	bg.render(target);
+	panelText.setUpBoundary(EDITOR_TOOL_SET_PANEL_WIDTH, EDITOR_TOOL_SET_PANEL_HEIGHT);
+	panelText.setAlignment(LEFT_JUSTIFIED);
+	int xPos = EDITOR_PANEL_SPACING;
+	int yPos = EDITOR_PANEL_SPACING;
+	int indicatorPos = 0;
+	if (drawTool == dtBrush)
+	{
+		panelText.setPosition(xPos, yPos);
+		panelText.print(target, "BRUSH SIZE:");
+		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
+		indicatorPos = EDITOR_SLIDER_WIDTH * brushSize / 128;
+	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+	    panelText.setPosition(xPos + 2, yPos);
+		if (panelInputTarget == 4)
+		{
+			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+			panelText.setColour(BLACK);
+			panelText.print(target, brushSize);
+			panelText.setColour(WHITE);
+		}
+		else
+			panelText.print(target, brushSize);
+		xPos = EDITOR_PANEL_SPACING;
+		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	}
+	if (gridActive)
+	{
+		panelText.setPosition(xPos, yPos);
+		panelText.print(target, "GRID SIZE:");
+		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
+		indicatorPos = EDITOR_SLIDER_WIDTH * gridSize / 128;
+	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+	    panelText.setPosition(xPos + 2, yPos);
+		if (panelInputTarget == 5)
+		{
+			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+			panelText.setColour(BLACK);
+			panelText.print(target, gridSize);
+			panelText.setColour(WHITE);
+		}
+		else
+			panelText.print(target, gridSize);
+		xPos = EDITOR_PANEL_SPACING;
+		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+		panelText.setPosition(xPos, yPos);
+		panelText.print(target, "GRID SNAP DISTANCE:");
+		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
+		indicatorPos = EDITOR_SLIDER_WIDTH * snapDistance / (gridSize / 2.0f);
+	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+	    panelText.setPosition(xPos + 2, yPos);
+		if (panelInputTarget == 6)
+		{
+			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+			panelText.setColour(BLACK);
+			panelText.print(target, snapDistance);
+			panelText.setColour(WHITE);
+		}
+		else
+			panelText.print(target, snapDistance);
+		xPos = EDITOR_PANEL_SPACING;
+		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	}
 }
 
 void Editor::drawUnitPanel(SDL_Surface *target)
