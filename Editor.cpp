@@ -61,7 +61,6 @@
 #define EDITOR_CROP_RECT_WIDTH 5
 #define EDITOR_CROP_COLOUR 0x3399FFFF // SDL_gfx expects colour values to be in RGBA
 #define EDITOR_GRID_COLOUR 0xCCCCCCFF
-#define EDITOR_GRID_SNAP 0.2f // Fractions of gridSize
 #define EDITOR_GRID_SPACING 3 // Spacing of grid dots in pixels (0 = solid line)
 #define EDITOR_PANEL_TEXT_SIZE 12
 #define EDITOR_SLIDER_HEIGHT 16
@@ -196,7 +195,8 @@ Editor::Editor()
 	drawTool = dtBrush;
 	gridActive = false;
 	gridSize = 32;
-	snapDistance = gridSize * EDITOR_GRID_SNAP;
+	snapDistancePercent = 40;
+	snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 	straightLinePos.x = 0;
 	straightLinePos.y = 0;
 	straightLineDirection = 0;
@@ -425,7 +425,7 @@ string Editor::debugInfo()
 			result += "LEVEL SETTINGS\n";
 			break;
 		case esDraw:
-			result += "DRAW MODE\nBrush: " + StringUtility::intToString(brushSize) + "\nGrid: " + StringUtility::intToString(gridSize) + "\n";
+			result += "DRAW MODE\nBrush: " + StringUtility::intToString(brushSize) + "\nGrid: " + StringUtility::intToString(gridSize) + "\n" + StringUtility::intToString(snapDistance) + "\n";
 			break;
 		case esUnits:
 			result += "UNIT MODE\n";
@@ -1137,12 +1137,14 @@ void Editor::inputDraw()
 				break;
 			case 5:
 				gridSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				panelInputTemp = StringUtility::intToString(gridSize);
 				toolSettingPanel.changed = true;
 				break;
 			case 6:
-				snapDistance = std::min(StringUtility::stringToInt(panelInputTemp), gridSize / 2);
-				panelInputTemp = StringUtility::intToString(snapDistance);
+				snapDistancePercent = std::min(StringUtility::stringToInt(panelInputTemp), 100);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				panelInputTemp = StringUtility::intToString(snapDistancePercent);
 				toolSettingPanel.changed = true;
 				break;
 			}
@@ -1190,11 +1192,13 @@ void Editor::inputDraw()
 				break;
 			case 5:
 				gridSize = StringUtility::stringToInt(panelInputBackup);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				toolSettingPanel.userIsInteracting = false;
 				toolSettingPanel.changed = true;
 				break;
 			case 6:
-				snapDistance = StringUtility::stringToInt(panelInputBackup);
+				snapDistancePercent = StringUtility::stringToInt(panelInputBackup);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				toolSettingPanel.userIsInteracting = false;
 				toolSettingPanel.changed = true;
 				break;
@@ -1202,7 +1206,6 @@ void Editor::inputDraw()
 			panelInputTarget = 0;
 			input->resetKeys();
 		}
-		mousePos = input->getMouse();
 		return; // Skip over mouse handling entirely
 	}
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
@@ -1406,7 +1409,7 @@ void Editor::inputDraw()
 								break;
 							case 2:
 								panelInputTarget = 6;
-								panelInputTemp = panelInputBackup = StringUtility::intToString(snapDistance);
+								panelInputTemp = panelInputBackup = StringUtility::intToString(snapDistancePercent);
 								break;
 							}
 							if (panelInputTarget > 0)
@@ -1448,11 +1451,12 @@ void Editor::inputDraw()
 				break;
 			case 5:
 				gridSize = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE), EDITOR_MAX_GRID_SIZE);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				toolSettingPanel.changed = true;
 				break;
 			case 6:
-				// TODO: Snap distance as % instead of px
-				snapDistance = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * gridSize / 2), 0), gridSize / 2);
+				snapDistancePercent = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 100), 0), 100);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				toolSettingPanel.changed = true;
 				break;
 			}
@@ -1849,11 +1853,30 @@ void Editor::inputUnits()
 	}
 	else
 	{
+		// Keyboard input
 		if (input->keyboardBufferHasChanged())
-			paramsPanel.changed = true;
-		if(addingParam)
 		{
-			if (isAcceptKey(input))
+			switch (panelInputTarget)
+			{
+			case 5:
+				gridSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				panelInputTemp = StringUtility::intToString(gridSize);
+				toolSettingPanel.changed = true;
+				break;
+			case 6:
+				snapDistancePercent = std::min(StringUtility::stringToInt(panelInputTemp), 100);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				panelInputTemp = StringUtility::intToString(snapDistancePercent);
+				toolSettingPanel.changed = true;
+				break;
+			default: // Params panel
+				paramsPanel.changed = true;
+			}
+		}
+		else if (isAcceptKey(input))
+		{
+			if (addingParam)
 			{
 				vector<string> temp;
 				StringUtility::tokenize(addingParamTemp, temp, "=", 2);
@@ -1862,26 +1885,64 @@ void Editor::inputUnits()
 					currentUnit->parameters.push_back(make_pair(temp.front(), temp.back()));
 					currentUnit->reset();
 				}
-			}
-			if (isAcceptKey(input) || isCancelKey(input))
-			{
-				input->stopKeyboardInput();
 				addingParam = false;
 				addingParamTemp = "";
 				paramsPanel.changed = true;
-				input->resetKeys();
 			}
+			else if (paramsSel >= 0) // editing parameter
+			{
+				currentUnit->reset(); // Reload changed parameters
+				paramsSel = -1;
+				paramsPanel.changed = true;
+			}
+			else // tool setting panel
+			{
+				if (panelInputTarget >= 5 && panelInputTarget <= 6)
+				{
+					toolSettingPanel.userIsInteracting = false;
+					toolSettingPanel.changed = true;
+				}
+				panelInputTarget = 0;
+			}
+			input->stopKeyboardInput();
+			input->resetKeys();
 		}
-		else // editing parameter
+		else if (isCancelKey(input))
 		{
-			if (isAcceptKey(input) || isCancelKey(input))
+			if (addingParam)
+			{
+				addingParam = false;
+				addingParamTemp = "";
+				paramsPanel.changed = true;
+			}
+			else if (paramsSel >= 0) // editing parameter
 			{
 				input->stopKeyboardInput();
 				currentUnit->reset(); // Reload changed parameters
 				paramsSel = -1;
 				paramsPanel.changed = true;
-				input->resetKeys();
 			}
+			else // tool setting panel
+			{
+				switch (panelInputTarget)
+				{
+				case 5:
+					gridSize = StringUtility::stringToInt(panelInputBackup);
+					snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+					toolSettingPanel.userIsInteracting = false;
+					toolSettingPanel.changed = true;
+					break;
+				case 6:
+					snapDistancePercent = StringUtility::stringToInt(panelInputBackup);
+					snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+					toolSettingPanel.userIsInteracting = false;
+					toolSettingPanel.changed = true;
+					break;
+				}
+				panelInputTarget = 0;
+			}
+			input->stopKeyboardInput();
+			input->resetKeys();
 		}
 		return; // Polling keyboard - skip over mouse handling entirely
 	}
@@ -2301,7 +2362,7 @@ void Editor::inputUnits()
 								break;
 							case 1:
 								panelInputTarget = 6;
-								panelInputTemp = panelInputBackup = StringUtility::intToString(snapDistance);
+								panelInputTemp = panelInputBackup = StringUtility::intToString(snapDistancePercent);
 								break;
 							}
 							if (panelInputTarget > 0)
@@ -2336,11 +2397,12 @@ void Editor::inputUnits()
 			{
 			case 5:
 				gridSize = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE), EDITOR_MAX_GRID_SIZE);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				toolSettingPanel.changed = true;
 				break;
 			case 6:
-				// TODO: Snap distance as % instead of px
-				snapDistance = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * gridSize / 2), 0), gridSize / 2);
+				snapDistancePercent = std::min(std::max((int)ceil((mousePos.x - EDITOR_PANEL_SPACING - EDITOR_SLIDER_INDICATOR_WIDTH / 2.0f) / EDITOR_SLIDER_WIDTH * 100), 0), 100);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
 				toolSettingPanel.changed = true;
 				break;
 			}
@@ -3782,9 +3844,9 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		xPos = EDITOR_PANEL_SPACING;
 		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
 		panelText.setPosition(xPos, yPos);
-		panelText.print(target, "GRID SNAP DISTANCE:");
+		panelText.print(target, "GRID SNAP DISTANCE %:");
 		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
-		indicatorPos = EDITOR_SLIDER_WIDTH * snapDistance / (gridSize / 2.0f);
+		indicatorPos = EDITOR_SLIDER_WIDTH * snapDistancePercent / 100.0f;
 	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
 	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
@@ -3793,11 +3855,11 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 			panelText.setColour(BLACK);
-			panelText.print(target, snapDistance);
+			panelText.print(target, snapDistancePercent);
 			panelText.setColour(WHITE);
 		}
 		else
-			panelText.print(target, snapDistance);
+			panelText.print(target, snapDistancePercent);
 		xPos = EDITOR_PANEL_SPACING;
 		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
 	}
