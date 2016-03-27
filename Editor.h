@@ -80,6 +80,7 @@ private:
 	void goToMenu();
 	void goToFileList(string path, string filters, string *target);
 	void switchState(int toState); // Change editor state, do clean-up and preparation
+	void switchDrawTool(int newTool);
 
 	int editorState;
 	int lastState; // jump to out of test play

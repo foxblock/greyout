@@ -1044,20 +1044,12 @@ void Editor::inputDraw()
 		}
 		if (input->isKey("b"))
 		{
-			drawTool = dtBrush;
-			toolPanel.changed = true;
-			GFX::showCursor(false);
+			switchDrawTool(dtBrush);
 			input->resetKeys();
 		}
 		else if (input->isKey("c"))
 		{
-			drawTool = dtCrop;
-			toolPanel.changed = true;
-			GFX::showCursor(true);
-			cropOffset.x = 0;
-			cropOffset.y = 0;
-			cropSize.x = l->levelImage->w;
-			cropSize.y = l->levelImage->h;
+			switchDrawTool(dtCrop);
 			input->resetKeys();
 		}
 		if (input->isKey("d"))
@@ -1076,8 +1068,11 @@ void Editor::inputDraw()
 		}
 		if (input->isKey("m"))
 		{
-			++brushSize;
-			toolSettingPanel.changed = true;
+			if (brushSize < EDITOR_MAX_BRUSH_SIZE)
+			{
+				++brushSize;
+				toolSettingPanel.changed = true;
+			}
 			input->resetKeys();
 		}
 		if (input->isKey("n"))
@@ -1093,19 +1088,6 @@ void Editor::inputDraw()
 		{
 			drawUnits = !drawUnits;
 			toolPanel.changed = true;
-			input->resetKeys();
-		}
-		if (input->isKey("v"))
-		{
-			if (brushCol == BLACK)
-				brushCol.setColour(WHITE);
-			else if (brushCol == WHITE)
-				brushCol.setColour(147, 149, 152);
-			else if (brushCol == Colour(147, 149, 152))
-				brushCol.setColour(RED);
-			else
-				brushCol.setColour(BLACK);
-			colourPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("x"))
@@ -1336,22 +1318,17 @@ void Editor::inputDraw()
 			{
 				if (mousePos.x >= EDITOR_PANEL_SPACING && mousePos.x < EDITOR_PANEL_SPACING + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2)
 				{
-					drawTool = dtBrush;
-					toolPanel.changed = true;
+					switchDrawTool(dtBrush);
 				}
 				else if (mousePos.x >= EDITOR_PANEL_SPACING * 2 + EDITOR_TOOL_BUTTON_SIZE + EDITOR_TOOL_BUTTON_BORDER * 2 && mousePos.x < EDITOR_PANEL_SPACING * 2 + EDITOR_TOOL_BUTTON_SIZE * 2 + EDITOR_TOOL_BUTTON_BORDER * 4)
 				{
-					drawTool = dtCrop;
-					cropOffset.x = 0;
-					cropOffset.y = 0;
-					cropSize.x = l->levelImage->w;
-					cropSize.y = l->levelImage->h;
-					toolPanel.changed = true;
+					switchDrawTool(dtCrop);
 				}
 				else if (mousePos.x >= EDITOR_PANEL_SPACING * 3 + EDITOR_TOOL_BUTTON_SIZE * 2 + EDITOR_TOOL_BUTTON_BORDER * 4 && mousePos.x < EDITOR_PANEL_SPACING * 3 + EDITOR_TOOL_BUTTON_SIZE * 3 + EDITOR_TOOL_BUTTON_BORDER * 6)
 				{
 					gridActive = !gridActive;
 					toolPanel.changed = true;
+					toolSettingPanel.changed = true;
 				}
 				else if (mousePos.x >= EDITOR_PANEL_SPACING * 4 + EDITOR_TOOL_BUTTON_SIZE * 2 + EDITOR_TOOL_BUTTON_BORDER * 4 && mousePos.x < EDITOR_PANEL_SPACING * 4 + EDITOR_TOOL_BUTTON_SIZE * 4 + EDITOR_TOOL_BUTTON_BORDER * 8)
 				{
@@ -1785,7 +1762,7 @@ void Editor::inputUnits()
 		{
 			paramsPanel.active = !paramsPanel.active;
 			if (paramsPanel.active)
-				drawParamsPanel(paramsPanel.surf);
+				paramsPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("u"))
@@ -1797,7 +1774,7 @@ void Editor::inputUnits()
 		{
 			unitPanel.active = !unitPanel.active;
 			if (unitPanel.active)
-				drawUnitPanel(unitPanel.surf);
+				unitPanel.changed = true;
 			input->resetKeys();
 		}
 		if (currentUnit)
@@ -3320,6 +3297,8 @@ void Editor::switchState(int toState)
 	case esTest:
 		l->reset();
 		break;
+	default:
+		break;
 	}
 	// Preparation
 	switch (toState)
@@ -3344,8 +3323,36 @@ void Editor::switchState(int toState)
 		l->generateParameters();
 		l->reset();
 		break;
+	default:
+		break;
 	}
 }
+
+void Editor::switchDrawTool(int newTool)
+{
+	switch (newTool)
+	{
+	case dtBrush:
+		drawTool = dtBrush;
+		toolPanel.changed = true;
+		toolSettingPanel.changed = true;
+		GFX::showCursor(false);
+		break;
+	case dtCrop:
+		drawTool = dtCrop;
+		toolPanel.changed = true;
+		toolSettingPanel.changed = true;
+		GFX::showCursor(true);
+		cropOffset.x = 0;
+		cropOffset.y = 0;
+		cropSize.x = l->levelImage->w;
+		cropSize.y = l->levelImage->h;
+		break;
+	default:
+		break;
+	}
+}
+
 
 /// Panel implementation
 
