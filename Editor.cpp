@@ -526,7 +526,7 @@ void Editor::inputSettings()
 	// Keyboard input before anything else
 	if (input->isPollingKeyboard())
 	{
-		if (input->isLeft() && !inputVecXCoord)
+		if ((input->isLeft() || input->isKey("TAB")) && !inputVecXCoord)
 		{
 			if (settingsSel == 4)
 			{
@@ -545,8 +545,9 @@ void Editor::inputSettings()
 			}
 			inputVecXCoord = true;
 			input->resetLeft();
+			input->resetKey("TAB");
 		}
-		if (input->isRight() && inputVecXCoord)
+		if ((input->isRight() || input->isKey("TAB")) && inputVecXCoord)
 		{
 			if (settingsSel == 4)
 			{
@@ -565,6 +566,7 @@ void Editor::inputSettings()
 			}
 			inputVecXCoord = false;
 			input->resetRight();
+			input->resetKey("TAB");
 		}
 		if (isAcceptKey(input))
 		{
@@ -2881,6 +2883,7 @@ void Editor::renderSettings()
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
+//			SDL_SetClipRect(GFX::getVideoSurface(), &rect);
 			switch (I)
 			{
 				case 0: entriesText.print(l->name); break;
@@ -2889,6 +2892,7 @@ void Editor::renderSettings()
 				case 7: break;
 				default: break;
 			}
+//			SDL_SetClipRect(GFX::getVideoSurface(), NULL);
 		}
 		else if (I == 4 || I == 8 || I == 9) // Vec input
 		{
