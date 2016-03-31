@@ -1117,34 +1117,28 @@ void Editor::inputDraw()
 			{
 			case 1:
 				brushCol.red = std::min(StringUtility::stringToInt(panelInputTemp), 255);
-				panelInputTemp = StringUtility::intToString(brushCol.red);
 				colourPanel.changed = true;
 				break;
 			case 2:
 				brushCol.green = std::min(StringUtility::stringToInt(panelInputTemp), 255);
-				panelInputTemp = StringUtility::intToString(brushCol.green);
 				colourPanel.changed = true;
 				break;
 			case 3:
 				brushCol.blue = std::min(StringUtility::stringToInt(panelInputTemp), 255);
-				panelInputTemp = StringUtility::intToString(brushCol.blue);
 				colourPanel.changed = true;
 				break;
 			case 4:
 				brushSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_BRUSH_SIZE), 1);
-				panelInputTemp = StringUtility::intToString(brushSize);
 				toolSettingPanel.changed = true;
 				break;
 			case 5:
 				gridSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE);
 				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
-				panelInputTemp = StringUtility::intToString(gridSize);
 				toolSettingPanel.changed = true;
 				break;
 			case 6:
 				snapDistancePercent = std::min(StringUtility::stringToInt(panelInputTemp), 100);
 				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
-				panelInputTemp = StringUtility::intToString(snapDistancePercent);
 				toolSettingPanel.changed = true;
 				break;
 			}
@@ -1252,7 +1246,7 @@ void Editor::inputDraw()
 					}
 					if (panelInputTarget > 0)
 					{
-						input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS);
+						input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS, 3);
 						colourPanel.userIsInteracting = true;
 						colourPanel.changed = true;
 						mousePos += colourPanel.pos;
@@ -1414,7 +1408,7 @@ void Editor::inputDraw()
 							}
 							if (panelInputTarget > 0)
 							{
-								input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS);
+								input->pollKeyboardInput(&panelInputTemp, KEYBOARD_MASK_NUMBERS, 3);
 								toolSettingPanel.userIsInteracting = true;
 								toolSettingPanel.changed = true;
 								mousePos += toolSettingPanel.pos;
@@ -3653,7 +3647,7 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	{
 		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 		panelText.setColour(BLACK);
-		panelText.print(target, brushCol.red);
+		panelText.print(target, panelInputTemp);
 		panelText.setColour(WHITE);
 	}
 	else
@@ -3672,7 +3666,7 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	{
 		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 		panelText.setColour(BLACK);
-		panelText.print(target, brushCol.green);
+		panelText.print(target, panelInputTemp);
 		panelText.setColour(WHITE);
 	}
 	else
@@ -3691,7 +3685,7 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	{
 		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 		panelText.setColour(BLACK);
-		panelText.print(target, brushCol.blue);
+		panelText.print(target, panelInputTemp);
 		panelText.setColour(WHITE);
 	}
 	else
@@ -3814,7 +3808,7 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 			panelText.setColour(BLACK);
-			panelText.print(target, brushSize);
+			panelText.print(target, panelInputTemp);
 			panelText.setColour(WHITE);
 		}
 		else
@@ -3836,7 +3830,7 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 			panelText.setColour(BLACK);
-			panelText.print(target, gridSize);
+			panelText.print(target, panelInputTemp);
 			panelText.setColour(WHITE);
 		}
 		else
@@ -3855,7 +3849,7 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
 			panelText.setColour(BLACK);
-			panelText.print(target, snapDistancePercent);
+			panelText.print(target, panelInputTemp);
 			panelText.setColour(WHITE);
 		}
 		else

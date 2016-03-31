@@ -148,7 +148,8 @@ private:
 	};
 	bool gridActive;
 	int gridSize;
-	int snapDistance; // Distance in which brush will snap to grid (in pixels), based on grid size
+	int snapDistance; // Distance in which brush will snap to grid (in pixels), based on grid size (this is used in the snapping code)
+	int snapDistancePercent; // In Percent. This will be set by the user in the tool settings panel and then converted to snapDistance in pixels
 	Vector2di straightLinePos; // Mouse starting position for straight lines (shift modifier)
 	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
 	Text panelText;
