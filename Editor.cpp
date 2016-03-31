@@ -1011,8 +1011,102 @@ void Editor::inputFlags()
 
 void Editor::inputDraw()
 {
-	/// Button handling
-	if (!input->isPollingKeyboard())
+	/// Button and keyboard handling
+	if (input->isPollingKeyboard())
+	{
+		// Keyboard input
+		if (input->keyboardBufferHasChanged())
+		{
+			switch (panelInputTarget)
+			{
+			case 1:
+				brushCol.red = std::min(StringUtility::stringToInt(panelInputTemp), 255);
+				colourPanel.changed = true;
+				break;
+			case 2:
+				brushCol.green = std::min(StringUtility::stringToInt(panelInputTemp), 255);
+				colourPanel.changed = true;
+				break;
+			case 3:
+				brushCol.blue = std::min(StringUtility::stringToInt(panelInputTemp), 255);
+				colourPanel.changed = true;
+				break;
+			case 4:
+				brushSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_BRUSH_SIZE), 1);
+				toolSettingPanel.changed = true;
+				break;
+			case 5:
+				gridSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				toolSettingPanel.changed = true;
+				break;
+			case 6:
+				snapDistancePercent = std::min(StringUtility::stringToInt(panelInputTemp), 100);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				toolSettingPanel.changed = true;
+				break;
+			}
+		}
+		else if (input->isKey("RETURN"))
+		{
+			input->stopKeyboardInput();
+			if (panelInputTarget >= 1 && panelInputTarget <= 3)
+			{
+				colourPanel.userIsInteracting = false;
+				colourPanel.changed = true;
+			}
+			else if (panelInputTarget >= 4 && panelInputTarget <= 6)
+			{
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+			}
+			panelInputTarget = 0;
+			input->resetKeys();
+		}
+		else if (input->isKey("ESCAPE"))
+		{
+			input->stopKeyboardInput();
+			switch (panelInputTarget)
+			{
+			case 1:
+				brushCol.red = StringUtility::stringToInt(panelInputBackup);
+				colourPanel.changed = true;
+				colourPanel.userIsInteracting = false;
+				break;
+			case 2:
+				brushCol.green = StringUtility::stringToInt(panelInputBackup);
+				colourPanel.changed = true;
+				colourPanel.userIsInteracting = false;
+				break;
+			case 3:
+				brushCol.blue = StringUtility::stringToInt(panelInputBackup);
+				colourPanel.changed = true;
+				colourPanel.userIsInteracting = false;
+				break;
+			case 4:
+				brushSize = StringUtility::stringToInt(panelInputBackup);
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+				break;
+			case 5:
+				gridSize = StringUtility::stringToInt(panelInputBackup);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+				break;
+			case 6:
+				snapDistancePercent = StringUtility::stringToInt(panelInputBackup);
+				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
+				toolSettingPanel.userIsInteracting = false;
+				toolSettingPanel.changed = true;
+				break;
+			}
+			panelInputTarget = 0;
+			input->resetKeys();
+		}
+		return; // Skip over mouse handling entirely
+	}
+	else
 	{
 		// Hotkeys
 		if (isCancelKey(input))
@@ -1107,100 +1201,6 @@ void Editor::inputDraw()
 			colourPanel.changed = true;
 			input->resetKeys();
 		}
-	}
-	else
-	{
-		// Keyboard input
-		if (input->keyboardBufferHasChanged())
-		{
-			switch (panelInputTarget)
-			{
-			case 1:
-				brushCol.red = std::min(StringUtility::stringToInt(panelInputTemp), 255);
-				colourPanel.changed = true;
-				break;
-			case 2:
-				brushCol.green = std::min(StringUtility::stringToInt(panelInputTemp), 255);
-				colourPanel.changed = true;
-				break;
-			case 3:
-				brushCol.blue = std::min(StringUtility::stringToInt(panelInputTemp), 255);
-				colourPanel.changed = true;
-				break;
-			case 4:
-				brushSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_BRUSH_SIZE), 1);
-				toolSettingPanel.changed = true;
-				break;
-			case 5:
-				gridSize = std::max(std::min(StringUtility::stringToInt(panelInputTemp), EDITOR_MAX_GRID_SIZE), EDITOR_MIN_GRID_SIZE);
-				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
-				toolSettingPanel.changed = true;
-				break;
-			case 6:
-				snapDistancePercent = std::min(StringUtility::stringToInt(panelInputTemp), 100);
-				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
-				toolSettingPanel.changed = true;
-				break;
-			}
-		}
-		else if (input->isKey("RETURN"))
-		{
-			input->stopKeyboardInput();
-			if (panelInputTarget >= 1 && panelInputTarget <= 3)
-			{
-				colourPanel.userIsInteracting = false;
-				colourPanel.changed = true;
-			}
-			else if (panelInputTarget >= 4 && panelInputTarget <= 6)
-			{
-				toolSettingPanel.userIsInteracting = false;
-				toolSettingPanel.changed = true;
-			}
-			panelInputTarget = 0;
-			input->resetKeys();
-		}
-		else if (input->isKey("ESCAPE"))
-		{
-			input->stopKeyboardInput();
-			switch (panelInputTarget)
-			{
-			case 1:
-				brushCol.red = StringUtility::stringToInt(panelInputBackup);
-				colourPanel.changed = true;
-				colourPanel.userIsInteracting = false;
-				break;
-			case 2:
-				brushCol.green = StringUtility::stringToInt(panelInputBackup);
-				colourPanel.changed = true;
-				colourPanel.userIsInteracting = false;
-				break;
-			case 3:
-				brushCol.blue = StringUtility::stringToInt(panelInputBackup);
-				colourPanel.changed = true;
-				colourPanel.userIsInteracting = false;
-				break;
-			case 4:
-				brushSize = StringUtility::stringToInt(panelInputBackup);
-				toolSettingPanel.userIsInteracting = false;
-				toolSettingPanel.changed = true;
-				break;
-			case 5:
-				gridSize = StringUtility::stringToInt(panelInputBackup);
-				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
-				toolSettingPanel.userIsInteracting = false;
-				toolSettingPanel.changed = true;
-				break;
-			case 6:
-				snapDistancePercent = StringUtility::stringToInt(panelInputBackup);
-				snapDistance = snapDistancePercent / 100.0f * (gridSize / 2);
-				toolSettingPanel.userIsInteracting = false;
-				toolSettingPanel.changed = true;
-				break;
-			}
-			panelInputTarget = 0;
-			input->resetKeys();
-		}
-		return; // Skip over mouse handling entirely
 	}
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
 	mousePos = input->getMouse();
@@ -1765,87 +1765,8 @@ void Editor::inputDraw()
 
 void Editor::inputUnits()
 {
-	/// Button handling
-	if (!input->isPollingKeyboard())
-	{
-		if (isCancelKey(input))
-		{
-			goToMenu();
-			input->resetKeys();
-		}
-		if (input->isLeft())
-			editorOffset.x -= 2;
-		else if (input->isRight())
-			editorOffset.x += 2;
-		if (input->isUp())
-			editorOffset.y -= 2;
-		else if (input->isDown())
-			editorOffset.y += 2;
-		if (input->isKey("1") && !toolPanel.userIsInteracting)
-		{
-			toolPanel.active = !toolPanel.active;
-			if (toolPanel.active)
-				toolPanel.changed = true;
-			input->resetKeys();
-		}
-		if (input->isKey("2") && !toolSettingPanel.userIsInteracting)
-		{
-			toolSettingPanel.active = !toolSettingPanel.active;
-			if (toolSettingPanel.active)
-				toolSettingPanel.changed = true;
-			input->resetKeys();
-		}
-		if (input->isKey("g"))
-		{
-			gridActive = !gridActive;
-			input->resetKeys();
-		}
-		if (input->isKey("p"))
-		{
-			paramsPanel.active = !paramsPanel.active;
-			if (paramsPanel.active)
-				paramsPanel.changed = true;
-			input->resetKeys();
-		}
-		if (input->isKey("u"))
-		{
-			drawUnits = !drawUnits;
-			input->resetKeys();
-		}
-		if (input->isKey("F7") && !unitPanel.userIsInteracting)
-		{
-			unitPanel.active = !unitPanel.active;
-			if (unitPanel.active)
-				unitPanel.changed = true;
-			input->resetKeys();
-		}
-		if (currentUnit)
-		{
-			if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
-			{
-				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
-				{
-					if (*I == currentUnit)
-					{
-						l->players.erase(I);
-						break;
-					}
-				}
-				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
-				{
-					if (*I == currentUnit)
-					{
-						l->units.erase(I);
-						break;
-					}
-				}
-				delete currentUnit;
-				currentUnit = NULL;
-				paramsPanel.changed = true;
-			}
-		}
-	}
-	else
+	/// Button and keyboard handling
+	if (input->isPollingKeyboard())
 	{
 		// Keyboard input
 		if (input->keyboardBufferHasChanged())
@@ -1939,6 +1860,85 @@ void Editor::inputUnits()
 			input->resetKeys();
 		}
 		return; // Polling keyboard - skip over mouse handling entirely
+	}
+	else
+	{
+		if (isCancelKey(input))
+		{
+			goToMenu();
+			input->resetKeys();
+		}
+		if (input->isLeft())
+			editorOffset.x -= 2;
+		else if (input->isRight())
+			editorOffset.x += 2;
+		if (input->isUp())
+			editorOffset.y -= 2;
+		else if (input->isDown())
+			editorOffset.y += 2;
+		if (input->isKey("1") && !toolPanel.userIsInteracting)
+		{
+			toolPanel.active = !toolPanel.active;
+			if (toolPanel.active)
+				toolPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("2") && !toolSettingPanel.userIsInteracting)
+		{
+			toolSettingPanel.active = !toolSettingPanel.active;
+			if (toolSettingPanel.active)
+				toolSettingPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("g"))
+		{
+			gridActive = !gridActive;
+			input->resetKeys();
+		}
+		if (input->isKey("p"))
+		{
+			paramsPanel.active = !paramsPanel.active;
+			if (paramsPanel.active)
+				paramsPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("u"))
+		{
+			drawUnits = !drawUnits;
+			input->resetKeys();
+		}
+		if (input->isKey("F7") && !unitPanel.userIsInteracting)
+		{
+			unitPanel.active = !unitPanel.active;
+			if (unitPanel.active)
+				unitPanel.changed = true;
+			input->resetKeys();
+		}
+		if (currentUnit)
+		{
+			if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
+			{
+				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+				{
+					if (*I == currentUnit)
+					{
+						l->players.erase(I);
+						break;
+					}
+				}
+				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+				{
+					if (*I == currentUnit)
+					{
+						l->units.erase(I);
+						break;
+					}
+				}
+				delete currentUnit;
+				currentUnit = NULL;
+				paramsPanel.changed = true;
+			}
+		}
 	}
 	/// Mouse position and button handling starts here (might be skipped if keyboard is being polled)
 	mousePos = input->getMouse();
