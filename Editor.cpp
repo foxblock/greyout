@@ -125,7 +125,7 @@ Editor::Editor()
 	entriesText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
 	entriesText.setColour(WHITE);
 	entriesText.setAlignment(CENTRED);
-	entriesText.setUpBoundary(Vector2di((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING, GFX::getYResolution()));
+	entriesText.setWrapping(false);
 	startItems.push_back("NEW LEVEL");
 	startItems.push_back("LOAD LEVEL");
 	startItems.push_back("NEW CHAPTER");
@@ -2801,7 +2801,7 @@ void Editor::renderStart()
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = EDITOR_RECT_HEIGHT;
-		entriesText.setPosition(EDITOR_MENU_OFFSET_X / 2, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		entriesText.setPosition(GFX::getXResolution() / 2, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 		if (I == startSel)
 		{
 			SDL_FillRect(screen, &rect, -1);
@@ -2877,21 +2877,29 @@ void Editor::renderSettings()
 		// render specific menu item content
 		if (I == 0 || I == 1 || I == 3 || I == 7) // Text
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
 					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == settingsSel)
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
 //			SDL_SetClipRect(GFX::getVideoSurface(), &rect);
+			string entryTemp;
 			switch (I)
 			{
-				case 0: entriesText.print(l->name); break;
-				case 1: entriesText.print(filename); break;
-				case 3: entriesText.print(musicFile); break;
+				case 0: entryTemp = l->name; break;
+				case 1: entryTemp = filename; break;
+				case 3: entryTemp = musicFile; break;
 				case 7: break;
 				default: break;
 			}
+			if (entriesText.getDimensions(entryTemp).x > EDITOR_ENTRY_SIZE)
+			{
+
+				entriesText.print(entryTemp);
+			}
+			else
+				entriesText.print(entryTemp);
 //			SDL_SetClipRect(GFX::getVideoSurface(), NULL);
 		}
 		else if (I == 4 || I == 8 || I == 9) // Vec input
@@ -3381,7 +3389,7 @@ void Editor::renderMenu()
 		rect.y = pos;
 		rect.w = GFX::getXResolution();
 		rect.h = EDITOR_RECT_HEIGHT;
-		entriesText.setPosition(EDITOR_MENU_OFFSET_X / 2, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		entriesText.setPosition(GFX::getXResolution() / 2, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 		if (I == menuSel)
 		{
 			SDL_FillRect(screen, &rect, -1);
