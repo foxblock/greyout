@@ -2877,13 +2877,10 @@ void Editor::renderSettings()
 		// render specific menu item content
 		if (I == 0 || I == 1 || I == 3 || I == 7) // Text
 		{
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
-					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == settingsSel)
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-//			SDL_SetClipRect(GFX::getVideoSurface(), &rect);
 			string entryTemp;
 			switch (I)
 			{
@@ -2895,22 +2892,43 @@ void Editor::renderSettings()
 			}
 			if (entriesText.getDimensions(entryTemp).x > EDITOR_ENTRY_SIZE)
 			{
-
+				rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+				rect.y = pos;
+				rect.w = EDITOR_ENTRY_SIZE;
+				rect.h = EDITOR_RECT_HEIGHT;
+				SDL_SetClipRect(GFX::getVideoSurface(), &rect);
+				if (I == settingsSel && input->isPollingKeyboard())
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+							pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+					entriesText.setAlignment(RIGHT_JUSTIFIED);
+				}
+				else
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+							pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+					entriesText.setAlignment(LEFT_JUSTIFIED);
+				}
 				entriesText.print(entryTemp);
+				entriesText.setAlignment(CENTRED);
+				SDL_SetClipRect(GFX::getVideoSurface(), NULL);
 			}
 			else
+			{
+				entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+						pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 				entriesText.print(entryTemp);
-//			SDL_SetClipRect(GFX::getVideoSurface(), NULL);
+			}
 		}
 		else if (I == 4 || I == 8 || I == 9) // Vec input
 		{
 			entriesText.setAlignment(LEFT_JUSTIFIED);
-			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
-					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == settingsSel && !input->isPollingKeyboard())
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
+			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			entriesText.print("X:");
 			entriesText.setPosition(entriesText.getStartPosition().x + EDITOR_TEXT_SIZE + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING, entriesText.getStartPosition().y);
 			entriesText.print("Y:");
@@ -2918,6 +2936,7 @@ void Editor::renderSettings()
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
+			// TODO: Use SetClipRect to restrict drawing area (similar to text input)
 			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE,
 					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 			if (I == 4)
