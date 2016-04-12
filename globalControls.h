@@ -8,7 +8,7 @@ static bool isAcceptKey(SimpleJoy *input)
 	return (
 		(input->isB() != SimpleJoy::sjRELEASED)
 		#if defined(PLATFORM_PC) || defined(PLATFORM_PANDORA)
-		&& !input->isPollingKeyboard() || (input->isKey("RETURN") != SimpleJoy::sjRELEASED)
+		&& !input->isPollingKeyboard() || (input->isKey("RETURN") != SimpleJoy::sjRELEASED) || (input->isKey("KP_ENTER") != SimpleJoy::sjRELEASED)
 		#endif
 		);
 }

@@ -306,6 +306,9 @@ Editor::~Editor()
 		}
 */
 
+// TODO: When resetting keys after performing a function, only reset keys for that function (where applicable, sometimes resetting everything is preferred)
+// TODO: Build a resetAcceptKey(input) and resetCancelKey(input) for that maybe
+
 void Editor::userInput()
 {
 	if (fileListActive)
@@ -318,6 +321,33 @@ void Editor::userInput()
 		inputMenu();
 		return;
 	}
+	// Global input
+	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("S"))
+	{
+		save();
+		input->resetKeys();
+	}
+	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("1"))
+	{
+		switchState(esSettings);
+		input->resetKeys();
+	}
+	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("2"))
+	{
+		switchState(esDraw);
+		input->resetKeys();
+	}
+	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("3"))
+	{
+		switchState(esUnits);
+		input->resetKeys();
+	}
+	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("4"))
+	{
+		switchState(esTest);
+		input->resetKeys();
+	}
+	// State specific input
 	switch (editorState)
 	{
 	case esStart:
@@ -1049,7 +1079,7 @@ void Editor::inputDraw()
 				break;
 			}
 		}
-		else if (input->isKey("RETURN"))
+		else if (isAcceptKey(input))
 		{
 			input->stopKeyboardInput();
 			if (panelInputTarget >= 1 && panelInputTarget <= 3)
@@ -1065,7 +1095,7 @@ void Editor::inputDraw()
 			panelInputTarget = 0;
 			input->resetKeys();
 		}
-		else if (input->isKey("ESCAPE"))
+		else if (isCancelKey(input))
 		{
 			input->stopKeyboardInput();
 			switch (panelInputTarget)
@@ -1126,13 +1156,6 @@ void Editor::inputDraw()
 		else if (input->isDown())
 			editorOffset.y += 2;
 
-		if (input->isKey("F6") && !colourPanel.userIsInteracting)
-		{
-			colourPanel.active = !colourPanel.active;
-			if (colourPanel.active)
-				colourPanel.changed = true;
-			input->resetKeys();
-		}
 		if (input->isKey("1") && !toolPanel.userIsInteracting)
 		{
 			toolPanel.active = !toolPanel.active;
@@ -1145,6 +1168,13 @@ void Editor::inputDraw()
 			toolSettingPanel.active = !toolSettingPanel.active;
 			if (toolSettingPanel.active)
 				toolSettingPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("6") && !colourPanel.userIsInteracting)
+		{
+			colourPanel.active = !colourPanel.active;
+			if (colourPanel.active)
+				colourPanel.changed = true;
 			input->resetKeys();
 		}
 		if (input->isKey("b"))
@@ -1892,28 +1922,28 @@ void Editor::inputUnits()
 				toolSettingPanel.changed = true;
 			input->resetKeys();
 		}
-		if (input->isKey("g"))
-		{
-			gridActive = !gridActive;
-			input->resetKeys();
-		}
-		if (input->isKey("p"))
+		if (input->isKey("3"))
 		{
 			paramsPanel.active = !paramsPanel.active;
 			if (paramsPanel.active)
 				paramsPanel.changed = true;
 			input->resetKeys();
 		}
-		if (input->isKey("u"))
-		{
-			drawUnits = !drawUnits;
-			input->resetKeys();
-		}
-		if (input->isKey("F7") && !unitPanel.userIsInteracting)
+		if (input->isKey("7") && !unitPanel.userIsInteracting)
 		{
 			unitPanel.active = !unitPanel.active;
 			if (unitPanel.active)
 				unitPanel.changed = true;
+			input->resetKeys();
+		}
+		if (input->isKey("g"))
+		{
+			gridActive = !gridActive;
+			input->resetKeys();
+		}
+		if (input->isKey("u"))
+		{
+			drawUnits = !drawUnits;
 			input->resetKeys();
 		}
 		if (currentUnit)
@@ -2635,12 +2665,13 @@ void Editor::inputMenu()
 		}
 		menuActive = false;
 		GFX::showCursor(true);
+		input->resetKeys();
 	}
 	else if (isCancelKey(input))
 	{
 		menuActive = false;
+		input->resetKeys();
 	}
-	input->resetKeys();
 }
 
 void Editor::inputFileList()
