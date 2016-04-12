@@ -2888,7 +2888,6 @@ void Editor::renderSettings()
 				case 1: entryTemp = filename; break;
 				case 3: entryTemp = musicFile; break;
 				case 7: break;
-				default: break;
 			}
 			if (entriesText.getDimensions(entryTemp).x > EDITOR_ENTRY_SIZE)
 			{
@@ -2936,26 +2935,92 @@ void Editor::renderSettings()
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			// TODO: Use SetClipRect to restrict drawing area (similar to text input)
 			entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE,
 					pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
-			if (I == 4)
-				entriesText.print((input->isPollingKeyboard() && settingsSel == 4 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.x));
-			else if (I == 8)
-				entriesText.print((input->isPollingKeyboard() && settingsSel == 8 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.x));
-			else if (I == 9)
-				entriesText.print((input->isPollingKeyboard() && settingsSel == 9 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.x));
+			string entryTemp;
+			switch (I)
+			{
+			case 4:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 4 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.x);
+				break;
+			case 8:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 8 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.x);
+				break;
+			case 9:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 9 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.x);
+			}
+			if (entriesText.getDimensions(entryTemp).x > EDITOR_VEC_ENTRY_SIZE)
+			{
+				rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE;
+				rect.y = pos;
+				rect.w = EDITOR_VEC_ENTRY_SIZE;
+				rect.h = EDITOR_RECT_HEIGHT;
+				SDL_SetClipRect(GFX::getVideoSurface(), &rect);
+				if (I == settingsSel && input->isPollingKeyboard() && inputVecXCoord)
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE + EDITOR_VEC_ENTRY_SIZE,
+							pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+					entriesText.setAlignment(RIGHT_JUSTIFIED);
+				}
+				else
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE,
+							pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+				}
+				entriesText.print(entryTemp);
+				entriesText.setAlignment(LEFT_JUSTIFIED);
+				SDL_SetClipRect(GFX::getVideoSurface(), NULL);
+			}
+			else
+			{
+				entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE,
+						pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+				entriesText.print(entryTemp);
+			}
 			if (I == settingsSel && (!input->isPollingKeyboard() || !inputVecXCoord))
 				entriesText.setColour(BLACK);
 			else
 				entriesText.setColour(WHITE);
-			entriesText.setPosition(entriesText.getStartPosition().x + EDITOR_TEXT_SIZE + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING, entriesText.getStartPosition().y);
-			if (I == 4)
-				entriesText.print((input->isPollingKeyboard() && settingsSel == 4 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.y));
-			else if (I == 8)
-				entriesText.print((input->isPollingKeyboard() && settingsSel == 8 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.y));
-			else if (I == 9)
-				entriesText.print((input->isPollingKeyboard() && settingsSel == 9 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.y));
+			switch (I)
+			{
+			case 4:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 4 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.y);
+				break;
+			case 8:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 8 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.y);
+				break;
+			case 9:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 9 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.y);
+			}
+			if (entriesText.getDimensions(entryTemp).x > EDITOR_VEC_ENTRY_SIZE)
+			{
+				rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING
+						+ EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING;
+				rect.y = pos;
+				rect.w = EDITOR_VEC_ENTRY_SIZE;
+				rect.h = EDITOR_RECT_HEIGHT;
+				SDL_SetClipRect(GFX::getVideoSurface(), &rect);
+				if (I == settingsSel && input->isPollingKeyboard() && !inputVecXCoord)
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING
+							+ EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE * 2 + EDITOR_MENU_SPACING, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+					entriesText.setAlignment(RIGHT_JUSTIFIED);
+				}
+				else
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING
+							+ EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+				}
+				entriesText.print(entryTemp);
+				entriesText.setAlignment(LEFT_JUSTIFIED);
+				SDL_SetClipRect(GFX::getVideoSurface(), NULL);
+			}
+			else
+			{
+				entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING
+						+ EDITOR_TEXT_SIZE * 2 + EDITOR_VEC_ENTRY_SIZE + EDITOR_MENU_SPACING, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+				entriesText.print(entryTemp);
+			}
 			entriesText.setAlignment(CENTRED);
 		}
 		else if (I == 6) // Checkbox
