@@ -145,6 +145,7 @@ private:
 		,dtCrop
 		,dtStamp
 		,dtSelect
+		,dtBucket
 	};
 	bool gridActive;
 	int gridSize;
