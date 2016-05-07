@@ -63,6 +63,7 @@ private:
 	void inputTest();
 	void inputMenu();
 	void inputFileList();
+	void inputMessageBox();
 
 	void updateStart();
 
@@ -74,11 +75,13 @@ private:
 	void renderTest();
 	void renderMenu();
 	void renderFileList();
+	void renderMessageBox();
 
-	void save();
+	int save(); // 0 - saved successfully, non-zero - error
 
 	void goToMenu();
 	void goToFileList(string path, string filters, string *target);
+	void showMessageBox(string message, string buttons);
 	void switchState(int toState); // Change editor state, do clean-up and preparation
 	void switchDrawTool(int newTool);
 
@@ -98,6 +101,7 @@ private:
 	vector<string> settingsItems;
 	vector<string> flagsItems;
 	vector<string> menuItems;
+	vector<string> messageBoxItems;
 
 	/// Startup + Settings
 	string loadFile;
@@ -105,7 +109,7 @@ private:
 	Vector2di lastPos;
 	bool mouseInBounds;
 	Text entriesText;
-	Text menuText;
+	Text menuText; // Used for multiple menus
 	SDL_Rect rect; // Dummy rect object used for drawing
 	AnimatedSprite arrows;
 	int mouseOnScrollItem; // 0 - not, 1 - on bar, 2 - up button, 3 - down button
@@ -119,12 +123,6 @@ private:
 	bool inputVecXCoord;
 	string vecInputTemp;
 	string vecInputBackup;
-	bool menuActive;
-	FileLister fileList;
-	bool fileListActive;
-	int fileListOffset;
-	int fileListSel;
-	string *fileListTarget;
 	string musicFile;
 	/// Draw
 	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
@@ -187,6 +185,20 @@ private:
 	/// Menu
 	SDL_Surface *menuBg;
 	int menuSel;
+	bool menuActive;
+	/// File Lister
+	FileLister fileList;
+	bool fileListActive;
+	int fileListOffset;
+	int fileListSel;
+	string *fileListTarget;
+	/// Message Box
+	bool messageBoxActive;
+	int messageBoxResult;
+	int messageBoxSel;
+	string messageBoxContent;
+	SDL_Surface *messageBoxBg;
+	Text messageBoxText;
 };
 
 

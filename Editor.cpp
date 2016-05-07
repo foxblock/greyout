@@ -52,6 +52,8 @@
 #define EDITOR_MENU_OFFSET_X 20
 #define EDITOR_MAX_MENU_ITEMS_SCREEN 10
 #define EDITOR_MAX_FILES_SCREEN 11
+#define EDITOR_MESSAGE_BOX_TEXT_OFFSET 40
+#define EDITOR_MESSAGE_BOX_BUTTONS_OFFSET 320
 
 #define EDITOR_DEFAULT_WIDTH 400
 #define EDITOR_DEFAULT_HEIGHT 240
@@ -230,13 +232,6 @@ Editor::Editor()
 	flagsOffset = 0;
 	editingFlags = false;
 	inputVecXCoord = false;
-	menuActive = false;
-	fileList.setCheckFolderDepth(false);
-	fileList.includeThisDirInListing(false);
-	fileListActive = false;
-	fileListOffset = 0;
-	fileListSel = 1;
-	fileListTarget = NULL;
 	musicFile = "";
 
 	ownsImage = false;
@@ -323,6 +318,26 @@ Editor::Editor()
 
 	menuBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 	menuSel = 0;
+	menuActive = false;
+
+	fileList.setCheckFolderDepth(false);
+	fileList.includeThisDirInListing(false);
+	fileListActive = false;
+	fileListOffset = 0;
+	fileListSel = 1;
+	fileListTarget = NULL;
+
+	messageBoxBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
+	messageBoxSel = 0;
+	messageBoxActive = false;
+	messageBoxResult = -1;
+	messageBoxContent = "";
+	messageBoxText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
+	messageBoxText.setColour(WHITE);
+	messageBoxText.setAlignment(LEFT_JUSTIFIED);
+	messageBoxText.setUpBoundary(Vector2di(GFX::getXResolution(), GFX::getYResolution()));
+	messageBoxText.setPosition(0, EDITOR_MESSAGE_BOX_TEXT_OFFSET);
+	messageBoxText.setWrapping(true);
 }
 
 Editor::~Editor()
@@ -373,7 +388,13 @@ Editor::~Editor()
 
 void Editor::userInput()
 {
-	if (fileListActive)
+	// Overlays
+	if (messageBoxActive)
+	{
+		inputMessageBox();
+		return;
+	}
+	else if (fileListActive)
 	{
 		inputFileList();
 		return;
@@ -462,7 +483,13 @@ void Editor::update()
 
 void Editor::render()
 {
-	if (fileListActive)
+	// Overlays
+	if (messageBoxActive)
+	{
+		renderMessageBox();
+		return;
+	}
+	else if (fileListActive)
 	{
 		renderFileList();
 		return;
@@ -472,6 +499,7 @@ void Editor::render()
 		renderMenu();
 		return;
 	}
+	// States
 	switch (editorState)
 	{
 	case esStart:
@@ -495,7 +523,7 @@ void Editor::render()
 	default:
 		return;
 	}
-
+	// Debug Output
 #ifdef _DEBUG
 	hlineColor(GFX::getVideoSurface(), 0, GFX::getXResolution()-1, input->getMouseY(), 0xFF0000AA);
 	vlineColor(GFX::getVideoSurface(), input->getMouseX(), 0, GFX::getYResolution()-1, 0xFF0000AA);
@@ -2753,6 +2781,7 @@ void Editor::inputMenu()
 
 		lastPos = mousePos;
 	}
+	int result = 0;
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
 		switch (menuSel)
@@ -2764,7 +2793,7 @@ void Editor::inputMenu()
 			switchState(esSettings + menuSel);
 			break;
 		case 4: // save
-			save();
+			result = save();
 			break;
 		case 5: // back
 			break;
@@ -2775,8 +2804,8 @@ void Editor::inputMenu()
 		default:
 			return;
 		}
-		menuActive = false;
-		GFX::showCursor(true);
+		if (result == 0)
+			menuActive = false;
 		input->resetKeys();
 	}
 	else if (isCancelKey(input))
@@ -2908,7 +2937,50 @@ void Editor::inputFileList()
 	}
 }
 
-// TODO: ChapterPath wird aktuell beim Laden eines Levels nicht gesetzt (ist aber eig. okay, da nur einzelne Levels geladen werden sollen)
+void Editor::inputMessageBox()
+{
+	mousePos = input->getMouse();
+	if (input->isUp())
+	{
+		messageBoxSel -= (messageBoxSel > 0) ? 1 : 0;
+	}
+	else if (input->isDown())
+	{
+		messageBoxSel += (messageBoxSel < messageBoxItems.size()-1) ? 1 : 0;
+	}
+
+	if (mousePos != lastPos)
+	{
+		int pos = EDITOR_MESSAGE_BOX_BUTTONS_OFFSET - ((EDITOR_MENU_SPACING + EDITOR_RECT_HEIGHT) * messageBoxItems.size() - EDITOR_MENU_SPACING) / 2;
+		int temp = -1;
+		for (int I = 0; I < menuItems.size(); ++I)
+		{
+			if (mousePos.y >= pos && mousePos.y < pos + EDITOR_RECT_HEIGHT)
+			{
+				temp = I;
+				break;
+			}
+			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		}
+		if ( temp != -1 )
+		{
+			messageBoxSel = temp;
+			mouseInBounds = true;
+		}
+		else
+			mouseInBounds = false;
+
+		lastPos = mousePos;
+	}
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
+	{
+		messageBoxResult = messageBoxSel;
+		messageBoxActive = false;
+		input->resetKeys();
+	}
+}
+
+// TODO: ChapterPath wird aktuell beim Laden eines Levels aus einem Chapter nicht gesetzt (ist aber eig. okay, da nur einzelne Levels geladen werden sollen)
 
 void Editor::updateStart()
 {
@@ -3709,47 +3781,82 @@ void Editor::renderFileList()
 	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? 0 : -1);
 }
 
-void Editor::save()
+void Editor::renderMessageBox()
 {
-	if (filename[0] != 0)
+	SDL_Surface *screen = GFX::getVideoSurface();
+	SDL_BlitSurface(messageBoxBg, NULL, GFX::getVideoSurface(), NULL);
+
+	messageBoxText.print(messageBoxContent);
+
+	int pos = EDITOR_MESSAGE_BOX_BUTTONS_OFFSET - (messageBoxItems.size() * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING) / 2;
+	for (int I = 0; I < messageBoxItems.size(); ++I)
 	{
-		char imgFilename[256] = "images/levels/";
-		strcat(imgFilename, filename.c_str());
-		strcat(imgFilename, ".png");
-		IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
-		l->imageFileName = imgFilename;
-		ofstream file;
-		char lvlFilename[256] = "levels/";
-		strcat(lvlFilename, filename.c_str());
-		strcat(lvlFilename, ".txt");
-		file.open(lvlFilename, ios::out | ios::trunc);
-		file << "[Level]\n";
-		l->generateParameters();
-		for (list<PARAMETER_TYPE >::iterator I = l->parameters.begin(); I != l->parameters.end(); ++I)
+		rect.x = 0;
+		rect.y = pos;
+		rect.w = GFX::getXResolution();
+		rect.h = EDITOR_RECT_HEIGHT;
+		entriesText.setPosition(GFX::getXResolution() / 2, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		if (I == messageBoxSel)
 		{
-			file << I->first << VALUE_STRING << I->second << "\n";
+			SDL_FillRect(screen, &rect, -1);
+			entriesText.setColour(BLACK);
 		}
-		for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+		else
 		{
-			file << "[Player]\n";
-			(*I)->generateParameters();
-			for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
-			{
-				file << K->first << VALUE_STRING << K->second << "\n";
-			}
+			SDL_FillRect(screen, &rect, 0);
+			entriesText.setColour(WHITE);
 		}
-		for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
-		{
-			file << "[Unit]\n";
-			(*I)->generateParameters();
-			for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
-			{
-				file << K->first << VALUE_STRING << K->second << "\n";
-			}
-		}
-		file.close();
-		l->levelFileName = lvlFilename;
+		entriesText.print(messageBoxItems[I]);
+
+		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
+}
+
+int Editor::save()
+{
+	if (filename[0] == 0)
+	{
+		showMessageBox("No filename entered! Please go to the level settings (Strg+1) and enter a valid filename.", "OK");
+		return 1;
+	}
+	// TODO: Better error checking when opening/editing files
+	char imgFilename[256] = "images/levels/";
+	strcat(imgFilename, filename.c_str());
+	strcat(imgFilename, ".png");
+	IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
+	l->imageFileName = imgFilename;
+	ofstream file;
+	char lvlFilename[256] = "levels/";
+	strcat(lvlFilename, filename.c_str());
+	strcat(lvlFilename, ".txt");
+	file.open(lvlFilename, ios::out | ios::trunc);
+	file << "[Level]\n";
+	l->generateParameters();
+	for (list<PARAMETER_TYPE >::iterator I = l->parameters.begin(); I != l->parameters.end(); ++I)
+	{
+		file << I->first << VALUE_STRING << I->second << "\n";
+	}
+	for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+	{
+		file << "[Player]\n";
+		(*I)->generateParameters();
+		for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
+		{
+			file << K->first << VALUE_STRING << K->second << "\n";
+		}
+	}
+	for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+	{
+		file << "[Unit]\n";
+		(*I)->generateParameters();
+		for (list<PARAMETER_TYPE >::iterator K = (*I)->parameters.begin(); K != (*I)->parameters.end(); ++K)
+		{
+			file << K->first << VALUE_STRING << K->second << "\n";
+		}
+	}
+	file.close();
+	l->levelFileName = lvlFilename;
+	return 0;
 }
 
 void Editor::goToMenu()
@@ -3772,6 +3879,21 @@ void Editor::goToFileList(string path, string filters, string *target)
 	fileListSel = 1;
 	fileListTarget = target;
 	fileListActive = true;
+	GFX::showCursor(true);
+}
+
+void Editor::showMessageBox(string message, string buttons)
+{
+	if (message[0] == 0 || buttons[0] == 0)
+		return;
+	SDL_BlitSurface(GFX::getVideoSurface(), NULL, messageBoxBg, NULL);
+	boxColor(messageBoxBg, 0, 0, GFX::getXResolution()-1, GFX::getYResolution()-1, 0x00000080);
+    messageBoxItems.clear();
+    StringUtility::tokenize(buttons, messageBoxItems, "|");
+	messageBoxContent = message;
+    messageBoxActive = true;
+    messageBoxResult = -1;
+	GFX::showCursor(true);
 }
 
 void Editor::switchState(int toState)
