@@ -90,7 +90,6 @@ Settings::Settings() :
 	entriesText->loadFont(GAME_FONT, SETTINGS_TEXT_SIZE);
 	entriesText->setColour(WHITE);
 	entriesText->setAlignment(CENTRED);
-	entriesText->setUpBoundary(Vector2di((int)GFX::getXResolution() - SETTINGS_MENU_OFFSET_X, GFX::getYResolution()));
 
 	categoryItems.push_back("AUDIO");
 	categoryItems.push_back("GAME");
@@ -596,7 +595,7 @@ void Settings::renderGame(SDL_Surface* surf)
 		}
 		else if (I == 1) // Set of values
 		{
-			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
+			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_MENU_OFFSET_X,
 									pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 			if (I == sel)
 				entriesText->setColour(BLACK);
@@ -659,7 +658,7 @@ void Settings::renderVideo(SDL_Surface* surf)
 
 		if (I < 2)
 		{
-			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE - SETTINGS_MENU_OFFSET_X,
+			entriesText->setPosition((int)GFX::getXResolution() - SETTINGS_VOLUME_SLIDER_SIZE / 2 - SETTINGS_MENU_OFFSET_X,
 									pos + SETTINGS_RECT_HEIGHT - SETTINGS_TEXT_SIZE);
 			if (I == sel)
 				entriesText->setColour(BLACK);

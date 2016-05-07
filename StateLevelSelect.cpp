@@ -785,7 +785,7 @@ void StateLevelSelect::switchState(const LevelSelectState& toState)
 			gridOffset = selection.y;
 			checkGridOffset(levelPreviews, gridOffset);
 		}
-		titleText.setPosition(GFX::getXResolution(),OFFSET_Y - TITLE_FONT_SIZE);
+		titleText.setPosition(0,OFFSET_Y - TITLE_FONT_SIZE);
 		titleText.setAlignment(RIGHT_JUSTIFIED);
 	}
 	else if (toState == lsIntermediate || toState == lsIntermediateLevel)
