@@ -36,7 +36,7 @@
 #include "globalControls.h"
 
 #define DEFAULT_SELECTION 0
-#define MENU_ITEM_COUNT 4
+#define MENU_ITEM_COUNT 5
 
 #ifdef _MEOW
 #define MENU_OFFSET_Y 101
@@ -45,9 +45,9 @@
 #define MENU_ITEM_SPACING 0
 #define MARKER_SPEED 3
 #else
-#define MENU_OFFSET_Y 178
-#define MENU_OFFSET_TITLE_Y 40
-#define MENU_ITEM_HEIGHT 61
+#define MENU_OFFSET_Y 154
+#define MENU_OFFSET_TITLE_Y 30
+#define MENU_ITEM_HEIGHT 57
 #define MENU_ITEM_SPACING 0
 #define MARKER_SPEED 5
 #endif
@@ -72,6 +72,7 @@ TitleMenu::TitleMenu()
 	bg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_bg.png");
 	SDL_Surface* temp2 = SURFACE_CACHE->loadSurface("images/menu/title_800_480_items.png");
 #endif
+	settingsBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 #ifdef _MEOW
 	marker.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_320_240_marker.png"), 1, 2, 0, 0);
 #else
@@ -165,7 +166,11 @@ void TitleMenu::update()
 
 void TitleMenu::render()
 {
-	GFX::clearScreen();
+	if (ENGINE->settings->isActive())
+	{
+		SDL_BlitSurface(settingsBg, NULL, GFX::getVideoSurface(), NULL);
+		return;
+	}
 
 	SDL_BlitSurface(bg, &bgRegion, GFX::getVideoSurface(), NULL);
 
@@ -180,9 +185,6 @@ void TitleMenu::render()
 	marker.setY(invertRegion.y + invertRegion.h);
 	marker.setCurrentFrame(1);
 	marker.render();
-
-	if (ENGINE->settings->isActive())
-		overlay.render();
 
 	EFFECTS->render();
 }
@@ -220,7 +222,7 @@ void TitleMenu::decSelection()
 
 void TitleMenu::doSelection()
 {
-	if ( selection != 2 && fadeTimer < 0 )
+	if ( selection != 3 && fadeTimer < 0 )
 	{
 		EFFECTS->fadeOut(30);
 		fadeTimer = 30;
@@ -238,10 +240,14 @@ void TitleMenu::doSelection()
 		setNextState(STATE_LEVELSELECT);
 		break;
 	case 2:
-		//ENGINE->settings->show();
 		setNextState(STATE_EDITOR);
 		break;
 	case 3:
+		ENGINE->settings->show();
+		SDL_BlitSurface(GFX::getVideoSurface(), NULL, settingsBg, NULL);
+		overlay.render(settingsBg);
+		break;
+	case 4:
 		nullifyState();
 		break;
 	default:

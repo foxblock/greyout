@@ -58,6 +58,7 @@ class TitleMenu : public BaseState
 		void inverse(SDL_Surface* const surf, const SDL_Rect& rect);
 
 		SDL_Surface *bg;
+		SDL_Surface *settingsBg;
 		AnimatedSprite marker;
 		AnimatedSprite title;
 		AnimatedSprite items;
