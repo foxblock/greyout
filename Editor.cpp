@@ -2041,13 +2041,49 @@ void Editor::inputUnits()
 			input->resetKeys();
 		}
 		if (input->isLeft())
-			editorOffset.x -= 2;
+		{
+			if (currentUnit)
+			{
+				currentUnit->position.x -= 1;
+				currentUnit->generateParameters();
+				paramsPanel.changed = true;
+			}
+			else
+				editorOffset.x -= 2;
+		}
 		else if (input->isRight())
-			editorOffset.x += 2;
+		{
+			if (currentUnit)
+			{
+				currentUnit->position.x += 1;
+				currentUnit->generateParameters();
+				paramsPanel.changed = true;
+			}
+			else
+				editorOffset.x += 2;
+		}
 		if (input->isUp())
-			editorOffset.y -= 2;
+		{
+			if (currentUnit)
+			{
+				currentUnit->position.y -= 1;
+				currentUnit->generateParameters();
+				paramsPanel.changed = true;
+			}
+			else
+				editorOffset.y -= 2;
+		}
 		else if (input->isDown())
-			editorOffset.y += 2;
+		{
+			if (currentUnit)
+			{
+				currentUnit->position.y += 1;
+				currentUnit->generateParameters();
+				paramsPanel.changed = true;
+			}
+			else
+				editorOffset.y += 2;
+		}
 		if (input->isKey("1") && !toolPanel.userIsInteracting)
 		{
 			toolPanel.active = !toolPanel.active;
