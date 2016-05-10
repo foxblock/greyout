@@ -2750,10 +2750,12 @@ void Editor::inputMenu()
 	if (input->isUp())
 	{
 		menuSel -= (menuSel > 0) ? 1 : 0;
+		input->resetUp();
 	}
 	else if (input->isDown())
 	{
 		menuSel += (menuSel < menuItems.size()-1) ? 1 : 0;
+		input->resetDown();
 	}
 
 	if (mousePos != lastPos)
@@ -4193,6 +4195,7 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 	int xPos = EDITOR_PANEL_SPACING;
 	int yPos = EDITOR_PANEL_SPACING;
 	int indicatorPos = 0;
+	bool toolOptionsPresent = false;
 	if (editorState == esDraw && drawTool == dtBrush)
 	{
 		panelText.setPosition(xPos, yPos);
@@ -4214,6 +4217,7 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 			panelText.print(target, brushSize);
 		xPos = EDITOR_PANEL_SPACING;
 		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+		toolOptionsPresent = true;
 	}
 	if (gridActive)
 	{
@@ -4255,6 +4259,14 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 			panelText.print(target, snapDistancePercent);
 		xPos = EDITOR_PANEL_SPACING;
 		yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+		toolOptionsPresent = true;
+	}
+	if (!toolOptionsPresent)
+	{
+		panelText.setBoundary(EDITOR_TOOL_SET_PANEL_WIDTH, EDITOR_TOOL_SET_PANEL_HEIGHT);
+		panelText.setAlignment(CENTRED);
+		panelText.setPosition(0, (EDITOR_TOOL_SET_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE) / 2);
+		panelText.print(target, "NO TOOL OPTIONS");
 	}
 }
 
@@ -4366,7 +4378,13 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 	bg.render(target);
 	paramsYPos.clear();
 	if (!currentUnit)
+	{
+		panelText.setBoundary(EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT);
+		panelText.setAlignment(CENTRED);
+		panelText.setPosition(0, (EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE) / 2);
+		panelText.print(target, "NO UNIT SELECTED");
 		return;
+	}
 	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PANEL_SPACING * 2 - EDITOR_RECT_HEIGHT,
 			EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PANEL_SPACING * 4);
 	panelText.setWrapping(true);
