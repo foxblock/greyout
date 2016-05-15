@@ -2379,6 +2379,8 @@ void Editor::inputUnits()
 		}
 		if (!paramsPanel.transparent && (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())) // user is actually interacting with the panel contents
 		{
+			if (!currentUnit)
+				return;
 			int tempItem = mouseOnScrollItem;
 			if (input->isLeftClick() && mouseOnScrollItem != 0)
 			{

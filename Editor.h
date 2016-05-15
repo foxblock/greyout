@@ -119,8 +119,8 @@ private:
 	int flagsSel;
 	int flagsOffset;
 	string filename;
-	bool editingFlags;
-	bool inputVecXCoord;
+	bool editingFlags; // Intermediate state on settings state used for level flags
+	bool inputVecXCoord; // True when user is editing the first (X) coordinate of a vector, false when second (Y) coordinate. Checked in combination with keyboard input
 	string vecInputTemp;
 	string vecInputBackup;
 	string musicFile;
@@ -152,8 +152,8 @@ private:
 	Vector2di straightLinePos; // Mouse starting position for straight lines (shift modifier)
 	int straightLineDirection; // 0 - none, 1 - undecided, 2 - horizontal, 3 - vertical
 	Text panelText;
-	string panelInputTemp;
-	string panelInputBackup;
+	string panelInputTemp; // Temporary string for holding keyboard input in panels
+	string panelInputBackup; // Backup string for keybaord input in panels (holds starting input, used for reset when user cancels keyboard input)
 	int panelActiveSlider; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue, 4 - brushSize, 5 - gridSize, 6 - snapDistance
 	int panelInputTarget; // 0 - none, 1 - colour_red, 2 - colour_green, 3 - colour_blue, 4 - brushSize, 5 - gridSize, 6 - snapDistance
 	EditorPanel colourPanel;
@@ -167,20 +167,22 @@ private:
 	/// Units
 	EditorPanel unitPanel;
 	AnimatedSprite unitButtons;
-	int hoverUnitButton;
-	int selectedUnitButton;
+	int hoverUnitButton; // Mouse-over unit button index
+	int selectedUnitButton; // Clicked unit button index
 	BaseUnit *currentUnit;
-	bool movingCurrentUnit;
-	bool currentUnitPlaced;
-	Vector2di unitMoveMouseOffset;
+	vector<BaseUnit*> selectedUnits;
+	bool movingCurrentUnit; // Set to true when user clicks on a selected unit to drag-move it, set to false when LMB is released
+	bool currentUnitPlaced; // True when the currently selected unit has been freshly created and not placed in the level yet
+	Vector2di unitMoveMouseOffset; // Offset of mousePos in the unit rect, when the user clicks on a unit to move it
 	void drawUnitPanel(SDL_Surface *target);
 	EditorPanel paramsPanel;
 	void drawParamsPanel(SDL_Surface *target);
-	int paramsSel;
-	int paramsOffset; // in pixels (all others are in # of menu items)
-	vector<int> paramsYPos;
-	int paramsSize;
-	bool addingParam;
+	int paramsSel; // Selected unit parameter index
+	int paramsOffset; // Draw offset for the params list in pixels (all others are in # of menu items)
+	vector<int> paramsYPos; // List of vertical starting positions of unit parameters (used for rect-checks when user clicks on panel). Set in panel draw function
+	int paramsSize; // Height of all unit parameters (used for sizing scrollbar for example). Set in panel draw function
+	// TODO: addingParam could possibly be merged with panelInputTarget
+	bool addingParam; // Indicating that user is currently adding a new unit parameter
 	string addingParamTemp;
 	/// Menu
 	SDL_Surface *menuBg;
