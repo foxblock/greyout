@@ -1350,7 +1350,7 @@ void Editor::inputDraw()
 		{
 			GFX::showCursor(true);
 		}
-		if (input->isLeftClick() && !colourPanel.transparent) // user is actually interacting with the panel contents
+		if ((input->isLeftClick() || input->isRightClick()) && !colourPanel.transparent) // user is actually interacting with the panel contents
 		{
 			mousePos -= colourPanel.pos;
 			if (input->isLeftClick() == SimpleJoy::sjPRESSED) // Initial mouse press on the panel
@@ -1393,12 +1393,19 @@ void Editor::inputDraw()
 					else if (mousePos.y >= EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 2 && mousePos.y < EDITOR_PANEL_SPACING * 3 + EDITOR_SLIDER_HEIGHT * 3)
 						panelActiveSlider = 3;
 				}
+				colourPanel.userIsInteracting = true;
+			}
+			if (input->isLeftClick() == SimpleJoy::sjPRESSED || input->isRightClick() == SimpleJoy::sjPRESSED) // Initial mouse press on the panel
+			{
 				// Colour fields
 				if (mousePos.y >= EDITOR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 3 && mousePos.y < EDITOR_PANEL_SPACING * 4 + EDITOR_SLIDER_HEIGHT * 4)
 				{
 					if ((mousePos.x - EDITOR_PANEL_SPACING) % (EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT) < EDITOR_SLIDER_HEIGHT)
 					{
-						brushCol.setColour(GFX::getPixel(colourPanel.surf, mousePos.x, mousePos.y));
+						if (input->isLeftClick())
+							brushCol.setColour(GFX::getPixel(colourPanel.surf, mousePos.x, mousePos.y));
+						else
+							brushCol2.setColour(GFX::getPixel(colourPanel.surf, mousePos.x, mousePos.y));
 						colourPanel.changed = true;
 					}
 				}
