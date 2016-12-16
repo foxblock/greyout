@@ -101,6 +101,7 @@
 #define EDITOR_TOOL_SET_PANEL_WIDTH 170
 #define EDITOR_TOOL_SET_PANEL_HEIGHT 114
 
+// getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
 Uint32 getpixel(SDL_Surface *surface, int x, int y)
 {
     int bpp = surface->format->BytesPerPixel;
@@ -2636,9 +2637,9 @@ void Editor::inputUnits()
 	// Snap mouse to grid
 	if (gridActive)
 	{
-		if (currentUnit)
+		if (currentUnit && (!currentUnitPlaced || movingCurrentUnit))
 		{
-			mousePos -= currentUnit->getSize() / 2;
+			mousePos -= currentUnit->getSize() / 2 - unitMoveMouseOffset;
 			int temp = (mousePos.x + editorOffset.x) % gridSize;
 			if (temp != 0) // Possibly need to make a correction
 			{
@@ -2679,12 +2680,12 @@ void Editor::inputUnits()
 						mousePos.y += gridSize - temp;
 				}
 			}
-			mousePos += currentUnit->getSize() / 2;
+			mousePos += currentUnit->getSize() / 2 - unitMoveMouseOffset;
 		}
 	}
 	if (currentUnit)
 	{
-		// Mouse
+		// Place new unit or hande actions with selected unit
 		if (input->isLeftClick())
 		{
 			if (!currentUnitPlaced)
