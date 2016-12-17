@@ -2134,24 +2134,28 @@ void Editor::inputUnits()
 		{
 			if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
 			{
-				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+				for (vector<BaseUnit*>::iterator I = selectedUnits.begin(); I != selectedUnits.end(); ++I)
 				{
-					if (*I == currentUnit)
+					for (vector<ControlUnit*>::iterator K = l->players.begin(); K != l->players.end(); ++K)
 					{
-						l->players.erase(I);
-						break;
+						if (*K == *I)
+						{
+							l->players.erase(K);
+							break;
+						}
 					}
-				}
-				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
-				{
-					if (*I == currentUnit)
+					for (vector<BaseUnit*>::iterator K = l->units.begin(); K != l->units.end(); ++K)
 					{
-						l->units.erase(I);
-						break;
+						if (*K == *I)
+						{
+							l->units.erase(K);
+							break;
+						}
 					}
+					delete *I;
 				}
-				delete currentUnit;
 				currentUnit = NULL;
+				selectedUnits.clear();
 				paramsPanel.changed = true;
 			}
 		}
@@ -2216,6 +2220,7 @@ void Editor::inputUnits()
 				{
 					delete currentUnit;
 					currentUnit = NULL;
+					selectedUnits.clear();
 				}
 				list<PARAMETER_TYPE > params;
 				switch (hoverUnitButton)
@@ -2354,6 +2359,8 @@ void Editor::inputUnits()
 				{
 					selectedUnitButton = hoverUnitButton;
 					currentUnitPlaced = false;
+					selectedUnits.clear();
+					selectedUnits.push_back(currentUnit);
 				}
 				else
 					selectedUnitButton = -1;
@@ -2387,7 +2394,7 @@ void Editor::inputUnits()
 		}
 		if (!paramsPanel.transparent && (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())) // user is actually interacting with the panel contents
 		{
-			if (!currentUnit)
+			if (selectedUnits.size() != 1)
 				return;
 			int tempItem = mouseOnScrollItem;
 			if (input->isLeftClick() && mouseOnScrollItem != 0)
@@ -2683,57 +2690,24 @@ void Editor::inputUnits()
 			mousePos += currentUnit->getSize() / 2 - unitMoveMouseOffset;
 		}
 	}
-	if (currentUnit)
+	// Place new unit or hande actions with selected unit
+	if (input->isLeftClick() == SimpleJoy::sjPRESSED)
 	{
-		// Place new unit or hande actions with selected unit
-		if (input->isLeftClick())
+		if (currentUnit && !currentUnitPlaced)
 		{
-			if (!currentUnitPlaced)
-			{
-				currentUnitPlaced = true;
-				if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
-					l->players.push_back((ControlUnit*)currentUnit);
-				else
-					l->units.push_back(currentUnit);
-				selectedUnitButton = -1;
-				unitPanel.changed = true;
-				input->resetMouseButtons();
-			}
-			else if (!movingCurrentUnit)
-			{
-				if ((mousePos + editorOffset).inRect(currentUnit->getRect()))
-				{
-					movingCurrentUnit = true;
-					unitMoveMouseOffset = currentUnit->getPixel(diMIDDLE) - mousePos - editorOffset;
-				}
-				else
-				{
-					currentUnit = NULL;
-				}
-			}
+			currentUnitPlaced = true;
+			if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+				l->players.push_back((ControlUnit*)currentUnit);
+			else
+				l->units.push_back(currentUnit);
+			selectedUnitButton = -1;
+			unitPanel.changed = true;
+			input->resetMouseButtons();
 		}
-		else if (movingCurrentUnit)
+		else
 		{
-			unitMoveMouseOffset.x = 0;
-			unitMoveMouseOffset.y = 0;
-			movingCurrentUnit = false;
-		}
-		if (movingCurrentUnit || !currentUnitPlaced)
-		{
-			// Place selected unit (either new or old)
-			currentUnit->position = mousePos + editorOffset + unitMoveMouseOffset - currentUnit->getSize() / 2.0f;
-			currentUnit->startingPosition = currentUnit->position;
-			currentUnit->generateParameters();
-		}
-		if (paramsPanel.active)
-			paramsPanel.changed = true;
-	}
-	else
-	{
-		// Select already placed unit
-		if (input->isLeftClick())
-		{
-			// Find and select unit under cursor
+			// Find unit under cursor
+			currentUnit = NULL;
 			Vector2df pos = mousePos + editorOffset;
 			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
 			{
@@ -2761,14 +2735,86 @@ void Editor::inputUnits()
 						currentUnit = *I;
 				}
 			}
+			// Handle click on unit...
 			if (currentUnit)
 			{
-				currentUnitPlaced = true;
-				currentUnit->generateParameters();
+				if (find(selectedUnits.begin(), selectedUnits.end(), currentUnit) != selectedUnits.end())
+				{
+					// Click on already selected unit
+					if (input->isKey("LEFT_SHIFT") || input->isKey("RIGHT_SHIFT"))
+					{
+						for (vector<BaseUnit*>::iterator I = selectedUnits.begin(); I != selectedUnits.end(); ++I)
+						{
+							if (*I == currentUnit)
+							{
+								selectedUnits.erase(I);
+								break;
+							}
+						}
+						currentUnit = selectedUnits.empty() ? NULL : selectedUnits.front();
+						if (paramsPanel.active)
+							paramsPanel.changed = true;
+						input->resetMouseButtons();
+					}
+					else
+					{
+						movingCurrentUnit = true;
+						unitMoveMouseOffset = currentUnit->getPixel(diMIDDLE) - mousePos - editorOffset;
+					}
+				}
+				else
+				{
+					// Select new unit
+					if (!input->isKey("LEFT_SHIFT") && !input->isKey("RIGHT_SHIFT"))
+						selectedUnits.clear();
+					selectedUnits.push_back(currentUnit);
+					currentUnitPlaced = true;
+					currentUnit->generateParameters();
+					if (paramsPanel.active)
+						paramsPanel.changed = true;
+					input->resetMouseButtons();
+				}
+			}
+			else // ...or empty space
+			{
+				selectedUnits.clear();
 				if (paramsPanel.active)
 					paramsPanel.changed = true;
+				input->resetMouseButtons();
 			}
-			input->resetMouseButtons();
+		}
+	}
+	else if (input->isLeftClick() == SimpleJoy::sjHELD)
+	{
+		if (movingCurrentUnit)
+		{
+			Vector2df currentUnitPos = currentUnit->position;
+			for (vector<BaseUnit*>::iterator I = selectedUnits.begin(); I != selectedUnits.end(); ++I)
+			{
+				Vector2df posDiff = (*I)->position - currentUnitPos;
+				(*I)->position = mousePos + editorOffset + posDiff + unitMoveMouseOffset - (*I)->getSize() / 2.0f;
+				(*I)->startingPosition = (*I)->position;
+				(*I)->generateParameters();
+			}
+			if (paramsPanel.active)
+				paramsPanel.changed = true;
+		}
+	}
+	else
+	{
+		if (movingCurrentUnit)
+		{
+			unitMoveMouseOffset.x = 0;
+			unitMoveMouseOffset.y = 0;
+			movingCurrentUnit = false;
+		}
+		if (currentUnit && !currentUnitPlaced)
+		{
+			currentUnit->position = mousePos + editorOffset + unitMoveMouseOffset - currentUnit->getSize() / 2.0f;
+			currentUnit->startingPosition = currentUnit->position;
+			currentUnit->generateParameters();
+			if (paramsPanel.active)
+				paramsPanel.changed = true;
 		}
 	}
 
@@ -3642,14 +3688,14 @@ void Editor::renderUnits()
 		l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
 	for (vector<ControlUnit*>::const_iterator I = l->players.begin(); I != l->players.end(); ++I)
 		l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
-	if (currentUnit)
+	for (vector<BaseUnit*>::const_iterator I = selectedUnits.begin(); I != selectedUnits.end(); ++I)
 	{
-		l->renderUnit(GFX::getVideoSurface(), currentUnit, editorOffset);
-		Vector2df temp = currentUnit->position - editorOffset;
-		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y - 1, 0x32D936FF);
-		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + currentUnit->getWidth(), temp.y + currentUnit->getHeight(), 0x32D936FF);
-		vlineColor(GFX::getVideoSurface(), temp.x - 1, temp.y, temp.y + currentUnit->getHeight() - 1, 0x32D936FF);
-		vlineColor(GFX::getVideoSurface(), temp.x + currentUnit->getWidth(), temp.y, temp.y + currentUnit->getHeight() - 1, 0x32D936FF);
+		l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
+		Vector2df temp = (*I)->position - editorOffset;
+		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + (*I)->getWidth(), temp.y - 1, 0x32D936FF);
+		hlineColor(GFX::getVideoSurface(), temp.x - 1, temp.x + (*I)->getWidth(), temp.y + (*I)->getHeight(), 0x32D936FF);
+		vlineColor(GFX::getVideoSurface(), temp.x - 1, temp.y, temp.y + (*I)->getHeight() - 1, 0x32D936FF);
+		vlineColor(GFX::getVideoSurface(), temp.x + (*I)->getWidth(), temp.y, temp.y + (*I)->getHeight() - 1, 0x32D936FF);
 	}
 
 	// Grid
@@ -4429,6 +4475,14 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 		panelText.setAlignment(CENTRED);
 		panelText.setPosition(0, (EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE) / 2);
 		panelText.print(target, "NO UNIT SELECTED");
+		return;
+	}
+	if (selectedUnits.size() > 1)
+	{
+		panelText.setBoundary(EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT);
+		panelText.setAlignment(CENTRED);
+		panelText.setPosition(0, (EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE) / 2);
+		panelText.print(target, "MULTIPLE UNITS SELECTED");
 		return;
 	}
 	panelText.setUpBoundary(EDITOR_PARAMS_PANEL_WIDTH - EDITOR_PANEL_SPACING * 2 - EDITOR_RECT_HEIGHT,
