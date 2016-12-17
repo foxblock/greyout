@@ -125,16 +125,6 @@ private:
 	string vecInputBackup;
 	string musicFile;
 	/// Draw
-	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
-	Colour brushCol;
-	Colour brushCol2;
-	int brushSize;
-	Vector2di mousePos; // Current mouse pos, adjusted for snapping to grid and other stuff
-	Vector2di editorOffset; // Offset of the window relative to the level image
-	Vector2di cropSize; // Size of the crop rectangle
-	Vector2di cropOffset; // Offset of the upper left corner of the crop offset relative to the level image
-	Vector2di mouseCropOffset; // Offset of the mouse to the crop rectangle when moving an edge
-	SimpleDirection cropEdge; // Currently selected edge or side to crop, diNONE if no edge is selected (mouse not down), diMIDDLE if mouse down, but no valid edge selected
 	int drawTool;
 	enum _DrawTool
 	{
@@ -145,6 +135,19 @@ private:
 		,dtSelect
 		,dtBucket
 	};
+	bool ownsImage; // Set on creating a new blank level, when the image is not loaded from the cache and therefore has to be destroyed manually
+	Colour brushCol;
+	Colour brushCol2;
+	int brushSize;
+	Vector2di mousePos; // Current mouse pos, adjusted for snapping to grid and other stuff
+	Vector2di editorOffset; // Offset of the window relative to the level image
+	Vector2di cropSize; // Size of the crop rectangle
+	Vector2di cropOffset; // Offset of the upper left corner of the crop offset relative to the level image
+	Vector2di mouseCropOffset; // Offset of the mouse to the crop rectangle when moving an edge
+	SimpleDirection cropEdge; // Currently selected edge or side to crop, diNONE if no edge is selected (mouse not down), diMIDDLE if mouse down, but no valid edge selected
+	SDL_Rect selectArea;
+	Vector2di selectAnchorPos; // Position of first click, used when moving to top or left
+	SDL_Surface *copyBuffer;
 	bool gridActive;
 	int gridSize;
 	int snapDistance; // Distance in which brush will snap to grid (in pixels), based on grid size (this is used in the snapping code)
@@ -161,6 +164,7 @@ private:
 	void drawColourPanel(SDL_Surface *target);
 	EditorPanel toolPanel;
 	AnimatedSprite toolButtons;
+	//void drawToolRectangle(SDL_Surface *target, int xPos, int yPos, bool selected);
 	void drawToolPanel(SDL_Surface *target);
 	EditorPanel toolSettingPanel;
 	void drawToolSettingPanel(SDL_Surface *target);
