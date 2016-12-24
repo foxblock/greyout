@@ -1254,6 +1254,39 @@ void Editor::inputDraw()
 		else if (input->isDown())
 			editorOffset.y += 2;
 
+		if ((input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("C"))
+		{
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_FreeSurface(copyBuffer);
+				// TODO: Clip selectArea to regard level bounds (necessary SDL does that, need to test in release mode for crashes?)
+				copyBuffer = SDL_CreateRGBSurface(SDL_SWSURFACE, selectArea.w, selectArea.h,
+						GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+				SDL_BlitSurface(l->levelImage, &selectArea, copyBuffer, NULL);
+			}
+			input->resetKey("C");
+		}
+		if ((input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("V"))
+		{
+			if (copyBuffer)
+			{
+				SDL_Rect dst = {mousePos.x + editorOffset.x - copyBuffer->w / 2,
+						mousePos.y + editorOffset.y - copyBuffer->h / 2,
+						copyBuffer->w,
+						copyBuffer->h};
+                SDL_BlitSurface(copyBuffer, NULL, l->levelImage, &dst);
+			}
+			input->resetKey("V");
+		}
+		if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
+		{
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_FillRect(l->levelImage, &selectArea, (input->isKey("DELETE") ? brushCol2 : brushCol).getSDL_Uint32Colour(l->levelImage));
+			}
+			input->resetKey("DELETE");
+			input->resetKey("BACKSPACE");
+		}
 		if (input->isKey("1") && !toolPanel.userIsInteracting)
 		{
 			toolPanel.active = !toolPanel.active;
