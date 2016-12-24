@@ -1674,7 +1674,7 @@ void Editor::inputDraw()
 			}
 			mousePos.x += brushSize / 2;
 			mousePos.y += brushSize / 2;
-		} // brush
+		} // end snap brush
 		else if (drawTool == dtCrop)
 		{
 			if (cropEdge == diLEFT || cropEdge == diRIGHT)
@@ -1697,7 +1697,24 @@ void Editor::inputDraw()
 				else if (gridSize - temp <= snapDistance)
 					mousePos.y += gridSize - temp;
 			}
-		} // crop
+		} // end snap crop
+		else if (drawTool == dtSelect)
+		{
+			int temp = (mousePos.x + editorOffset.x) % gridSize;
+			if (temp < 0)
+				temp += gridSize;
+			if (temp <= snapDistance)
+				mousePos.x -= temp;
+			else if (gridSize - temp <= snapDistance)
+				mousePos.x += gridSize - temp;
+			temp = (mousePos.y + editorOffset.y) % gridSize;
+			if (temp < 0)
+				temp += gridSize;
+			if (temp <= snapDistance)
+				mousePos.y -= temp;
+			else if (gridSize - temp <= snapDistance)
+				mousePos.y += gridSize - temp;
+		}
 	} // grid active
 	// Mouse button handling
 	if (drawTool == dtSelect)
