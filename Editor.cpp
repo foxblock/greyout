@@ -1278,6 +1278,17 @@ void Editor::inputDraw()
 			}
 			input->resetKey("V");
 		}
+		if ((input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("X"))
+		{
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_FreeSurface(copyBuffer);
+				copyBuffer = SDL_CreateRGBSurface(SDL_SWSURFACE, selectArea.w, selectArea.h,
+						GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+				SDL_BlitSurface(l->levelImage, &selectArea, copyBuffer, NULL);
+				SDL_FillRect(l->levelImage, &selectArea, brushCol2.getSDL_Uint32Colour(l->levelImage));
+			}
+		}
 		if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
 		{
 			if (selectArea.w > 0 && selectArea.h > 0)
