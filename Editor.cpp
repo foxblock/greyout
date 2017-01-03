@@ -4118,8 +4118,15 @@ void Editor::switchState(int toState)
 		break;
 	case esUnits:
 		if (currentUnit && !currentUnitPlaced)
+		{
 			delete currentUnit;
-		currentUnit = NULL;
+			currentUnit = NULL;
+			selectedUnits.clear();
+			selectedUnitButton = -1;
+			unitPanel.changed = true;
+			paramsPanel.changed = true;
+			currentUnitPlaced = true;
+		}
 		break;
 	case esTest:
 		l->reset();
