@@ -2887,7 +2887,15 @@ void Editor::inputUnits()
 				selectedUnits.clear();
 				if (paramsPanel.active)
 					paramsPanel.changed = true;
-				input->resetMouseButtons();
+			}
+			// Start selection box
+			if (!movingCurrentUnit)
+			{
+				selectArea.x = mousePos.x + editorOffset.x;
+				selectArea.y = mousePos.y + editorOffset.y;
+				selectAnchorPos.x = selectArea.x;
+				selectAnchorPos.y = selectArea.y;
+				selectArea.w = selectArea.h = 0;
 			}
 		}
 	}
@@ -2906,6 +2914,40 @@ void Editor::inputUnits()
 			if (paramsPanel.active)
 				paramsPanel.changed = true;
 		}
+		else if (mousePos != lastPos)
+		{
+			if (mousePos.x + editorOffset.x < selectAnchorPos.x)
+			{
+				selectArea.w = selectAnchorPos.x - (mousePos.x + editorOffset.x);
+				selectArea.x = mousePos.x + editorOffset.x;
+			}
+			else
+			{
+				selectArea.x = selectAnchorPos.x;
+				selectArea.w = mousePos.x + editorOffset.x - selectArea.x;
+			}
+			if (mousePos.y + editorOffset.y < selectAnchorPos.y)
+			{
+				selectArea.h = selectAnchorPos.y - (mousePos.y + editorOffset.y);
+				selectArea.y = mousePos.y + editorOffset.y;
+			}
+			else
+			{
+				selectArea.y = selectAnchorPos.y;
+				selectArea.h = mousePos.y + editorOffset.y - selectArea.y;
+			}
+			selectedUnits.clear();
+			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+			{
+				if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
+					selectedUnits.push_back(*I);
+			}
+			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+			{
+				if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
+					selectedUnits.push_back(*I);
+			}
+		}
 	}
 	else
 	{
@@ -2922,6 +2964,10 @@ void Editor::inputUnits()
 			currentUnit->generateParameters();
 			if (paramsPanel.active)
 				paramsPanel.changed = true;
+		}
+		if (selectArea.w > 0 || selectArea.h > 0)
+		{
+			selectArea.w = selectArea.h = 0;
 		}
 	}
 
@@ -3808,6 +3854,11 @@ void Editor::renderUnits()
 		Vector2df temp = (*I)->position - editorOffset;
 		rectangleColor(GFX::getVideoSurface(), temp.x - 1, temp.y - 1, temp.x + (*I)->getWidth(), temp.y + (*I)->getHeight(), EDITOR_SELECTION_COLOUR);
 		temp.x += 20;
+	}
+
+	if (selectArea.w > 0 && selectArea.h > 0)
+	{
+		rectangleColor(GFX::getVideoSurface(), selectArea.x - editorOffset.x, selectArea.y - editorOffset.y, selectArea.x - editorOffset.x + selectArea.w, selectArea.y - editorOffset.y + selectArea.h, EDITOR_SELECTION_COLOUR);
 	}
 
 	// Grid

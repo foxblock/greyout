@@ -145,7 +145,7 @@ private:
 	Vector2di cropOffset; // Offset of the upper left corner of the crop offset relative to the level image
 	Vector2di mouseCropOffset; // Offset of the mouse to the crop rectangle when moving an edge
 	SimpleDirection cropEdge; // Currently selected edge or side to crop, diNONE if no edge is selected (mouse not down), diMIDDLE if mouse down, but no valid edge selected
-	SDL_Rect selectArea;
+	SDL_Rect selectArea; // Position in game coordinates
 	Vector2di selectAnchorPos; // Position of first click, used when moving to top or left
 	SDL_Surface *copyBuffer;
 	bool gridActive;
@@ -164,7 +164,6 @@ private:
 	void drawColourPanel(SDL_Surface *target);
 	EditorPanel toolPanel;
 	AnimatedSprite toolButtons;
-	//void drawToolRectangle(SDL_Surface *target, int xPos, int yPos, bool selected);
 	void drawToolPanel(SDL_Surface *target);
 	EditorPanel toolSettingPanel;
 	void drawToolSettingPanel(SDL_Surface *target);

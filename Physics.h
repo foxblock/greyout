@@ -77,12 +77,13 @@ public:
 
 	// resets to initial state
 	void reset();
+	
+	// check for overlapping rectangles
+	bool rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const;
 
 	Vector2df gravity;
 	Vector2df maximum; // the maximum, absolute value a unit is allowed to move (limit)
 private:
-	// check for overlapping rectangles
-	bool rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const;
 
 	std::vector<SimpleDirection> checkPointsX;
 	std::vector<SimpleDirection> checkPointsY;
