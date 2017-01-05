@@ -2901,51 +2901,52 @@ void Editor::inputUnits()
 	}
 	else if (input->isLeftClick() == SimpleJoy::sjHELD)
 	{
-		if (movingCurrentUnit)
+		if (mousePos != lastPos)
 		{
-			Vector2df currentUnitPos = currentUnit->position;
-			for (vector<BaseUnit*>::iterator I = selectedUnits.begin(); I != selectedUnits.end(); ++I)
+			if (movingCurrentUnit)
 			{
-				Vector2df posDiff = (*I)->position - currentUnitPos;
-				(*I)->position = mousePos + editorOffset + posDiff + unitMoveMouseOffset - (*I)->getSize() / 2.0f;
-				(*I)->startingPosition = (*I)->position;
-				(*I)->generateParameters();
-			}
-			if (paramsPanel.active)
-				paramsPanel.changed = true;
-		}
-		else if (mousePos != lastPos)
-		{
-			if (mousePos.x + editorOffset.x < selectAnchorPos.x)
-			{
-				selectArea.w = selectAnchorPos.x - (mousePos.x + editorOffset.x);
-				selectArea.x = mousePos.x + editorOffset.x;
+				for (vector<BaseUnit*>::iterator I = selectedUnits.begin(); I != selectedUnits.end(); ++I)
+				{
+					(*I)->position += (mousePos - lastPos);
+					(*I)->startingPosition = (*I)->position;
+					(*I)->generateParameters();
+				}
+				if (paramsPanel.active)
+					paramsPanel.changed = true;
 			}
 			else
 			{
-				selectArea.x = selectAnchorPos.x;
-				selectArea.w = mousePos.x + editorOffset.x - selectArea.x;
-			}
-			if (mousePos.y + editorOffset.y < selectAnchorPos.y)
-			{
-				selectArea.h = selectAnchorPos.y - (mousePos.y + editorOffset.y);
-				selectArea.y = mousePos.y + editorOffset.y;
-			}
-			else
-			{
-				selectArea.y = selectAnchorPos.y;
-				selectArea.h = mousePos.y + editorOffset.y - selectArea.y;
-			}
-			selectedUnits.clear();
-			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
-			{
-				if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
-					selectedUnits.push_back(*I);
-			}
-			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
-			{
-				if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
-					selectedUnits.push_back(*I);
+				if (mousePos.x + editorOffset.x < selectAnchorPos.x)
+				{
+					selectArea.w = selectAnchorPos.x - (mousePos.x + editorOffset.x);
+					selectArea.x = mousePos.x + editorOffset.x;
+				}
+				else
+				{
+					selectArea.x = selectAnchorPos.x;
+					selectArea.w = mousePos.x + editorOffset.x - selectArea.x;
+				}
+				if (mousePos.y + editorOffset.y < selectAnchorPos.y)
+				{
+					selectArea.h = selectAnchorPos.y - (mousePos.y + editorOffset.y);
+					selectArea.y = mousePos.y + editorOffset.y;
+				}
+				else
+				{
+					selectArea.y = selectAnchorPos.y;
+					selectArea.h = mousePos.y + editorOffset.y - selectArea.y;
+				}
+				selectedUnits.clear();
+				for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+				{
+					if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
+						selectedUnits.push_back(*I);
+				}
+				for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+				{
+					if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
+						selectedUnits.push_back(*I);
+				}
 			}
 		}
 	}

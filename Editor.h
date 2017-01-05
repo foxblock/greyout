@@ -176,7 +176,7 @@ private:
 	vector<BaseUnit*> selectedUnits;
 	bool movingCurrentUnit; // Set to true when user clicks on a selected unit to drag-move it, set to false when LMB is released
 	bool currentUnitPlaced; // True when the currently selected unit has been freshly created and not placed in the level yet
-	Vector2di unitMoveMouseOffset; // Offset of mousePos in the unit rect, when the user clicks on a unit to move it
+	Vector2di unitMoveMouseOffset; // Offset of mousePos to the center of the unit, when the user clicks on a unit to move it
 	void drawUnitPanel(SDL_Surface *target);
 	EditorPanel paramsPanel;
 	void drawParamsPanel(SDL_Surface *target);
