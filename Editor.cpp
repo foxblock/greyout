@@ -3129,6 +3129,10 @@ void Editor::inputUnits()
 					if (PHYSICS->rectCheck(selectArea, (*I)->getRect()))
 						selectedUnits.push_back(*I);
 				}
+				if (selectedUnits.empty())
+					currentUnit = NULL;
+				else
+					currentUnit = selectedUnits.back();
 			}
 		}
 	}
