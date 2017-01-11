@@ -167,11 +167,24 @@ private:
 	void drawToolPanel(SDL_Surface *target);
 	EditorPanel toolSettingPanel;
 	void drawToolSettingPanel(SDL_Surface *target);
+	EditorPanel stampPanel;
+	int stampButtonHover;
+	int stampButtonSelected;
+	SDL_Surface	*currentStamp;
+	vector<SDL_Surface*> stampImagesGlobal;     // Full scale stamps, owned by surface cache
+	vector<SDL_Surface*> stampThumbnailsGlobal; // For menu buttons scaled to 32x32px, order corresponding to stampImages, not cached, owned by Editor class
+	vector<string> stampImageFilenamesGlobal;
+	vector<SDL_Surface*> stampImagesChapter;    // Chapter specific stamps
+	vector<SDL_Surface*> stampThumbnailsChapter;
+	vector<string> stampImageFilenamesChapter;
+	FileLister stampImageLister;
+	void generateStampListing(FileLister *lister, string path, vector<SDL_Surface*> &stampTarget, vector<SDL_Surface*> &thumbnailTarget, vector<string> &filenameTarget);
+	void drawStampPanel(SDL_Surface *target);
 	/// Units
 	EditorPanel unitPanel;
 	AnimatedSprite unitButtons;
-	int hoverUnitButton; // Mouse-over unit button index
-	int selectedUnitButton; // Clicked unit button index
+	int unitButtonHover; // Mouse-over unit button index
+	int unitButtonSelected; // Clicked unit button index
 	BaseUnit *currentUnit;
 	vector<BaseUnit*> selectedUnits;
 	bool movingCurrentUnit; // Set to true when user clicks on a selected unit to drag-move it, set to false when LMB is released
@@ -184,7 +197,6 @@ private:
 	int paramsOffset; // Draw offset for the params list in pixels (all others are in # of menu items)
 	vector<int> paramsYPos; // List of vertical starting positions of unit parameters (used for rect-checks when user clicks on panel). Set in panel draw function
 	int paramsSize; // Height of all unit parameters (used for sizing scrollbar for example). Set in panel draw function
-	// TODO: addingParam could possibly be merged with panelInputTarget
 	bool addingParam; // Indicating that user is currently adding a new unit parameter
 	string addingParamTemp;
 	/// Menu

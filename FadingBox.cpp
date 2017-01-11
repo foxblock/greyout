@@ -104,7 +104,7 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
 void FadingBox::generateParameters()
 {
 	PushableBox::generateParameters();
-	parameters.push_back(make_pair("farcolour", colourToString(col)));
+	parameters.push_back(make_pair("farcolour", colourToString(colours.second)));
 	parameters.push_back(make_pair("faderadius", StringUtility::vecToString(fadeRadius)));
 	if (fadeSteps != 0)
 		parameters.push_back(make_pair("fadesteps", StringUtility::intToString(fadeSteps)));

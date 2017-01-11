@@ -102,6 +102,13 @@
 #define EDITOR_TOOL_SET_PANEL_WIDTH 170
 #define EDITOR_TOOL_SET_PANEL_HEIGHT 114
 
+#define EDITOR_STAMP_PANEL_WIDTH 180
+#define EDITOR_STAMP_PANEL_HEIGHT 372
+#define EDITOR_STAMP_BUTTON_SIZE 32
+#define EDITOR_STAMP_BUTTON_BORDER 4
+
+// TODO: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
+
 // getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
 Uint32 getpixel(SDL_Surface *surface, int x, int y)
 {
@@ -292,18 +299,34 @@ Editor::Editor()
 	toolSettingPanel.transparent = false;
 	toolSettingPanel.userIsInteracting = false;
 	toolSettingPanel.changed = false;
+	stampPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_STAMP_PANEL_WIDTH, EDITOR_STAMP_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	stampPanel.pos.x = 0;
+	stampPanel.pos.y = EDITOR_TOOL_PANEL_HEIGHT + 20;
+	stampPanel.active = false;
+	stampPanel.transparent = false;
+	stampPanel.userIsInteracting = false;
+	stampPanel.changed = false;
+	stampButtonHover = -1;
+	stampButtonSelected = -1;
+	currentStamp = NULL;
+	// TODO: Set-up chapter file lister once stamp panel is opened
+	// TODO: Select all für draw und units
+	// TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
+	// TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
+	stampImageLister.addFilter("png");
+	stampImageLister.includePathLabelInListing(false);
 
 	unitPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	unitPanel.pos.x = 0;
-	unitPanel.pos.y = 50;
+	unitPanel.pos.y = EDITOR_TOOL_PANEL_HEIGHT + 20;
 	unitPanel.active = false;
 	unitPanel.transparent = false;
 	unitPanel.userIsInteracting = false;
 	unitPanel.changed = false;
 	unitButtons.loadFrames(SURFACE_CACHE->loadSurface(EDITOR_UNIT_BUTTONS_IMAGE), 8, 8, 0, 0, true);
 	unitButtons.setTransparentColour(MAGENTA);
-	hoverUnitButton = -1;
-	selectedUnitButton = -1;
+	unitButtonHover = -1;
+	unitButtonSelected = -1;
 	currentUnit = NULL;
 	movingCurrentUnit = false;
 	currentUnitPlaced = false;
@@ -350,14 +373,18 @@ Editor::~Editor()
 	if (ownsImage)
 		SDL_FreeSurface(l->levelImage);
 	delete l;
-	if (colourPanel.surf)
-		SDL_FreeSurface(colourPanel.surf);
-	if (toolPanel.surf)
-		SDL_FreeSurface(toolPanel.surf);
-	if (unitPanel.surf)
-		SDL_FreeSurface(unitPanel.surf);
-	if (paramsPanel.surf)
-		SDL_FreeSurface(paramsPanel.surf);
+	SDL_FreeSurface(colourPanel.surf);
+	SDL_FreeSurface(toolPanel.surf);
+	SDL_FreeSurface(unitPanel.surf);
+	SDL_FreeSurface(paramsPanel.surf);
+	SDL_FreeSurface(stampPanel.surf);
+	SDL_FreeSurface(menuBg);
+	SDL_FreeSurface(messageBoxBg);
+	SDL_FreeSurface(copyBuffer);
+	for (vector<SDL_Surface*>::const_iterator I = stampThumbnailsGlobal.begin(); I != stampThumbnailsGlobal.end(); ++I)
+		SDL_FreeSurface(*I);
+	for (vector<SDL_Surface*>::const_iterator I = stampThumbnailsChapter.begin(); I != stampThumbnailsChapter.end(); ++I)
+		SDL_FreeSurface(*I);
 }
 
 ///---public---
@@ -1319,6 +1346,16 @@ void Editor::inputDraw()
 				colourPanel.changed = true;
 			input->resetKeys();
 		}
+		if (input->isKey("7") && !stampPanel.userIsInteracting)
+		{
+			stampPanel.active = !stampPanel.active;
+			if (stampPanel.active)
+			{
+				stampPanel.changed = true;
+				generateStampListing(&stampImageLister, "images/stamps", stampImagesGlobal, stampThumbnailsGlobal, stampImageFilenamesGlobal);
+			}
+			input->resetKeys();
+		}
 		if (input->isKey("b"))
 		{
 			switchDrawTool(dtBrush);
@@ -1364,6 +1401,16 @@ void Editor::inputDraw()
 				--brushSize;
 				toolSettingPanel.changed = true;
 			}
+			input->resetKeys();
+		}
+		if (input->isKey("s"))
+		{
+			switchDrawTool(dtSelect);
+			input->resetKeys();
+		}
+		if (input->isKey("t"))
+		{
+			switchDrawTool(dtStamp);
 			input->resetKeys();
 		}
 		if (input->isKey("u"))
@@ -1522,7 +1569,7 @@ void Editor::inputDraw()
 				}
 				else if (mousePos.x >= EDITOR_PANEL_SPACING * 4 + EDITOR_TOOL_BUTTON_SIZE * 3 + EDITOR_TOOL_BUTTON_BORDER * 6 && mousePos.x < EDITOR_PANEL_SPACING * 4 + EDITOR_TOOL_BUTTON_SIZE * 4 + EDITOR_TOOL_BUTTON_BORDER * 8)
 				{
-					//switchDrawTool(dtStamp);
+					switchDrawTool(dtStamp);
 				}
 				else if (mousePos.x >= EDITOR_PANEL_SPACING * 5 + EDITOR_TOOL_BUTTON_SIZE * 4 + EDITOR_TOOL_BUTTON_BORDER * 8 && mousePos.x < EDITOR_PANEL_SPACING * 5 + EDITOR_TOOL_BUTTON_SIZE * 5 + EDITOR_TOOL_BUTTON_BORDER * 10)
 				{
@@ -1667,6 +1714,83 @@ void Editor::inputDraw()
 		SDL_SetAlpha(toolSettingPanel.surf, 0, 255);
 		toolSettingPanel.transparent = false;
 	}
+	// Stamp panel
+	if (stampPanel.active && (stampPanel.userIsInteracting || mousePos.inRect(stampPanel.pos.x, stampPanel.pos.y, EDITOR_STAMP_PANEL_WIDTH, EDITOR_STAMP_PANEL_HEIGHT)))
+	{
+		// Make transparent if user is drawing/cropping over panel, else show cursor
+		if ((input->isLeftClick() == SimpleJoy::sjHELD || input->isRightClick() == SimpleJoy::sjHELD) && !stampPanel.userIsInteracting)
+		{
+			SDL_SetAlpha(stampPanel.surf, SDL_SRCALPHA, 128);
+			stampPanel.transparent = true;
+		}
+		if (!stampPanel.transparent && (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())) // user is actually interacting with the panel contents
+		{
+			Vector2di backupPos = mousePos;
+			backupPos -= stampPanel.pos;
+			stampButtonHover = -1; // Reset selection
+			float columns = EDITOR_STAMP_PANEL_WIDTH / (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
+			for (int I = 0; I <= 1; ++I) // Go through categories (global, chapter)
+			{
+				int tempCount = 0;
+				int tempOffset = 0;
+				switch (I)
+				{
+					case 0: // Offset by selected stamp text and "global" label
+						backupPos.y -= (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING) * 2;
+						tempCount = stampImagesGlobal.size();
+						tempOffset = 0;
+						break;
+					case 1: // Offset by global stamp buttons and "chapter" label
+						backupPos.y -= ceil(stampImagesGlobal.size() / columns) * (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING);
+						tempCount = stampImagesChapter.size();
+						tempOffset = stampImagesGlobal.size();
+						break;
+				}
+				if (backupPos.y < 0)
+				{
+					break; // outside of any buttons
+				}
+				else if (backupPos.y < ceil(tempCount / columns) * (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING))
+				{
+					backupPos.x -= EDITOR_PANEL_SPACING; // Button x offset
+					int x = backupPos.x / (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
+					int y = backupPos.y / (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
+					if (x < columns && y * columns + x < tempCount)
+						stampButtonHover = tempOffset + y * columns + x;
+					break;
+				}
+			}
+			if (input->isLeftClick() == SimpleJoy::sjPRESSED && stampButtonHover != -1)
+			{
+				if (stampButtonHover < stampImagesGlobal.size())
+					currentStamp = stampImagesGlobal.at(stampButtonHover);
+				else
+					currentStamp = stampImagesChapter.at(stampButtonHover - stampImagesGlobal.size());
+				if (currentStamp)
+				{
+					stampButtonSelected = stampButtonHover;
+				}
+				else
+					stampButtonSelected = -1;
+			}
+			if (input->isLeftClick() || input->isRightClick())
+				stampPanel.userIsInteracting = true;
+			else
+				stampPanel.userIsInteracting = false;
+			stampPanel.changed = true;
+			return; // Skip over rest of mouse handling
+		}
+		else
+		{
+			stampPanel.userIsInteracting = false;
+		}
+	}
+	// Reset panel transparency
+	if (stampPanel.active && stampPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(stampPanel.pos.x, stampPanel.pos.y, EDITOR_UNIT_PANEL_WIDTH, EDITOR_STAMP_PANEL_HEIGHT)))
+	{
+		SDL_SetAlpha(stampPanel.surf, 0, 255);
+		stampPanel.transparent = false;
+	}
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
 	// Snap mouse to grid (changes mousePos)
 	// Everything before works with the real mousePos, everything after works with a new virtual/aligned mousePos
@@ -1758,6 +1882,56 @@ void Editor::inputDraw()
 				mousePos.y -= temp;
 			else if (gridSize - temp <= snapDistance)
 				mousePos.y += gridSize - temp;
+		}
+		else if (drawTool == dtStamp)
+		{
+			if (currentStamp)
+			{
+				mousePos.x -= currentStamp->w / 2;
+				mousePos.y -= currentStamp->h / 2;
+				int temp = (mousePos.x + editorOffset.x) % gridSize;
+				if (temp != 0) // Possibly need to make a correction
+				{
+					if (temp < 0) // Wrap negative values (left of level area)
+						temp += gridSize;
+					if (temp <= snapDistance) // If in snap distance right side of grid line
+						mousePos.x -= temp;
+					else if (gridSize - temp <= snapDistance) // In snap distance left side of grid line
+						mousePos.x += gridSize - temp;
+					else // If not snapped to left of brush, check right side of brush
+					{
+						temp = (mousePos.x + editorOffset.x + currentStamp->w) % gridSize;
+						if (temp < 0)
+							temp += gridSize;
+						if (temp <= snapDistance)
+							mousePos.x -= temp;
+						else if (gridSize - temp <= snapDistance)
+							mousePos.x += gridSize - temp;
+					}
+				}
+				temp = (mousePos.y + editorOffset.y) % gridSize;
+				if (temp != 0)
+				{
+					if (temp < 0) // Wrap negative values (top of level area)
+						temp += gridSize;
+					if (temp <= snapDistance)
+						mousePos.y -= temp;
+					else if (gridSize - temp <= snapDistance)
+						mousePos.y += gridSize - temp;
+					else
+					{
+						temp = (mousePos.y + editorOffset.y + currentStamp->h) % gridSize;
+						if (temp < 0)
+							temp += gridSize;
+						if (temp <= snapDistance)
+							mousePos.y -= temp;
+						else if (gridSize - temp <= snapDistance)
+							mousePos.y += gridSize - temp;
+					}
+				}
+				mousePos.x += currentStamp->w / 2;
+				mousePos.y += currentStamp->h / 2;
+			}
 		}
 	} // grid active
 	// Mouse button handling
@@ -2046,6 +2220,15 @@ void Editor::inputDraw()
 			input->resetMouseButtons();
 		}
 	} // bucket
+	else if (drawTool == dtStamp)
+	{
+		if (input->isLeftClick() && currentStamp)
+		{
+			SDL_Rect dst = {mousePos.x + editorOffset.x - currentStamp->w / 2, mousePos.y + editorOffset.y - currentStamp->h / 2, 0, 0};
+			SDL_BlitSurface(currentStamp, NULL, l->levelImage, &dst);
+			input->resetMouseButtons();
+		}
+	}
 	if (input->isLeftClick() || input->isRightClick())
 		lastPos = mousePos;
 }
@@ -2283,7 +2466,7 @@ void Editor::inputUnits()
 		{
 			Vector2di backupPos = mousePos;
 			backupPos -= unitPanel.pos;
-			hoverUnitButton = -1; // Reset selection
+			unitButtonHover = -1; // Reset selection
 			float columns = EDITOR_UNIT_PANEL_WIDTH / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
 			for (int I = 0; I <= 2; ++I) // Go through categories (players, units, triggers)
 			{
@@ -2317,11 +2500,11 @@ void Editor::inputUnits()
 					int x = backupPos.x / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
 					int y = backupPos.y / (EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING);
 					if (x < columns && y * columns + x < tempCount)
-						hoverUnitButton = tempOffset + y * columns + x;
+						unitButtonHover = tempOffset + y * columns + x;
 					break;
 				}
 			}
-			if (input->isLeftClick() == SimpleJoy::sjPRESSED && hoverUnitButton != -1)
+			if (input->isLeftClick() == SimpleJoy::sjPRESSED && unitButtonHover != -1)
 			{
 				if (!currentUnitPlaced)
 				{
@@ -2330,7 +2513,7 @@ void Editor::inputUnits()
 					selectedUnits.clear();
 				}
 				list<PARAMETER_TYPE > params;
-				switch (hoverUnitButton)
+				switch (unitButtonHover)
 				{
 					case  0:
 						params.push_back(make_pair(CLASS_STRING, "black"));
@@ -2457,20 +2640,20 @@ void Editor::inputUnits()
 				if (!params.empty())
 				{
 					params.push_back(make_pair("position",StringUtility::vecToString(editorOffset + Vector2di(GFX::getXResolution(), GFX::getYResolution())/2.0f)));
-					if (hoverUnitButton >= EDITOR_UNIT_PLAYER_START && hoverUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+					if (unitButtonHover >= EDITOR_UNIT_PLAYER_START && unitButtonHover < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
 						currentUnit = LEVEL_LOADER->createPlayer(params, l, -1);
 					else
 						currentUnit = LEVEL_LOADER->createUnit(params, l, -1);
 				}
 				if (currentUnit)
 				{
-					selectedUnitButton = hoverUnitButton;
+					unitButtonSelected = unitButtonHover;
 					currentUnitPlaced = false;
 					selectedUnits.clear();
 					selectedUnits.push_back(currentUnit);
 				}
 				else
-					selectedUnitButton = -1;
+					unitButtonSelected = -1;
 			}
 			if (input->isLeftClick() || input->isRightClick())
 				unitPanel.userIsInteracting = true;
@@ -2803,11 +2986,11 @@ void Editor::inputUnits()
 		if (currentUnit && !currentUnitPlaced)
 		{
 			currentUnitPlaced = true;
-			if (selectedUnitButton >= EDITOR_UNIT_PLAYER_START && selectedUnitButton < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
+			if (unitButtonSelected >= EDITOR_UNIT_PLAYER_START && unitButtonSelected < EDITOR_UNIT_PLAYER_START + EDITOR_UNIT_PLAYER_COUNT)
 				l->players.push_back((ControlUnit*)currentUnit);
 			else
 				l->units.push_back(currentUnit);
-			selectedUnitButton = -1;
+			unitButtonSelected = -1;
 			unitPanel.changed = true;
 			input->resetMouseButtons();
 		}
@@ -3735,13 +3918,6 @@ void Editor::renderDraw()
 		}
 	}
 	// Tool overlay (cursor/crop area, etc.)
-	if (drawTool == dtSelect)
-	{
-		if (selectArea.w > 0 && selectArea.h > 0)
-		{
-			rectangleColor(GFX::getVideoSurface(), selectArea.x - editorOffset.x, selectArea.y - editorOffset.y, selectArea.x - editorOffset.x + selectArea.w, selectArea.y - editorOffset.y + selectArea.h, EDITOR_SELECTION_COLOUR);
-		}
-	}
 	if (drawTool == dtBrush)
 	{
 		Vector2di pos = mousePos;
@@ -3799,6 +3975,22 @@ void Editor::renderDraw()
 		boxColor(screen, -editorOffset.x + cropOffset.x + cropSize.x + 1, -editorOffset.y + cropOffset.y + cropSize.y / 2 - EDITOR_CROP_RECT_HALFHEIGHT,
 				-editorOffset.x + cropOffset.x  + cropSize.x + EDITOR_CROP_RECT_WIDTH, -editorOffset.y + cropOffset.y + cropSize.y / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, EDITOR_CROP_COLOUR);
 	}
+	else if (drawTool == dtSelect)
+	{
+		if (selectArea.w > 0 && selectArea.h > 0)
+		{
+			rectangleColor(GFX::getVideoSurface(), selectArea.x - editorOffset.x, selectArea.y - editorOffset.y, selectArea.x - editorOffset.x + selectArea.w, selectArea.y - editorOffset.y + selectArea.h, EDITOR_SELECTION_COLOUR);
+		}
+	}
+	else if (drawTool == dtStamp)
+	{
+		if (currentStamp)
+		{
+			dst.x = mousePos.x - currentStamp->w / 2;
+			dst.y = mousePos.y - currentStamp->h / 2;
+			SDL_BlitSurface(currentStamp, NULL, GFX::getVideoSurface(), &dst);
+		}
+	}
 	if (colourPanel.active)
 	{
 		if (colourPanel.changed)
@@ -3806,8 +3998,9 @@ void Editor::renderDraw()
 			drawColourPanel(colourPanel.surf);
 			colourPanel.changed = false;
 		}
-		SDL_Rect temp = {colourPanel.pos.x, colourPanel.pos.y, 0, 0};
-		SDL_BlitSurface(colourPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = colourPanel.pos.x;
+		dst.y = colourPanel.pos.y;
+		SDL_BlitSurface(colourPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (toolPanel.active)
 	{
@@ -3816,8 +4009,9 @@ void Editor::renderDraw()
 			drawToolPanel(toolPanel.surf);
 			toolPanel.changed = false;
 		}
-		SDL_Rect temp = {toolPanel.pos.x, toolPanel.pos.y, 0, 0};
-		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = toolPanel.pos.x;
+		dst.y = toolPanel.pos.y;
+		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (toolSettingPanel.active)
 	{
@@ -3826,8 +4020,20 @@ void Editor::renderDraw()
 			drawToolSettingPanel(toolSettingPanel.surf);
 			toolSettingPanel.changed = false;
 		}
-		SDL_Rect temp = {toolSettingPanel.pos.x, toolSettingPanel.pos.y, 0, 0};
-		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = toolSettingPanel.pos.x;
+		dst.y = toolSettingPanel.pos.y;
+		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+	}
+	if (stampPanel.active)
+	{
+		if (stampPanel.changed)
+		{
+			drawStampPanel(stampPanel.surf);
+			stampPanel.changed = false;
+		}
+		dst.x = stampPanel.pos.x;
+		dst.y = stampPanel.pos.y;
+		SDL_BlitSurface(stampPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 }
 
@@ -3894,8 +4100,9 @@ void Editor::renderUnits()
 			drawUnitPanel(unitPanel.surf);
 			unitPanel.changed = false;
 		}
-		SDL_Rect temp = {unitPanel.pos.x, unitPanel.pos.y, 0, 0};
-		SDL_BlitSurface(unitPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = unitPanel.pos.x;
+		dst.y = unitPanel.pos.y;
+		SDL_BlitSurface(unitPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (paramsPanel.active)
 	{
@@ -3904,8 +4111,9 @@ void Editor::renderUnits()
 			drawParamsPanel(paramsPanel.surf);
 			paramsPanel.changed = false;
 		}
-		SDL_Rect temp = {paramsPanel.pos.x, paramsPanel.pos.y, 0, 0};
-		SDL_BlitSurface(paramsPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = paramsPanel.pos.x;
+		dst.y = paramsPanel.pos.y;
+		SDL_BlitSurface(paramsPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (toolPanel.active)
 	{
@@ -3914,8 +4122,9 @@ void Editor::renderUnits()
 			drawToolPanel(toolPanel.surf);
 			toolPanel.changed = false;
 		}
-		SDL_Rect temp = {toolPanel.pos.x, toolPanel.pos.y, 0, 0};
-		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = toolPanel.pos.x;
+		dst.y = toolPanel.pos.y;
+		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (toolSettingPanel.active)
 	{
@@ -3924,8 +4133,9 @@ void Editor::renderUnits()
 			drawToolSettingPanel(toolSettingPanel.surf);
 			toolSettingPanel.changed = false;
 		}
-		SDL_Rect temp = {toolSettingPanel.pos.x, toolSettingPanel.pos.y, 0, 0};
-		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &temp);
+		dst.x = toolSettingPanel.pos.x;
+		dst.y = toolSettingPanel.pos.y;
+		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 }
 
@@ -4070,6 +4280,7 @@ void Editor::renderMessageBox()
 	}
 }
 
+// TODO: Better save function with parmaters (filename, etc.)
 int Editor::save()
 {
 	if (filename[0] == 0)
@@ -4174,7 +4385,7 @@ void Editor::switchState(int toState)
 			delete currentUnit;
 			currentUnit = NULL;
 			selectedUnits.clear();
-			selectedUnitButton = -1;
+			unitButtonSelected = -1;
 			unitPanel.changed = true;
 			paramsPanel.changed = true;
 			currentUnitPlaced = true;
@@ -4220,11 +4431,17 @@ void Editor::switchState(int toState)
 
 void Editor::switchDrawTool(int newTool)
 {
+	// Clean-up current tool
+	switch (drawTool)
+	{
+	case dtStamp:
+		stampPanel.active = false;
+		break;
+	}
+	// Set-up new tool
 	switch (newTool)
 	{
 	case dtSelect:
-		selectArea.w = 0;
-		selectArea.h = 0;
 		break;
 	case dtBrush:
 		break;
@@ -4236,7 +4453,15 @@ void Editor::switchDrawTool(int newTool)
 		break;
 	case dtBucket:
 		break;
-	default:
+	case dtStamp:
+		currentStamp = NULL;
+		stampButtonHover = -1;
+		stampButtonSelected = -1;
+		stampPanel.active = true;
+		generateStampListing(&stampImageLister, "images/stamps", stampImagesGlobal, stampThumbnailsGlobal, stampImageFilenamesGlobal);
+		if (l->chapterPath[0] != 0)
+			generateStampListing(&stampImageLister, l->chapterPath + "/images/stamps", stampImagesChapter, stampThumbnailsChapter, stampImageFilenamesChapter);
+		stampPanel.changed = true;
 		break;
 	}
 	drawTool = newTool;
@@ -4521,13 +4746,39 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 	}
 }
 
+// state - 0 = nothing, 1 = hover, 2 = selected
+void drawButtonRectangle(SDL_Surface *target, int x, int y, int size, int borderSize, int state)
+{
+	switch (state)
+	{
+	case 0: // not selected
+		boxColor(target, x, y, x + size + borderSize * 2 - 1, y + borderSize / 2 - 1, 0x000000FF);
+		boxColor(target, x, y + size + borderSize * 1.5f, x + size + borderSize * 2 - 1, y + size + borderSize * 2 - 1, 0x000000FF);
+		boxColor(target, x, y + borderSize / 2, x + borderSize / 2 - 1, y + size + borderSize * 1.5f - 1, 0x000000FF);
+		boxColor(target, x + size + borderSize * 1.5f, y + borderSize / 2, x + size + borderSize * 2 - 1, y + size + borderSize * 1.5f - 1, 0x000000FF);
+		break;
+	case 1: // hover
+		boxColor(target, x, y, x + size + borderSize * 2 - 1, y + borderSize / 2 - 1, 0xFFFFFFFF);
+		boxColor(target, x, y + size + borderSize * 1.5f, x + size + borderSize * 2 - 1, y + size + borderSize * 2 - 1, 0xFFFFFFFF);
+		boxColor(target, x, y + borderSize / 2, x + borderSize / 2 - 1, y + size + borderSize * 1.5f - 1, 0xFFFFFFFF);
+		boxColor(target, x + size + borderSize * 1.5f, y + borderSize / 2, x + size + borderSize * 2 - 1, y + size + borderSize * 1.5f - 1, 0xFFFFFFFF);
+		break;
+	case 2: // selected
+		boxColor(target, x, y, x + size + borderSize * 2 - 1, y + borderSize - 1, 0xFFFFFFFF);
+		boxColor(target, x, y + size + borderSize, x + size + borderSize * 2 - 1, y + size + borderSize * 2 - 1, 0xFFFFFFFF);
+		boxColor(target, x, y + borderSize, x + borderSize - 1, y + size + borderSize - 1, 0xFFFFFFFF);
+		boxColor(target, x + size + borderSize, y + borderSize / 2, x + size + borderSize * 2 - 1, y + size + borderSize - 1, 0xFFFFFFFF);
+		break;
+	}
+}
+
 void Editor::drawUnitPanel(SDL_Surface *target)
 {
 	bg.render(target);
 	panelText.setUpBoundary(EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT);
 	panelText.setAlignment(CENTRED);
 	panelText.setPosition(0, 0);
-	int temp = (hoverUnitButton == -1) ? selectedUnitButton : hoverUnitButton;
+	int temp = (unitButtonHover == -1) ? unitButtonSelected : unitButtonHover;
 	switch (temp)
 	{
 		case  0: panelText.print(target, "BLACK PLAYER"); break;
@@ -4564,27 +4815,7 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 	yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 	for (int I = 0; I < 64; ++I)
 	{
-		if (I == selectedUnitButton)
-		{
-			boxColor(target, xPos, yPos, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_BORDER - 1, 0xFFFFFFFF);
-			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, 0xFFFFFFFF);
-			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_BORDER, xPos + EDITOR_UNIT_BUTTON_BORDER - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER - 1, 0xFFFFFFFF);
-			boxColor(target, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER - 1, 0xFFFFFFFF);
-		}
-		else if (I == hoverUnitButton)
-		{
-			boxColor(target, xPos, yPos, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, 0xFFFFFFFF);
-			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, 0xFFFFFFFF);
-			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0xFFFFFFFF);
-			boxColor(target, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0xFFFFFFFF);
-		}
-		else
-		{
-			boxColor(target, xPos, yPos, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, 0x000000FF);
-			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, 0x000000FF);
-			boxColor(target, xPos, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_BORDER / 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0x000000FF);
-			boxColor(target, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f, yPos + EDITOR_UNIT_BUTTON_BORDER / 2, xPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 - 1, yPos + EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 1.5f - 1, 0x000000FF);
-		}
+		drawButtonRectangle(target, xPos, yPos, EDITOR_UNIT_BUTTON_SIZE, EDITOR_UNIT_BUTTON_BORDER, (I == unitButtonSelected) ? 2 : (I == unitButtonHover) ? 1 : 0);
 		unitButtons.setCurrentFrame(I);
 		unitButtons.setPosition(xPos + EDITOR_UNIT_BUTTON_BORDER, yPos + EDITOR_UNIT_BUTTON_BORDER);
 		unitButtons.render(target);
@@ -4610,7 +4841,7 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 		{
 			break;
 		}
-		else
+		else // Normal position advancement
 		{
 			xPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			if (xPos > EDITOR_UNIT_PANEL_WIDTH - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
@@ -4619,6 +4850,7 @@ void Editor::drawUnitPanel(SDL_Surface *target)
 				yPos += EDITOR_UNIT_BUTTON_SIZE + EDITOR_UNIT_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			}
 		}
+		// Failsafe, bail when reaching end of panel (no scrollbars currently)
 		if (yPos > EDITOR_UNIT_PANEL_HEIGHT - EDITOR_UNIT_BUTTON_SIZE - EDITOR_UNIT_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
 			break;
 	}
@@ -4704,4 +4936,81 @@ void Editor::drawParamsPanel(SDL_Surface* target)
 	panelText.setPosition(-EDITOR_PANEL_TEXT_SIZE / 2, EDITOR_PARAMS_PANEL_HEIGHT - EDITOR_PANEL_TEXT_SIZE - EDITOR_PANEL_SPACING);
 	panelText.print(target, addingParam ? addingParamTemp : "CLICK HERE AND TYPE TO ADD");
 	panelText.setColour(WHITE);
+}
+
+void Editor::generateStampListing(FileLister *lister, string path, vector<SDL_Surface*> &stampTarget, vector<SDL_Surface*> &thumbnailTarget, vector<string> &filenameTarget)
+{
+	// Clear previous listing
+	for (vector<SDL_Surface*>::const_iterator I = thumbnailTarget.begin(); I != thumbnailTarget.end(); ++I)
+		SDL_FreeSurface(*I);
+	stampTarget.clear();
+	thumbnailTarget.clear();
+	filenameTarget.clear();
+	// Generate new listing and thumbnails
+	lister->setPath(path);
+	vector<string> stampFiles = lister->getListing();
+	for (vector<string>::const_iterator I = stampFiles.begin(); I != stampFiles.end(); ++I)
+	{
+		SDL_Surface *stamp = SURFACE_CACHE->loadSurface(lister->getPath() + "/" + *I,false);
+		if (stamp)
+		{
+			SDL_SetColorKey(stamp, SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(stamp->format,255,0,255));
+			float scale = (float)EDITOR_STAMP_BUTTON_SIZE / (float)max(stamp->w, stamp->h);
+			SDL_Surface *thumb = zoomSurface(stamp, scale, scale, SMOOTHING_OFF);
+			stampTarget.push_back(stamp);
+			thumbnailTarget.push_back(thumb);
+			filenameTarget.push_back(*I);
+		}
+	}
+}
+
+void Editor::drawStampPanel(SDL_Surface *target)
+{
+	bg.render(target);
+	panelText.setUpBoundary(EDITOR_STAMP_PANEL_WIDTH, EDITOR_STAMP_PANEL_HEIGHT);
+	panelText.setAlignment(CENTRED);
+	panelText.setPosition(0, 0);
+	int activeSelection = (stampButtonHover == -1) ? stampButtonSelected : stampButtonHover;
+	if (activeSelection < 0)
+		panelText.print(target, "-NONE SELECTED-");
+	if (activeSelection < stampImageFilenamesGlobal.size())
+		panelText.print(target, StringUtility::upper(stampImageFilenamesGlobal.at(activeSelection)));
+	else if (activeSelection < stampImageFilenamesGlobal.size() + stampImageFilenamesChapter.size())
+		panelText.print(target, StringUtility::upper(stampImageFilenamesChapter.at(activeSelection - stampImageFilenamesGlobal.size())));
+	panelText.setAlignment(LEFT_JUSTIFIED);
+	int xPos = EDITOR_PANEL_SPACING;
+	int yPos = EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
+	SDL_Rect dst = {0, 0, 0, 0};
+	panelText.setPosition(xPos, yPos);
+	panelText.print(target, "GLOBAL:");
+	yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
+	for (int I = 0; I < stampImagesGlobal.size() + stampImagesChapter.size(); ++I)
+	{
+		drawButtonRectangle(target, xPos, yPos, EDITOR_STAMP_BUTTON_SIZE, EDITOR_STAMP_BUTTON_BORDER, (I == stampButtonSelected) ? 2 : (I == stampButtonHover) ? 1 : 0);
+		dst.x = xPos + EDITOR_STAMP_BUTTON_BORDER;
+		dst.y = yPos + EDITOR_STAMP_BUTTON_BORDER;
+		if (I < stampImagesGlobal.size())
+			SDL_BlitSurface(stampThumbnailsGlobal.at(I), NULL, target, &dst);
+		else
+			SDL_BlitSurface(stampThumbnailsChapter.at(I - stampImagesGlobal.size()), NULL, target, &dst);
+		if (I == stampImagesGlobal.size() - 1 && l->chapterPath[0] != 0)
+		{
+			xPos = EDITOR_PANEL_SPACING;
+			yPos += EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+			panelText.setPosition(xPos, yPos);
+			panelText.print(target, "CHAPTER:");
+			yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
+		}
+		else
+		{
+			xPos += EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+			if (xPos > EDITOR_STAMP_PANEL_WIDTH - EDITOR_STAMP_BUTTON_SIZE - EDITOR_STAMP_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
+			{
+				xPos = EDITOR_PANEL_SPACING;
+				yPos += EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
+			}
+		}
+		if (yPos > EDITOR_STAMP_PANEL_HEIGHT - EDITOR_STAMP_BUTTON_SIZE - EDITOR_STAMP_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
+			break;
+	}
 }
