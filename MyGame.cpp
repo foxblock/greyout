@@ -318,6 +318,7 @@ bool MyGame::stateLoop()
 		if (input->isKey("f") && !input->isPollingKeyboard())
 		{
 			frameAdvance = true;
+			input->resetKey("f");
 		}
 		#endif // _DEBUG
 		if (input->isKey("F5") || input->isKey("PRINT"))

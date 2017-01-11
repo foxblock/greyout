@@ -64,6 +64,8 @@
 #define DEFAULT_LEVEL_FOLDER ((string)"levels/")
 #define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
 
+// TODO: Fix mouse collision regions for scrolling (sometimes loads level when close to level images)
+
 struct VecComp
 {
 	bool operator() (const Vector2di& lhs, const Vector2di& rhs) const

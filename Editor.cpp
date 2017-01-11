@@ -416,6 +416,7 @@ Editor::~Editor()
 // TODO: Select all für draw und units
 // TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
 // TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
+// TODO: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
 
 void Editor::userInput()
 {

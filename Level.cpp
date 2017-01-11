@@ -645,6 +645,7 @@ void Level::userInput()
 		else
 			ENGINE->setFrameRate(FRAME_RATE);
 		frameLimiter = !frameLimiter;
+		input->resetKey("b");
 	}
 #endif
 
