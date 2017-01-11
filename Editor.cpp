@@ -309,10 +309,6 @@ Editor::Editor()
 	stampButtonHover = -1;
 	stampButtonSelected = -1;
 	currentStamp = NULL;
-	// TODO: Set-up chapter file lister once stamp panel is opened
-	// TODO: Select all für draw und units
-	// TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
-	// TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
 	stampImageLister.addFilter("png");
 	stampImageLister.includePathLabelInListing(false);
 
@@ -417,6 +413,9 @@ Editor::~Editor()
 
 // TODO: When resetting keys after performing a function, only reset keys for that function (where applicable, sometimes resetting everything is preferred)
 // TODO: Build a resetAcceptKey(input) and resetCancelKey(input) for that maybe
+// TODO: Select all für draw und units
+// TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
+// TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
 
 void Editor::userInput()
 {
@@ -1346,7 +1345,7 @@ void Editor::inputDraw()
 				colourPanel.changed = true;
 			input->resetKeys();
 		}
-		if (input->isKey("7") && !stampPanel.userIsInteracting)
+		if (input->isKey("7") && drawTool == dtStamp && !stampPanel.userIsInteracting)
 		{
 			stampPanel.active = !stampPanel.active;
 			if (stampPanel.active)
