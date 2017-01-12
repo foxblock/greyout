@@ -56,6 +56,14 @@ int TitleMenu::selection = DEFAULT_SELECTION;
 
 TitleMenu::TitleMenu()
 {
+	bgVariant = rand() % 1000;
+	if (bgVariant < 990)
+		bgVariant = 0;
+	else if (bgVariant < 995)
+		bgVariant = 1;
+	else
+		bgVariant = 2;
+
 	invertRegion.w = GFX::getXResolution();
 	invertRegion.h = MENU_ITEM_HEIGHT;
 	invertRegion.x = 0;
@@ -67,10 +75,21 @@ TitleMenu::TitleMenu()
 
 #ifdef _MEOW
 	bg = SURFACE_CACHE->loadSurface("images/menu/title_320_240_bg.png");
-	SDL_Surface* temp2 = SURFACE_CACHE->loadSurface("images/menu/title_320_240_items.png");
+	SDL_Surface* itemsImg = SURFACE_CACHE->loadSurface("images/menu/title_320_240_items.png");
 #else
-	bg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_bg.png");
-	SDL_Surface* temp2 = SURFACE_CACHE->loadSurface("images/menu/title_800_480_items.png");
+	switch (bgVariant)
+	{
+	case 0:
+		bg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_bg.png", true);
+		break;
+	case 1:
+		bg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_bg2.png", true);
+		break;
+	case 2:
+		bg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_bg3.png", true);
+		break;
+	}
+	SDL_Surface* itemsImg = SURFACE_CACHE->loadSurface("images/menu/title_800_480_items.png");
 #endif
 	settingsBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 #ifdef _MEOW
@@ -80,7 +99,7 @@ TitleMenu::TitleMenu()
 #endif
 	title.loadFrames(SURFACE_CACHE->loadSurface("images/menu/title_800_480_header.png"), 1, 1, 0, 0);
 	title.setPosition((GFX::getXResolution() - title.getWidth()) / 2.0f, MENU_OFFSET_TITLE_Y);
-	items.loadFrames(temp2, 1, 1, 0, 0);
+	items.loadFrames(itemsImg, 1, 1, 0, 0);
 	items.setPosition(0, MENU_OFFSET_Y - (items.getHeight() - (MENU_ITEM_HEIGHT + MENU_ITEM_SPACING) * MENU_ITEM_COUNT + MENU_ITEM_SPACING) / 2.0f);
 	updateSelection(true);
 	lastPos = Vector2di(0, 0);
@@ -88,10 +107,27 @@ TitleMenu::TitleMenu()
 	fadeTimer = -1;
 	sizeDiff.x = bg->w - GFX::getXResolution();
 	sizeDiff.y = bg->h - GFX::getYResolution();
-	bgPos.x = sizeDiff.x;
-	bgPos.y = 0;
-	bgVel.x = -(sizeDiff.x) / 120.0f;
-	bgVel.y = (sizeDiff.y) / 120.0f;
+	switch (bgVariant)
+	{
+	case 0:
+		bgPos.x = sizeDiff.x; // start in top-right corner of image
+		bgPos.y = 0;
+		bgVel.x = -(sizeDiff.x) / 120.0f; // move image to the right (x-position of visible area decreasing) over the course of 2 seconds
+		bgVel.y = (sizeDiff.y) / 120.0f; // move imgage to the bottom
+		break;
+	case 1:
+		bgPos.x = 0;
+		bgPos.y = 0;
+		bgVel.x = (sizeDiff.x) / 5334.0f; // move image to the left over 10 seconds
+		bgVel.y = 0;
+		break;
+	case 2:
+		bgPos.x = sizeDiff.x;
+		bgPos.y = 0;
+		bgVel.x = -(sizeDiff.x) / 580.0f;
+		bgVel.y = (sizeDiff.y) / 580.0f;
+		break;
+	}
 
 	overlay.setDimensions(GFX::getXResolution(), GFX::getYResolution());
 	overlay.setPosition(0, 0);
@@ -155,10 +191,26 @@ void TitleMenu::update()
 		doSelection();
 	}
 	bgPos += bgVel;
-	if (bgPos.x <= 0 && bgPos.y >= sizeDiff.y)
+	switch (bgVariant)
 	{
-		bgPos.x = sizeDiff.x;
-		bgPos.y = 0;
+	case 0:
+		if (bgPos.x <= 0 && bgPos.y >= sizeDiff.y)
+		{
+			bgPos.x = sizeDiff.x;
+			bgPos.y = 0;
+		}
+		break;
+	case 1:
+		if (bgPos.x >= bg->w - GFX::getXResolution())
+			bgPos.x = 0;
+		break;
+	case 2:
+		if (bgPos.x <= 0 && bgPos.y >= sizeDiff.y)
+		{
+			bgPos.x = sizeDiff.x;
+			bgPos.y = 0;
+		}
+		break;
 	}
 	bgRegion.x = bgPos.x;
 	bgRegion.y = bgPos.y;

@@ -453,7 +453,7 @@ bool MyGame::stateLoop()
 		#ifdef _DEBUG
 		if (!frameAdvance)
 		#endif // _DEBUG
-		limitFPS(gameTimer->getScaler() - gameTimer->getTicks());
+			limitFPS(gameTimer->getScaler() - gameTimer->getTicks());
 		return true;   // Continue program execution
 	}
 	else

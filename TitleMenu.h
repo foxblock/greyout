@@ -59,6 +59,7 @@ class TitleMenu : public BaseState
 
 		SDL_Surface *bg;
 		SDL_Surface *settingsBg;
+		unsigned int bgVariant;
 		AnimatedSprite marker;
 		AnimatedSprite title;
 		AnimatedSprite items;
