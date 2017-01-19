@@ -114,14 +114,14 @@ Level::Level()
 
 	levelImage = NULL;
 	collisionLayer = NULL;
-	levelFileName = "";
+	levelFilePath = "";
 	chapterPath = "";
-	imageFileName = "";
+	imageFilePath = "";
 	errorString = "";
 	drawOffset = Vector2df(0,0);
 	idCounter = 0;
 	PHYSICS->reset();
-	dialogueFile = "";
+	dialogueFilePath = "";
 
 	nameTimer = 0;
 	eventTimer = 0;
@@ -303,7 +303,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 			levelImage = NULL;
 		if (levelImage)
 		{
-			imageFileName = value.second;
+			imageFilePath = value.second;
 			if (levelImage->w < GFX::getXResolution())
 				drawOffset.x = ((int)levelImage->w - (int)GFX::getXResolution()) / 2.0f;
 			if (levelImage->h < GFX::getYResolution())
@@ -324,7 +324,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 	}
 	case lpFilename:
 	{
-		levelFileName = value.second;
+		levelFilePath = value.second;
 		break;
 	}
 	case lpOffset:
@@ -374,7 +374,7 @@ bool Level::processParameter(const PARAMETER_TYPE& value)
 	{
 		if (ENGINE->currentState != STATE_LEVELSELECT)
 			DIALOGUE->loadFromFile(chapterPath + value.second);
-		dialogueFile = value.second;
+		dialogueFilePath = value.second;
 		break;
 	}
 	case lpGravity:
@@ -422,8 +422,8 @@ void Level::generateParameters()
 		parameters.erase(++parameters.begin(), parameters.end()); // Keep class param
 	else
 		parameters.push_back(make_pair(CLASS_STRING, "generic"));
-	if (imageFileName[0] != 0)
-		parameters.push_back(make_pair("image", imageFileName));
+	if (imageFilePath[0] != 0)
+		parameters.push_back(make_pair("image", imageFilePath));
 	if (name[0] != 0)
 		parameters.push_back(make_pair("name", name));
 	if (!flags.empty())
@@ -456,8 +456,8 @@ void Level::generateParameters()
 				StringUtility::intToString(c.blue) + "b"));
 	}
 	parameters.push_back(make_pair("boundaries", StringUtility::boolToString(cam.disregardBoundaries, true)));
-	if (dialogueFile[0] != 0)
-		parameters.push_back(make_pair("dialogue", dialogueFile));
+	if (dialogueFilePath[0] != 0)
+		parameters.push_back(make_pair("dialogue", dialogueFilePath));
 	parameters.push_back(make_pair("gravity", StringUtility::vecToString(PHYSICS->gravity)));
 	parameters.push_back(make_pair("terminalvelocity", StringUtility::vecToString(PHYSICS->maximum)));
 }
@@ -1364,7 +1364,7 @@ void Level::pauseInput()
 				EFFECTS->fadeOut(30);
 				MUSIC_CACHE->playSound("sounds/menu_back.wav");
 				Savegame::LevelStats stats = {timeCounter,deathCount,resetCount,1,0,timeOnLevel};
-				SAVEGAME->setLevelStats(levelFileName,stats);
+				SAVEGAME->setLevelStats(levelFilePath,stats);
 			}
 			else if (pauseItems[pauseSelection] == "SETTINGS")
 			{
@@ -1523,7 +1523,7 @@ void Level::pauseScreen()
 			if (ENGINE->chapterTrial)
 				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getChapterStats(ENGINE->currentChapter->filename).bestSpeedrunTime));
 			else
-				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFileName).bestSpeedrunTime));
+				timeTrialText.print(MyGame::ticksToTimeString(SAVEGAME->getLevelStats(levelFilePath).bestSpeedrunTime));
 		}
 	}
 
@@ -1751,9 +1751,9 @@ void Level::win()
 	if ( eventTimer == 0 && eventState == fsNone )
 	{
 		Savegame::LevelStats stats = {timeCounter,deathCount,resetCount,1,1,timeOnLevel};
-		if (timeCounter < SAVEGAME->getLevelStats(levelFileName).bestSpeedrunTime)
+		if (timeCounter < SAVEGAME->getLevelStats(levelFilePath).bestSpeedrunTime)
 			newRecord = true;
-		SAVEGAME->setLevelStats(levelFileName,stats);
+		SAVEGAME->setLevelStats(levelFilePath,stats);
 		if (ENGINE->timeTrial)
 		{
 			trialEnd = true;
@@ -1821,7 +1821,7 @@ void Level::removeLink(BaseUnit *source)
 #ifdef _DEBUG
 string Level::debugInfo()
 {
-	string result = levelFileName + "\n";
+	string result = levelFilePath + "\n";
 	result += "Players alive: " + StringUtility::intToString(players.size()) + " (" + StringUtility::intToString(players.capacity()) + ")\n";
 	result += "Units alive: " + StringUtility::intToString(units.size()) + " (" + StringUtility::intToString(units.capacity()) + ")\n";
 	result += "Particles: " + StringUtility::intToString(effects.size()) + " (" + StringUtility::intToString(effects.capacity()) + ")\n";
@@ -1846,7 +1846,7 @@ string Level::debugInfo()
 	}
 	result += "---\n";
 #ifdef _DEBUG_LEVEL_STATS
-	Savegame::LevelStats temp = SAVEGAME->getLevelStats(levelFileName);
+	Savegame::LevelStats temp = SAVEGAME->getLevelStats(levelFilePath);
 	result += "Time: " + StringUtility::intToString(timeOnLevel) + " (" + StringUtility::intToString(temp.totalTimeOnLevel) + ")\n";
 	result += "Deaths: " + StringUtility::intToString(deathCount) + " (" + StringUtility::intToString(temp.totalDeaths) + ")\n";
 	result += "Resets: " + StringUtility::intToString(resetCount) + " (" + StringUtility::intToString(temp.totalResets) + ")\n";
@@ -2036,7 +2036,7 @@ bool Level::playersVisible() const
 void Level::saveMusicToFile(CRstring musicFile)
 {
 	string line;
-	fstream file(levelFileName.c_str(), fstream::in);
+	fstream file(levelFilePath.c_str(), fstream::in);
 	vector<string> lines;
 
 	if (file.fail())
@@ -2063,7 +2063,7 @@ void Level::saveMusicToFile(CRstring musicFile)
 		}
 	}
 	file.close();
-	file.open(levelFileName.c_str(), fstream::out | fstream::trunc);
+	file.open(levelFilePath.c_str(), fstream::out | fstream::trunc);
 	vector<string>::const_iterator I = lines.begin();
 	file << *I;
 	for (++I; I != lines.end(); ++I)

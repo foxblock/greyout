@@ -146,11 +146,11 @@ public:
 	SDL_Surface* levelImage; // The raw level background loaded from a file (will not be altered)
 	SimpleFlags flags;
 
-	string levelFileName; // chapterPath + filename
-	string chapterPath;
-	string imageFileName;
-	string name;
-	string dialogueFile;
+	string levelFilePath; // chapterPath + filename
+	string chapterPath;  // path to the chapter folder (incl. trailing backslash)
+	string imageFilePath; // path to the level image (without chapterPath)
+	string name; // name of the level (as stated in the level file)
+	string dialogueFilePath; // path to the dialogue file for this level
 
 	#ifdef _DEBUG
 	virtual string debugInfo();

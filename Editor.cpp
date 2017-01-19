@@ -940,7 +940,7 @@ void Editor::inputSettings()
 			l->cam.disregardBoundaries = !(l->cam.disregardBoundaries);
 			break;
 		case 7: // Dialogue
-			goToFileList("data","txt",&l->dialogueFile);
+			goToFileList("data","txt",&l->dialogueFilePath);
 			break;
 		case 8: // Gravity
 			if (inputVecXCoord)
@@ -3555,7 +3555,7 @@ void Editor::renderSettings()
 				case 0: entryTemp = l->name; break;
 				case 1: entryTemp = filename; break;
 				case 3: entryTemp = musicFile; break;
-				case 7: break;
+				case 7: entryTemp = l->dialogueFilePath; break;
 			}
 			if (entriesText.getDimensions(entryTemp).x > EDITOR_ENTRY_SIZE)
 			{
@@ -3708,10 +3708,6 @@ void Editor::renderSettings()
 			else if (I != settingsSel && !l->cam.disregardBoundaries)
 				SDL_FillRect(screen, &rect, 0);
 		}
-
-		//		if (I == settingsItems.size()-3)
-		//			pos = EDITOR_RETURN_Y_POS - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-		//		else
 		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
 	}
 	// render back menu item (always visible)
@@ -4302,7 +4298,7 @@ void Editor::renderMessageBox()
 	}
 }
 
-// TODO: Better save function with parmaters (filename, etc.)
+// TODO: Better save function with parmaters (filename, etc.) and error checking
 int Editor::save()
 {
 	if (filename[0] == 0)
@@ -4310,12 +4306,12 @@ int Editor::save()
 		showMessageBox("No filename entered! Please go to the level settings (Strg+1) and enter a valid filename.", "OK");
 		return 1;
 	}
-	// TODO: Better error checking when opening/editing files
+
 	char imgFilename[256] = "images/levels/";
 	strcat(imgFilename, filename.c_str());
 	strcat(imgFilename, ".png");
 	IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
-	l->imageFileName = imgFilename;
+	l->imageFilePath = imgFilename;
 	ofstream file;
 	char lvlFilename[256] = "levels/";
 	strcat(lvlFilename, filename.c_str());
@@ -4346,7 +4342,7 @@ int Editor::save()
 		}
 	}
 	file.close();
-	l->levelFileName = lvlFilename;
+	l->levelFilePath = lvlFilename;
 	return 0;
 }
 
