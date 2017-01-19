@@ -641,11 +641,11 @@ void Editor::inputStart()
 		switch (startSel)
 		{
 		case 0: // New level
-			ownsImage = true;
 			l = new Level();
 			l->setSimpleJoy(input);
 			l->levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_DEFAULT_WIDTH, EDITOR_DEFAULT_HEIGHT,
 					GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+			ownsImage = true;
 			SDL_FillRect(l->levelImage, NULL, -1);
 			editorOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2;
 			editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
@@ -2159,7 +2159,7 @@ void Editor::inputDraw()
 			dstRect.x = std::max(-cropOffset.x, 0);
 			dstRect.y = std::max(-cropOffset.y, 0);
             SDL_BlitSurface(l->levelImage, &srcRect, l->collisionLayer, &dstRect);
-            if (!ownsImage)
+            if (ownsImage)
 				SDL_FreeSurface(l->levelImage);
 			l->levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 			ownsImage = true;
@@ -3419,24 +3419,42 @@ void Editor::inputMessageBox()
 
 void Editor::updateStart()
 {
-	if (loadFile[0] != 0)
+	if (!loadFile[0] != 0) // loadFile is set when a level is seletected from goToFileList
 	{
-		l = LEVEL_LOADER->loadLevelFromFile(loadFile);
-		if (!l)
+		return;
+	}
+	// Check if level is from chapter
+	size_t pos = loadFile.find(DEFAULT_CHAPTER_FOLDER);
+	if (pos != string::npos)
+	{
+		// Construct path to chapter folder
+		pos = loadFile.find_first_of("/", pos + 9);
+		if (pos == string::npos)
 		{
 			input->resetKeys();
-			ENGINE->stateParameter = "ERROR: Failed to load level file in editor: " + loadFile;
+			ENGINE->stateParameter = "ERROR: File in main ""chapters"" folder, instead of individual chapter sub-folder: " + loadFile;
 			setNextState(STATE_ERROR);
+			return;
 		}
-		else
-		{
-			l->setSimpleJoy(input);
-			editorOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2;
-			editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
-			editorState = esDraw;
-			ownsImage = false;
-		}
+		l = LEVEL_LOADER->loadLevelFromFile(loadFile, loadFile.substr(0, pos+1));
 	}
+	else
+	{
+		l = LEVEL_LOADER->loadLevelFromFile(loadFile);
+	}
+
+	if (!l)
+	{
+		input->resetKeys();
+		ENGINE->stateParameter = "ERROR: Failed to load level file in editor: " + loadFile;
+		setNextState(STATE_ERROR);
+		return;
+	}
+	l->setSimpleJoy(input);
+	editorOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2;
+	editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
+	editorState = esDraw;
+	ownsImage = false;
 }
 
 void Editor::renderStart()
@@ -4950,6 +4968,7 @@ void Editor::generateStampListing(FileLister *lister, string path, vector<SDL_Su
 	stampTarget.clear();
 	thumbnailTarget.clear();
 	filenameTarget.clear();
+	lister->clearListing();
 	// Generate new listing and thumbnails
 	lister->setPath(path);
 	vector<string> stampFiles = lister->getListing();

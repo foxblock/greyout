@@ -72,7 +72,7 @@ public:
 	virtual string getNextLevelAndSave(CRstring current);
 
 	string filename; // info.txt filename and path
-	string path; // path to chapter folder (where info.txt is in)
+	string path; // path to chapter folder (where info.txt is in) including trailing backslash
 	string name; // name of the chapter (mandatory)
 	string imageFile; // image displayed in the chapter menu
 	string dialogueFile; // file containing the strings loaded as dialogue
