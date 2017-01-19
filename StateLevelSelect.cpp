@@ -61,11 +61,6 @@
 #define INTERMEDIATE_LEVEL_MENU_ITEM_COUNT 2
 #define INTERMEDIATE_MENU_SPACING 20
 
-#define DEFAULT_LEVEL_FOLDER ((string)"levels/")
-#define DEFAULT_CHAPTER_FOLDER ((string)"chapters/")
-
-// TODO: Fix mouse collision regions for scrolling (sometimes loads level when close to level images)
-
 struct VecComp
 {
 	bool operator() (const Vector2di& lhs, const Vector2di& rhs) const
@@ -206,6 +201,7 @@ void StateLevelSelect::clearLevelListing()
 	}
 
 	levelPreviews.clear();
+	levelLister.clearListing();
 	delete exChapter;
 	exChapter = NULL;
 }
@@ -221,6 +217,7 @@ void StateLevelSelect::clearChapterListing()
 	}
 
 	chapterPreviews.clear();
+	dirLister.clearListing();
 }
 
 void StateLevelSelect::userInput()
@@ -263,20 +260,30 @@ void StateLevelSelect::userInput()
 
 		if (mousePos != lastPos)
 		{
-			mouseInBounds = true;
+			mouseInBounds = false;
 			Vector2di newPos(-1,-1);
-			newPos.x = floor( (float)(mousePos.x - spacing.x) / (float)( size.x + spacing.x ) );
-			newPos.y = floor( (float)(mousePos.y - spacing.y / 2.0f - OFFSET_Y) / (float)( size.y + spacing.y) );
-			if (newPos.y >= 0 && newPos.y < PREVIEW_COUNT_Y)
-				newPos.y += gridOffset;
-			else
+			for (int I = 0; I < PREVIEW_COUNT_X; ++I)
 			{
-				mouseInBounds = false;
-				newPos.y = -1;
+				if (mousePos.x >= spacing.x * (I+1) + size.x * I && mousePos.x < spacing.x * (I+1) + size.x * (I+1))
+				{
+					newPos.x = I;
+					break;
+				}
 			}
-			if (newPos.x >= 0 && newPos.y >= 0 && newPos != selection)
+			for (int I = 0; I < PREVIEW_COUNT_Y; ++I)
+			{
+				if (mousePos.y >= OFFSET_Y + spacing.y * (I+1) + size.y * I && mousePos.y < OFFSET_Y + spacing.y * (I+1) + size.y * (I+1))
+				{
+					newPos.y = I;
+					break;
+				}
+			}
+			if (newPos.y != -1)
+				newPos.y += gridOffset;
+			if (newPos.x >= 0 && newPos.y >= 0)
 			{
 				selection = newPos;
+				mouseInBounds = true;
 			}
 
 			lastPos = mousePos;

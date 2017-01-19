@@ -212,8 +212,8 @@ void TitleMenu::update()
 		}
 		break;
 	}
-	bgRegion.x = bgPos.x;
-	bgRegion.y = bgPos.y;
+	bgRegion.x = round(bgPos.x);
+	bgRegion.y = round(bgPos.y);
 }
 
 void TitleMenu::render()
