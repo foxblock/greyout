@@ -36,7 +36,7 @@
 // you can do funky horizontal gravity, but the collision checking would need some tinkering to make it work
 // it currently checks the y-directions last for a reason...
 #define DEFAULT_GRAVITY Vector2df(0,1)
-#define DEFAULT_MAXIMUM Vector2df(10,10) // this should be the size of a tile if that's applicable
+#define DEFAULT_MAXIMUM Vector2df(10,10) // this should be less than the size of a tile if that's applicable
 
 Physics* Physics::self = 0;
 
@@ -73,6 +73,16 @@ Physics* Physics::GetSingleton()
 void Physics::reset()
 {
 	gravity = DEFAULT_GRAVITY;
+	maximum = DEFAULT_MAXIMUM;
+}
+
+void Physics::resetGravity()
+{
+	gravity = DEFAULT_GRAVITY;
+}
+
+void Physics::resetMaximum()
+{
 	maximum = DEFAULT_MAXIMUM;
 }
 

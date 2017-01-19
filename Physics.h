@@ -77,6 +77,8 @@ public:
 
 	// resets to initial state
 	void reset();
+	void resetGravity();
+	void resetMaximum();
 	
 	// check for overlapping rectangles
 	bool rectCheck(const SDL_Rect& rectA, const SDL_Rect& rectB) const;

@@ -115,6 +115,7 @@
 // TODO: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
 // TODO: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
 // TODO: Copy and paste for units
+// TODO: Add help (use showMessageBox and display hint when user presses F1 while highlighting something, e.g. menu Items in settings)
 
 // getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
 Uint32 getpixel(SDL_Surface *surface, const int &x, const int &y)
@@ -180,8 +181,8 @@ void putpixel(SDL_Surface *surface, const int &x, const int &y, const Uint32 &pi
 }
 
 bool fileExists (const string &file) {
-	struct stat buffer;   
-	return (stat (file.c_str(), &buffer) == 0); 
+	struct stat buffer;
+	return (stat (file.c_str(), &buffer) == 0);
 }
 
 Editor::Editor()
@@ -929,7 +930,7 @@ void Editor::inputSettings()
 		input->resetMouseWheel();
 	}
 
-	if (input->isSelect()) 
+	if (input->isSelect())
 	{
 		if (settingsSel == 4) // Removing the music
 		{
@@ -948,6 +949,14 @@ void Editor::inputSettings()
 		else if (settingsSel == 8)
 		{
 			l->dialogueFilePath = "";
+		}
+		else if (settingsSel == 9)
+		{
+			PHYSICS->resetGravity();
+		}
+		else if (settingsSel == 10)
+		{
+			PHYSICS->resetMaximum();
 		}
 		input->resetSelect();
 	}
