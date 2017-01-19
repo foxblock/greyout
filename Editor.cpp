@@ -40,6 +40,7 @@
 #include <SDL/SDL_gfxPrimitives.h>
 #include <iostream>
 #include <fstream>
+#include <sys/stat.h>
 
 #define EDITOR_HEADLINE_SIZE 72
 #define EDITOR_TEXT_SIZE 48
@@ -107,10 +108,16 @@
 #define EDITOR_STAMP_BUTTON_SIZE 32
 #define EDITOR_STAMP_BUTTON_BORDER 4
 
+// TODO: When resetting keys after performing a function, only reset keys for that function (where applicable, sometimes resetting everything is preferred)
+// TODO: Build a resetAcceptKey(input) and resetCancelKey(input) for that maybe
+// TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
+// TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
+// TODO: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
 // TODO: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
+// TODO: Copy and paste for units
 
 // getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
-Uint32 getpixel(SDL_Surface *surface, int x, int y)
+Uint32 getpixel(SDL_Surface *surface, const int &x, const int &y)
 {
     int bpp = surface->format->BytesPerPixel;
     /* Here p is the address to the pixel we want to retrieve */
@@ -138,7 +145,7 @@ Uint32 getpixel(SDL_Surface *surface, int x, int y)
     }
 }
 
-void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
+void putpixel(SDL_Surface *surface, const int &x, const int &y, const Uint32 &pixel)
 {
     int bpp = surface->format->BytesPerPixel;
     /* Here p is the address to the pixel we want to set */
@@ -170,6 +177,11 @@ void putpixel(SDL_Surface *surface, int x, int y, Uint32 pixel)
         *(Uint32 *)p = pixel;
         break;
     }
+}
+
+bool fileExists (const string &file) {
+	struct stat buffer;   
+	return (stat (file.c_str(), &buffer) == 0); 
 }
 
 Editor::Editor()
@@ -205,6 +217,7 @@ Editor::Editor()
 	startItems.push_back("LOAD CHAPTER");
 	settingsItems.push_back("NAME:");
 	settingsItems.push_back("FILENAME:");
+	settingsItems.push_back("IMAGE FILE:");
 	settingsItems.push_back("EDIT FLAGS");
 	settingsItems.push_back("MUSIC:");
 	settingsItems.push_back("CAM OFFSET:");
@@ -325,7 +338,7 @@ Editor::Editor()
 	unitButtonSelected = -1;
 	currentUnit = NULL;
 	movingCurrentUnit = false;
-	currentUnitPlaced = false;
+	currentUnitPlaced = true;
 	unitMoveMouseOffset.x = 0;
 	unitMoveMouseOffset.y = 0;
 	paramsPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_PARAMS_PANEL_WIDTH, EDITOR_PARAMS_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
@@ -385,39 +398,6 @@ Editor::~Editor()
 
 ///---public---
 
-/*
-		// Code to spawn a box example for creating a new unit)
-		list<PARAMETER_TYPE > params;
-		Vector2df pos = drawOffset + input->getMouse() - Vector2df(16,16);
-		params.push_back(make_pair("class","pushablebox"));
-		params.push_back(make_pair("collision","0,255"));
-		params.push_back(make_pair("size","32,32"));
-		params.push_back(make_pair("position",StringUtility::vecToString(pos)));
-		BaseUnit* box = LEVEL_LOADER->createUnit(params,this);
-		units.push_back(box);
-
-		// Draw a Rect
-
-			Rectangle* temp = new Rectangle;
-			temp->setColour(WHITE);
-			temp->setDimensions(24,24);
-			temp->setPosition(input->getMouse() - Vector2df(12,12));
-			mouseRects.push_back(temp);
-
-		// Code to save PNG
-		if (input->isKey("F2"))
-		{
-			IMG_SavePNG("images/test.png", collisionLayer, IMG_COMPRESS_MAX);
-		}
-*/
-
-// TODO: When resetting keys after performing a function, only reset keys for that function (where applicable, sometimes resetting everything is preferred)
-// TODO: Build a resetAcceptKey(input) and resetCancelKey(input) for that maybe
-// TODO: Select all für draw und units
-// TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
-// TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
-// TODO: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
-
 void Editor::userInput()
 {
 	// Overlays
@@ -441,26 +421,31 @@ void Editor::userInput()
 	{
 		save();
 		input->resetKeys();
+		return;
 	}
 	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("1"))
 	{
 		switchState(esSettings);
 		input->resetKeys();
+		return;
 	}
 	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("2"))
 	{
 		switchState(esDraw);
 		input->resetKeys();
+		return;
 	}
 	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("3"))
 	{
 		switchState(esUnits);
 		input->resetKeys();
+		return;
 	}
 	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("4"))
 	{
 		switchState(esTest);
 		input->resetKeys();
+		return;
 	}
 	// State specific input
 	switch (editorState)
@@ -656,6 +641,7 @@ void Editor::inputStart()
 			char* temp;
 			temp = new char[_MAX_PATH];
 			temp = getcwd(temp,_MAX_PATH);
+			// Actual loading done in updateStart
 			goToFileList((string)temp + "/levels", "DIR|txt", &loadFile);
 			break;
 		}
@@ -683,20 +669,20 @@ void Editor::inputSettings()
 	{
 		if ((input->isLeft() || input->isKey("TAB")) && !inputVecXCoord)
 		{
-			if (settingsSel == 4)
+			if (settingsSel == 5)
 			{
 				l->drawOffset.y = StringUtility::stringToFloat(vecInputTemp);
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.x);
-			}
-			else if (settingsSel == 8)
-			{
-				PHYSICS->gravity.y = StringUtility::stringToFloat(vecInputTemp);
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.x);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(l->drawOffset.x);
 			}
 			else if (settingsSel == 9)
 			{
+				PHYSICS->gravity.y = StringUtility::stringToFloat(vecInputTemp);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->gravity.x);
+			}
+			else if (settingsSel == 10)
+			{
 				PHYSICS->maximum.y = StringUtility::stringToFloat(vecInputTemp);
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.x);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->maximum.x);
 			}
 			inputVecXCoord = true;
 			input->resetLeft();
@@ -704,20 +690,20 @@ void Editor::inputSettings()
 		}
 		if ((input->isRight() || input->isKey("TAB")) && inputVecXCoord)
 		{
-			if (settingsSel == 4)
+			if (settingsSel == 5)
 			{
 				l->drawOffset.x = StringUtility::stringToFloat(vecInputTemp);
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.y);
-			}
-			else if (settingsSel == 8)
-			{
-				PHYSICS->gravity.x = StringUtility::stringToFloat(vecInputTemp);
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.y);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(l->drawOffset.y);
 			}
 			else if (settingsSel == 9)
 			{
+				PHYSICS->gravity.x = StringUtility::stringToFloat(vecInputTemp);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->gravity.y);
+			}
+			else if (settingsSel == 10)
+			{
 				PHYSICS->maximum.x = StringUtility::stringToFloat(vecInputTemp);
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
 			}
 			inputVecXCoord = false;
 			input->resetRight();
@@ -726,21 +712,59 @@ void Editor::inputSettings()
 		if (isAcceptKey(input))
 		{
 			input->stopKeyboardInput();
-			if (settingsSel == 4)
+			if (settingsSel == 0)
+			{
+				if (l->name[0] != 0 && filename[0] == 0 && l->imageFilePath[0] == 0)
+				{
+					int temp = 1;
+					filename = (l->chapterPath[0] == 0 ? DEFAULT_LEVEL_FOLDER : "") + l->name + ".txt";
+					while (fileExists(l->chapterPath + filename))
+					{
+						filename = (l->chapterPath[0] == 0 ? DEFAULT_LEVEL_FOLDER : "") + l->name + "_" + StringUtility::intToString(temp) + ".txt";
+						++temp;
+					}
+					temp = 1;
+					l->imageFilePath = "images/levels/" + l->name + ".png";
+					while (fileExists(l->chapterPath + l->imageFilePath))
+					{
+						l->imageFilePath = "images/levels/" + l->name + "_" + StringUtility::intToString(temp) + ".png";
+						++temp;
+					}
+				}
+			}
+			else if (settingsSel == 1)
+			{
+				if (filename[0] != 0)
+				{
+					if (filename.length() < 4 || filename.substr(filename.length()-4) != ".txt")
+						filename += ".txt";
+					if (fileExists(l->chapterPath + filename))
+						showMessageBox("Caution: The filename you entered already exists and will be overwritten on save!", "OK");
+				}
+			}
+			else if (settingsSel == 2)
+			{
+				if (l->imageFilePath[0] != 0)
+				{
+					if (fileExists(l->chapterPath + l->imageFilePath))
+						showMessageBox("Caution: The filename you entered already exists and will be overwritten on save!", "OK");
+				}
+			}
+			else if (settingsSel == 5)
 			{
 				if (inputVecXCoord)
 					l->drawOffset.x = StringUtility::stringToFloat(vecInputTemp);
 				else
 					l->drawOffset.y = StringUtility::stringToFloat(vecInputTemp);
 			}
-			else if (settingsSel == 8)
+			else if (settingsSel == 9)
 			{
 				if (inputVecXCoord)
 					PHYSICS->gravity.x = StringUtility::stringToFloat(vecInputTemp);
 				else
 					PHYSICS->gravity.y = StringUtility::stringToFloat(vecInputTemp);
 			}
-			else if (settingsSel == 9)
+			else if (settingsSel == 10)
 			{
 				if (inputVecXCoord)
 					PHYSICS->maximum.x = StringUtility::stringToFloat(vecInputTemp);
@@ -752,26 +776,38 @@ void Editor::inputSettings()
 		else if (isCancelKey(input))
 		{
 			input->stopKeyboardInput();
-			if (settingsSel == 4)
+			if (settingsSel == 0)
 			{
-				if (inputVecXCoord)
-					l->drawOffset.x = StringUtility::stringToFloat(vecInputBackup);
-				else
-					l->drawOffset.y = StringUtility::stringToFloat(vecInputBackup);
+				l->name = keyboardInputBackup;
 			}
-			else if (settingsSel == 8)
+			else if (settingsSel == 1)
+			{
+				filename = keyboardInputBackup;
+			}
+			else if (settingsSel == 2)
+			{
+				l->imageFilePath = keyboardInputBackup;
+			}
+			else if (settingsSel == 5)
 			{
 				if (inputVecXCoord)
-					PHYSICS->gravity.x = StringUtility::stringToFloat(vecInputBackup);
+					l->drawOffset.x = StringUtility::stringToFloat(keyboardInputBackup);
 				else
-					PHYSICS->gravity.y = StringUtility::stringToFloat(vecInputBackup);
+					l->drawOffset.y = StringUtility::stringToFloat(keyboardInputBackup);
 			}
 			else if (settingsSel == 9)
 			{
 				if (inputVecXCoord)
-					PHYSICS->maximum.x = StringUtility::stringToFloat(vecInputBackup);
+					PHYSICS->gravity.x = StringUtility::stringToFloat(keyboardInputBackup);
 				else
-					PHYSICS->maximum.y = StringUtility::stringToFloat(vecInputBackup);
+					PHYSICS->gravity.y = StringUtility::stringToFloat(keyboardInputBackup);
+			}
+			else if (settingsSel == 10)
+			{
+				if (inputVecXCoord)
+					PHYSICS->maximum.x = StringUtility::stringToFloat(keyboardInputBackup);
+				else
+					PHYSICS->maximum.y = StringUtility::stringToFloat(keyboardInputBackup);
 			}
 			inputVecXCoord = true;
 		}
@@ -822,12 +858,12 @@ void Editor::inputSettings()
 				{
 					settingsSel = I;
 					// Check X-Position depending on menu item
-					if (I == 6) // Checkbox
+					if (I == 7) // Checkbox
 					{
 						int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 						mouseInBounds = (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT);
 					}
-					else if (I == 4 || I == 8 || I == 9)
+					else if (I == 5 || I == 9 || I == 10) // Vec input
 					{
 						int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING + EDITOR_TEXT_SIZE;
 						if (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_VEC_ENTRY_SIZE)
@@ -893,13 +929,29 @@ void Editor::inputSettings()
 		input->resetMouseWheel();
 	}
 
-	if (input->isSelect() && settingsSel == 4) // Shortcut for centering the level
+	if (input->isSelect()) 
 	{
-		if (l->levelImage->w < GFX::getXResolution())
-			l->drawOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2.0f;
-		if (l->levelImage->h < GFX::getYResolution())
-			l->drawOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2.0f;
+		if (settingsSel == 4) // Removing the music
+		{
+			if (musicFile[0] == 0)
+				musicFile = "none";
+			else
+				musicFile = "";
+		}
+		else if (settingsSel == 5) // Shortcut for centering the level
+		{
+			if (l->levelImage->w < GFX::getXResolution())
+				l->drawOffset.x = ((int)l->levelImage->w - (int)GFX::getXResolution()) / 2.0f;
+			if (l->levelImage->h < GFX::getYResolution())
+				l->drawOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2.0f;
+		}
+		else if (settingsSel == 8)
+		{
+			l->dialogueFilePath = "";
+		}
+		input->resetSelect();
 	}
+
 
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
@@ -917,46 +969,52 @@ void Editor::inputSettings()
 		{
 		case 0: // Name
 			input->pollKeyboardInput(&l->name, KEYBOARD_MASK_ASCII);
+			keyboardInputBackup = l->name;
 			break;
 		case 1: // Filename
-			input->pollKeyboardInput(&filename, KEYBOARD_MASK_ASCII);
+			input->pollKeyboardInput(&filename, KEYBOARD_MASK_FILEFOLDER);
+			keyboardInputBackup = filename;
 			break;
-		case 2: // Flags
+		case 2: // Image file path
+			input->pollKeyboardInput(&l->imageFilePath, KEYBOARD_MASK_FILEFOLDER);
+			keyboardInputBackup = l->imageFilePath;
+			break;
+		case 3: // Flags
 			editingFlags = true;
 			break;
-		case 3: // Music
+		case 4: // Music
 			goToFileList("music","mp3|ogg|wav",&musicFile);
 			break;
-		case 4: // Offset
+		case 5: // Offset
 			if (inputVecXCoord)
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.x);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(l->drawOffset.x);
 			else
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(l->drawOffset.y);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(l->drawOffset.y);
 			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
-		case 5: // Background colour
+		case 6: // Background colour
 			break;
-		case 6: // Bounmdaries
+		case 7: // Bounmdaries
 			l->cam.disregardBoundaries = !(l->cam.disregardBoundaries);
 			break;
-		case 7: // Dialogue
+		case 8: // Dialogue
 			goToFileList("data","txt",&l->dialogueFilePath);
 			break;
-		case 8: // Gravity
+		case 9: // Gravity
 			if (inputVecXCoord)
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.x);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->gravity.x);
 			else
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->gravity.y);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->gravity.y);
 			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
-		case 9: // Terminal velocity
+		case 10: // Terminal velocity
 			if (inputVecXCoord)
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.x);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->maximum.x);
 			else
-				vecInputTemp = vecInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
+				vecInputTemp = keyboardInputBackup = StringUtility::floatToString(PHYSICS->maximum.y);
 			input->pollKeyboardInput(&vecInputTemp, KEYBOARD_MASK_FLOAT);
 			break;
-		case 10: // Menu
+		case 11: // Menu
 			goToMenu();
 			break;
 		default:
@@ -1266,7 +1324,11 @@ void Editor::inputDraw()
 	else
 	{
 		// Hotkeys
+		#ifndef PLATFORM_PC
 		if (isCancelKey(input))
+		#else
+		if (input->isKey("ESCAPE"))
+		#endif
 		{
 			goToMenu();
 			input->resetKeys();
@@ -1281,12 +1343,19 @@ void Editor::inputDraw()
 		else if (input->isDown())
 			editorOffset.y += 2;
 
+		if ((input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("A"))
+		{
+			selectArea.x = 0;
+			selectArea.y = 0;
+			selectArea.w = l->getWidth();
+			selectArea.h = l->getHeight();
+			input->resetKey("A");
+		}
 		if ((input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("C"))
 		{
 			if (selectArea.w > 0 && selectArea.h > 0)
 			{
 				SDL_FreeSurface(copyBuffer);
-				// TODO: Clip selectArea to regard level bounds (necessary SDL does that, need to test in release mode for crashes?)
 				copyBuffer = SDL_CreateRGBSurface(SDL_SWSURFACE, selectArea.w, selectArea.h,
 						GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 				SDL_BlitSurface(l->levelImage, &selectArea, copyBuffer, NULL);
@@ -1315,6 +1384,7 @@ void Editor::inputDraw()
 				SDL_BlitSurface(l->levelImage, &selectArea, copyBuffer, NULL);
 				SDL_FillRect(l->levelImage, &selectArea, brushCol2.getSDL_Uint32Colour(l->levelImage));
 			}
+			input->resetKey("X");
 		}
 		if (input->isKey("DELETE") || input->isKey("BACKSPACE"))
 		{
@@ -2333,7 +2403,11 @@ void Editor::inputUnits()
 	}
 	else
 	{
+		#ifndef PLATFORM_PC
 		if (isCancelKey(input))
+		#else
+		if (input->isKey("ESCAPE"))
+		#endif
 		{
 			goToMenu();
 			input->resetKeys();
@@ -2381,6 +2455,18 @@ void Editor::inputUnits()
 			}
 			else
 				editorOffset.y += 2;
+		}
+		if ((input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("A"))
+		{
+			selectedUnits.clear();
+			for (vector<BaseUnit*>::iterator I = l->units.begin(); I != l->units.end(); ++I)
+				selectedUnits.push_back(*I);
+			for (vector<ControlUnit*>::iterator I = l->players.begin(); I != l->players.end(); ++I)
+				selectedUnits.push_back(*I);
+			paramsPanel.changed = true;
+			currentUnit = selectedUnits.back();
+			currentUnitPlaced = true;
+			input->resetKey("A");
 		}
 		if (input->isKey("1") && !toolPanel.userIsInteracting)
 		{
@@ -3388,7 +3474,7 @@ void Editor::inputMessageBox()
 	{
 		int pos = EDITOR_MESSAGE_BOX_BUTTONS_OFFSET - ((EDITOR_MENU_SPACING + EDITOR_RECT_HEIGHT) * messageBoxItems.size() - EDITOR_MENU_SPACING) / 2;
 		int temp = -1;
-		for (int I = 0; I < menuItems.size(); ++I)
+		for (int I = 0; I < messageBoxItems.size(); ++I)
 		{
 			if (mousePos.y >= pos && mousePos.y < pos + EDITOR_RECT_HEIGHT)
 			{
@@ -3415,8 +3501,6 @@ void Editor::inputMessageBox()
 	}
 }
 
-// TODO: ChapterPath wird aktuell beim Laden eines Levels aus einem Chapter nicht gesetzt (ist aber eig. okay, da nur einzelne Levels geladen werden sollen)
-
 void Editor::updateStart()
 {
 	if (!loadFile[0] != 0) // loadFile is set when a level is seletected from goToFileList
@@ -3437,14 +3521,21 @@ void Editor::updateStart()
 			return;
 		}
 		l = LEVEL_LOADER->loadLevelFromFile(loadFile, loadFile.substr(0, pos+1));
+		filename = loadFile.substr(pos+1);
 	}
 	else
 	{
 		l = LEVEL_LOADER->loadLevelFromFile(loadFile);
+		pos = loadFile.find(DEFAULT_LEVEL_FOLDER);
+		if (pos != string::npos)
+			filename = loadFile.substr(pos);
+		else
+			filename = loadFile.substr(loadFile.find_last_of("/")+1);
 	}
 
 	if (!l)
 	{
+		filename = "";
 		input->resetKeys();
 		ENGINE->stateParameter = "ERROR: Failed to load level file in editor: " + loadFile;
 		setNextState(STATE_ERROR);
@@ -3505,13 +3596,13 @@ void Editor::renderSettings()
 			if (input->isPollingKeyboard()) // Active input selection
 			{
 				SDL_FillRect(screen, &rect, 0);
-				if (I == 0 || I == 1) // Text input
+				if (I == 0 || I == 1 || I == 2) // Text input
 				{
 					rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
 					rect.w = EDITOR_ENTRY_SIZE;
 					SDL_FillRect(screen, &rect, -1);
 				}
-				else if (I == 4 || I == 8 || I == 9)
+				else if (I == 5 || I == 9 || I == 10)
 				{
 					if (inputVecXCoord)
 					{
@@ -3543,7 +3634,7 @@ void Editor::renderSettings()
 		menuText.print(settingsItems[I]);
 
 		// render specific menu item content
-		if (I == 0 || I == 1 || I == 3 || I == 7) // Text
+		if (I == 0 || I == 1 || I == 2 || I == 4 || I == 8) // Text
 		{
 			if (I == settingsSel)
 				entriesText.setColour(BLACK);
@@ -3554,16 +3645,17 @@ void Editor::renderSettings()
 			{
 				case 0: entryTemp = l->name; break;
 				case 1: entryTemp = filename; break;
-				case 3: entryTemp = musicFile; break;
-				case 7: entryTemp = l->dialogueFilePath; break;
+				case 2: entryTemp = l->imageFilePath; break;
+				case 4: entryTemp = musicFile; break;
+				case 8: entryTemp = l->dialogueFilePath; break;
 			}
+			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+			rect.y = pos;
+			rect.w = EDITOR_ENTRY_SIZE;
+			rect.h = EDITOR_RECT_HEIGHT;
+			SDL_SetClipRect(GFX::getVideoSurface(), &rect);
 			if (entriesText.getDimensions(entryTemp).x > EDITOR_ENTRY_SIZE)
 			{
-				rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
-				rect.y = pos;
-				rect.w = EDITOR_ENTRY_SIZE;
-				rect.h = EDITOR_RECT_HEIGHT;
-				SDL_SetClipRect(GFX::getVideoSurface(), &rect);
 				if (I == settingsSel && input->isPollingKeyboard())
 				{
 					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
@@ -3578,7 +3670,6 @@ void Editor::renderSettings()
 				}
 				entriesText.print(entryTemp);
 				entriesText.setAlignment(CENTRED);
-				SDL_SetClipRect(GFX::getVideoSurface(), NULL);
 			}
 			else
 			{
@@ -3586,8 +3677,9 @@ void Editor::renderSettings()
 						pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
 				entriesText.print(entryTemp);
 			}
+			SDL_SetClipRect(GFX::getVideoSurface(), NULL);
 		}
-		else if (I == 4 || I == 8 || I == 9) // Vec input
+		else if (I == 5 || I == 9 || I == 10) // Vec input
 		{
 			entriesText.setAlignment(LEFT_JUSTIFIED);
 			if (I == settingsSel && !input->isPollingKeyboard())
@@ -3608,14 +3700,14 @@ void Editor::renderSettings()
 			string entryTemp;
 			switch (I)
 			{
-			case 4:
-				entryTemp = (input->isPollingKeyboard() && settingsSel == 4 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.x);
-				break;
-			case 8:
-				entryTemp = (input->isPollingKeyboard() && settingsSel == 8 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.x);
+			case 5:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 5 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.x);
 				break;
 			case 9:
-				entryTemp = (input->isPollingKeyboard() && settingsSel == 9 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.x);
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 9 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.x);
+				break;
+			case 10:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 10 && inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.x);
 			}
 			if (entriesText.getDimensions(entryTemp).x > EDITOR_VEC_ENTRY_SIZE)
 			{
@@ -3651,14 +3743,14 @@ void Editor::renderSettings()
 				entriesText.setColour(WHITE);
 			switch (I)
 			{
-			case 4:
-				entryTemp = (input->isPollingKeyboard() && settingsSel == 4 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.y);
-				break;
-			case 8:
-				entryTemp = (input->isPollingKeyboard() && settingsSel == 8 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.y);
+			case 5:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 5 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(l->drawOffset.y);
 				break;
 			case 9:
-				entryTemp = (input->isPollingKeyboard() && settingsSel == 9 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.y);
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 9 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->gravity.y);
+				break;
+			case 10:
+				entryTemp = (input->isPollingKeyboard() && settingsSel == 10 && !inputVecXCoord) ? vecInputTemp : StringUtility::floatToString(PHYSICS->maximum.y);
 			}
 			if (entriesText.getDimensions(entryTemp).x > EDITOR_VEC_ENTRY_SIZE)
 			{
@@ -3691,7 +3783,7 @@ void Editor::renderSettings()
 			}
 			entriesText.setAlignment(CENTRED);
 		}
-		else if (I == 6) // Checkbox
+		else if (I == 7) // Checkbox
 		{
 			rect.w = EDITOR_RECT_HEIGHT;
 			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
@@ -4298,25 +4390,50 @@ void Editor::renderMessageBox()
 	}
 }
 
-// TODO: Better save function with parmaters (filename, etc.) and error checking
 int Editor::save()
 {
-	if (filename[0] == 0)
+	// Pre-operation error checking
+	if (filename[0] == 0 || filename.length() < 4)
 	{
-		showMessageBox("No filename entered! Please go to the level settings (Strg+1) and enter a valid filename.", "OK");
-		return 1;
+		showMessageBox("No (valid) filename entered! Please go to the level settings (Strg+1) and enter a valid filename.", "OK");
+		return -1;
 	}
-
-	char imgFilename[256] = "images/levels/";
-	strcat(imgFilename, filename.c_str());
-	strcat(imgFilename, ".png");
-	IMG_SavePNG(imgFilename, l->levelImage, IMG_COMPRESS_DEFAULT);
-	l->imageFilePath = imgFilename;
+	if (l->imageFilePath[0] == 0)
+	{
+		l->imageFilePath = "images/levels/" + filename.substr(filename.length()-4) + ".png";
+		int temp = 1;
+		while (fileExists(l->chapterPath + l->imageFilePath))
+		{
+			l->imageFilePath = "images/levels/" + filename.substr(filename.length()-4) + "_" + StringUtility::intToString(temp) + ".png";
+			++temp;
+		}
+	}
+	// Create level image
+	if (IMG_SavePNG(l->imageFilePath.c_str(), l->levelImage, IMG_COMPRESS_DEFAULT) != 0)
+	{
+		char errorMessage[256] = "Error saving level image: ";
+		strcat(errorMessage, SDL_GetError());
+		showMessageBox(errorMessage, "OK");
+		return -1;
+	}
+	// Create level file and push data
 	ofstream file;
-	char lvlFilename[256] = "levels/";
-	strcat(lvlFilename, filename.c_str());
-	strcat(lvlFilename, ".txt");
+	char lvlFilename[256] = "";
+	if (l->chapterPath[0] == 0)
+	{
+		strcpy(lvlFilename, filename.c_str());
+	}
+	else
+	{
+		strcpy(lvlFilename, l->chapterPath.c_str());
+		strcat(lvlFilename, filename.c_str());
+	}
 	file.open(lvlFilename, ios::out | ios::trunc);
+	if (!file.is_open() || !file.good())
+	{
+		showMessageBox("Error saving level file: i/o error.", "OK");
+		return -1;
+	}
 	file << "[Level]\n";
 	l->generateParameters();
 	for (list<PARAMETER_TYPE >::iterator I = l->parameters.begin(); I != l->parameters.end(); ++I)

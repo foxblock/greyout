@@ -122,7 +122,7 @@ private:
 	bool editingFlags; // Intermediate state on settings state used for level flags
 	bool inputVecXCoord; // True when user is editing the first (X) coordinate of a vector, false when second (Y) coordinate. Checked in combination with keyboard input
 	string vecInputTemp;
-	string vecInputBackup;
+	string keyboardInputBackup; // Used to revert keyboard input, when user cancels out
 	string musicFile;
 	/// Draw
 	int drawTool;
