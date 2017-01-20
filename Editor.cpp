@@ -116,6 +116,9 @@
 // TODO: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
 // TODO: Copy and paste for units
 // TODO: Add help (use showMessageBox and display hint when user presses F1 while highlighting something, e.g. menu Items in settings)
+// TODO: New chapter creation
+// TODO: Editing a chapter
+// TODO: Chosing a background colour
 
 // getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
 Uint32 getpixel(SDL_Surface *surface, const int &x, const int &y)
@@ -647,7 +650,12 @@ void Editor::inputStart()
 			break;
 		}
 		case 2: // New chapter
-			break;
+			{
+				Chapter temp;
+				temp.loadFromFile("chapters/newDefault/info.txt");
+				temp.saveToFile("chapters/newDefault/info2.txt");
+				break;
+			}
 		case 3: // Open chapter
 			break;
 		default:

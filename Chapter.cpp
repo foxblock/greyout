@@ -152,6 +152,49 @@ bool Chapter::loadFromFile(CRstring filename)
 	return true;
 }
 
+bool Chapter::saveToFile(string filename)
+{
+	if (filename[0] == 0)
+		filename = this->filename;
+	printf("Trying to save chapter file \"%s\"\n",filename.c_str());
+	if (levels.empty() && !autoDetect)
+	{
+		errorString = "No levels added to this chapter and auto detect is set to false.";
+		return false;
+	}
+	if (name[0] == 0)
+	{
+		errorString = "Chapter name not set.";
+		return false;
+	}
+	if (filename.substr(filename.length()-8) != "info.txt")
+		printf("WARNING: Chapter file has to be named ""info.txt"" to be detected by the game and show up in the chapter listing.\n");
+
+	path = filename.substr(0,filename.find_last_of('/')+1);
+	ofstream file;
+	file.open(filename.c_str(), ios::out | ios::trunc);
+	if (!file.is_open() || !file.good())
+	{
+		errorString = "I/O error.";
+		return false;
+	}
+	file << "Name" << VALUE_STRING << name << "\n";
+	if (imageFile[0] != 0)
+		file << "Image" << VALUE_STRING << imageFile << "\n";
+	if (dialogueFile[0] != 0)
+		file << "Dialogue" << VALUE_STRING << dialogueFile << "\n";
+	file << "AutoDetect" << VALUE_STRING << StringUtility::boolToString(autoDetect, true) << "\n";
+	if (autoDetect && !levels.empty())
+		printf("WARNING: This chapter has a list of levels and autoDetect set at the same time. AutoDetected levels will be added after the listed levels.\n");
+	for (vector<string>::iterator I = levels.begin(); I != levels.end(); ++I)
+	{
+		file << "Level" << VALUE_STRING << (*I) << "\n";
+	}
+	file.close();
+	this->filename = filename;
+	return true;
+}
+
 string Chapter::getLevelFilename(CRint pos)
 {
 	errorString = "";

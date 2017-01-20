@@ -57,11 +57,15 @@ public:
 	// Load a chapter from a file (name and at least one level are mandatory)
 	// returns true on success, false otherwise (and sets errorString variable)
 	virtual bool loadFromFile(CRstring filename);
+	// Save chapter data to a file
+	// returns true on success, false otherwise (and sets errorString variable)
+	// if filename parameter is left blank, the member variable filename will be used
+	virtual bool saveToFile(string filename);
+
 	// Get the level at index pos, returns "" if out of bounds
 	virtual string getLevelFilename(CRint pos);
 	// Get the index of the passed level, returns -1 if not found (or empty string)
 	virtual int getLevelIndex(CRstring filename);
-
 	// Load the user's progress in this chapter from the savegame file
 	virtual int getProgress() const;
 	// Get the next level after the passed one
@@ -80,7 +84,7 @@ public:
 
 	// used for error output
 	string errorString;
-
+	// List of level filenames (without chapter path)
 	vector<string> levels;
 
 	enum ChapterProp
