@@ -208,6 +208,7 @@ private:
 	bool fileListActive;
 	int fileListOffset;
 	int fileListSel;
+	vector<string> fileListing;
 	string *fileListTarget;
 	/// Message Box
 	bool messageBoxActive;

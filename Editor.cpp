@@ -3363,7 +3363,7 @@ void Editor::inputFileList()
 			--fileListOffset;
 			input->resetMouseButtons();
 		}
-		else if (mouseOnScrollItem == 3 && fileListOffset < (int)fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN)
+		else if (mouseOnScrollItem == 3 && fileListOffset < (int)fileListing.size() - EDITOR_MAX_FILES_SCREEN)
 		{
 			++fileListOffset;
 			input->resetMouseButtons();
@@ -3371,12 +3371,12 @@ void Editor::inputFileList()
 		else if (mouseOnScrollItem == 1)
 		{
 			int barSize = EDITOR_MAX_FILES_SCREEN * EDITOR_RECT_HEIGHT - EDITOR_RECT_HEIGHT * 2;
-			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (float)fileList.getListing().size() * EDITOR_MAX_FILES_SCREEN;
-			fileListOffset = round((float)(fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_RECT_HEIGHT - scrollSize / 2) / (float)(barSize - scrollSize));
+			int scrollSize = (barSize - EDITOR_RECT_HEIGHT * 2) / (float)fileListing.size() * EDITOR_MAX_FILES_SCREEN;
+			fileListOffset = round((float)(fileListing.size() - EDITOR_MAX_FILES_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_RECT_HEIGHT - scrollSize / 2) / (float)(barSize - scrollSize));
 			if (fileListOffset < 0)
 				fileListOffset = 0;
-			else if (fileListOffset > (int)fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN)
-				fileListOffset = max((int)fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN, 0);
+			else if (fileListOffset > (int)fileListing.size() - EDITOR_MAX_FILES_SCREEN)
+				fileListOffset = max((int)fileListing.size() - EDITOR_MAX_FILES_SCREEN, 0);
 			return; // skip rest of input
 		}
 	}
@@ -3388,10 +3388,10 @@ void Editor::inputFileList()
 				&& input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_MAX_FILES_SCREEN + 1) * EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING)
 		{
 			// Back item (always visible at the bottom)
-			fileListSel = fileList.getListing().size();
+			fileListSel = fileListing.size();
 			mouseInBounds = true;
 		}
-		else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + min((int)fileList.getListing().size(), EDITOR_MAX_FILES_SCREEN) * EDITOR_RECT_HEIGHT
+		else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + min((int)fileListing.size(), EDITOR_MAX_FILES_SCREEN) * EDITOR_RECT_HEIGHT
 				&& input->getMouseY() >= EDITOR_MENU_OFFSET_Y && input->getMouseX() < GFX::getXResolution() - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING)
 		{
 			fileListSel = fileListOffset + (input->getMouseY() - EDITOR_MENU_OFFSET_Y) / EDITOR_RECT_HEIGHT;
@@ -3419,16 +3419,16 @@ void Editor::inputFileList()
 	if (input->isUp() && fileListSel > 1)
 	{
 		--fileListSel;
-		if (fileListSel < fileListOffset)
+		if (fileListSel <= fileListOffset && fileListOffset > 0)
 			--fileListOffset;
 		else if (fileListSel >= fileListOffset + EDITOR_MAX_FILES_SCREEN) // Coming from fixed "back item" after moving there with the mouse
 			fileListOffset = fileListSel - EDITOR_MAX_FILES_SCREEN + 1;
 		input->resetUp();
 	}
-	else if (input->isDown() && fileListSel < fileList.getListing().size())
+	else if (input->isDown() && fileListSel < fileListing.size())
 	{
 		++fileListSel;
-		if (fileListSel >= fileListOffset + EDITOR_MAX_FILES_SCREEN - 1 && fileListSel != fileList.getListing().size()-1)
+		if (fileListSel >= fileListOffset + EDITOR_MAX_FILES_SCREEN - 1 && fileListOffset < max((int)fileListing.size() - EDITOR_MAX_FILES_SCREEN, 0))
 			++fileListOffset;
 		input->resetDown();
 	}
@@ -3437,14 +3437,14 @@ void Editor::inputFileList()
 		fileListOffset -= input->getMouseWheelDelta();
 		if (fileListOffset < 0)
 			fileListOffset = 0;
-		else if (fileListOffset > fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN)
-			settingsOffset = fileList.getListing().size() - EDITOR_MAX_FILES_SCREEN;
+		else if (fileListOffset > fileListing.size() - EDITOR_MAX_FILES_SCREEN)
+			settingsOffset = fileListing.size() - EDITOR_MAX_FILES_SCREEN;
 		input->resetMouseWheel();
 	}
 
 	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
 	{
-		if (fileListSel < fileList.getListing().size()) // If not on "back" button
+		if (fileListSel < fileListing.size()) // If not on "back" button
 		{
 			fileList.setSelection(fileListSel);
 			if (fileList.getSelectedType() == DT_DIR)
@@ -4309,7 +4309,7 @@ void Editor::renderFileList()
 	menuText.setWrapping(false); // Temporarily disable wrapping
 
 	int pos = EDITOR_MENU_OFFSET_Y;
-	for (int I = fileListOffset; I < min((int)fileList.getListing().size(), fileListOffset + EDITOR_MAX_FILES_SCREEN); ++I)
+	for (int I = fileListOffset; I < min((int)fileListing.size(), fileListOffset + EDITOR_MAX_FILES_SCREEN); ++I)
 	{
 		rect.x = 0;
 		rect.y = pos;
@@ -4327,7 +4327,7 @@ void Editor::renderFileList()
 			SDL_FillRect(screen, &rect, 0);
 			menuText.setColour(WHITE);
 		}
-		menuText.print(fileList.getListing()[I]);
+		menuText.print(fileListing[I]);
 
 		pos += EDITOR_RECT_HEIGHT;
 	}
@@ -4337,7 +4337,7 @@ void Editor::renderFileList()
 	rect.w = GFX::getXResolution();
 	rect.h = EDITOR_RECT_HEIGHT;
 	menuText.setPosition(EDITOR_MENU_OFFSET_X, rect.y + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
-	if (fileListSel == fileList.getListing().size())
+	if (fileListSel == fileListing.size())
 	{
 		SDL_FillRect(screen, &rect, -1);
 		menuText.setColour(BLACK);
@@ -4371,8 +4371,8 @@ void Editor::renderFileList()
 	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT;
 	rect.h = fullBarSize - EDITOR_RECT_HEIGHT * 2;
 	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? -1 : 0);
-	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT + rect.h / fileList.getListing().size() * fileListOffset;
-	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)fileList.getListing().size() * min((int)fileList.getListing().size(), EDITOR_MAX_FILES_SCREEN) + 1;
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_RECT_HEIGHT + rect.h / fileListing.size() * fileListOffset;
+	rect.h = (fullBarSize - EDITOR_RECT_HEIGHT * 2) / (float)fileListing.size() * min((int)fileList.getListing().size(), EDITOR_MAX_FILES_SCREEN) + 1;
 	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? 0 : -1);
 }
 
@@ -4500,6 +4500,7 @@ void Editor::goToFileList(string path, string filters, string *target)
 	fileListSel = 1;
 	fileListTarget = target;
 	fileListActive = true;
+	fileListing = fileList.getListing();
 	GFX::showCursor(true);
 }
 
