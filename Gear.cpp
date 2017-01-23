@@ -80,28 +80,21 @@ bool Gear::load(list<PARAMETER_TYPE >& params)
 
 bool Gear::processParameter(const PARAMETER_TYPE& value)
 {
-	if (BaseUnit::processParameter(value))
-		return true;
-
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case gpSpeed:
 	{
 		speed = StringUtility::stringToFloat(value.second);
-		break;
+		return true;
 	}
 	case gpAngle:
 	{
 		angle = StringUtility::stringToFloat(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseUnit::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void Gear::generateParameters()
@@ -196,7 +189,7 @@ bool Gear::processOrder(Order& next)
 	return parsed;
 }
 
-string Gear::generateParameterOrders(Order o)
+string Gear::generateParameterOrders(const Order &o)
 {
 	if (o.key != goRotateBy && o.key != goRotateTo)
 		return BaseUnit::generateParameterOrders(o);
@@ -204,11 +197,11 @@ string Gear::generateParameterOrders(Order o)
 	string result = orderToString[o.key];
 	// Time
 	if (o.randomTicks > 0)
-		result += StringUtility::intToString(o.randomTicks) + "r";
+		result += "," + StringUtility::intToString(o.randomTicks) + "r";
 	else
-		result += StringUtility::intToString(o.ticks) + "f";
+		result += "," + StringUtility::intToString(o.ticks) + "f";
 	// Parameters
-	for (vector<string>::iterator I = o.params.begin(); I != o.params.end(); ++I)
+	for (vector<string>::const_iterator I = o.params.begin(); I != o.params.end(); ++I)
 		result += "," + *I;
 	return result;
 }

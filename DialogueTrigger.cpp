@@ -44,28 +44,21 @@ DialogueTrigger::~DialogueTrigger()
 
 bool DialogueTrigger::processParameter(const PARAMETER_TYPE& value)
 {
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case tpTextKey:
 	{
 		textKey = value.second;
-		break;
+		return true;
 	}
 	case tpTime:
 	{
 		time = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
-	}
-
-	if (not parsed)
 		return BaseTrigger::processParameter(value);
-
-	return parsed;
+	}
 }
 
 void DialogueTrigger::generateParameters()

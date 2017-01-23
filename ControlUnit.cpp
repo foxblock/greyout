@@ -41,23 +41,16 @@ ControlUnit::~ControlUnit()
 
 bool ControlUnit::processParameter(const PARAMETER_TYPE& value)
 {
-	if (BaseUnit::processParameter(value))
-		return true;
-
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case cpControl:
 	{
 		takesControl = StringUtility::stringToBool(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseUnit::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void ControlUnit::generateParameters()

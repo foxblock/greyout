@@ -84,23 +84,20 @@ bool Key::load(list<PARAMETER_TYPE >& params)
 
 bool Key::processParameter(const PARAMETER_TYPE& value)
 {
-	if (BaseUnit::processParameter(value))
-		return true;
-
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case BaseUnit::upTarget:
 	{
-		parsed = pLoadUintIDs( value.second, targetIDs );
-		break;
+		if (!pLoadUintIDs(value.second, targetIDs))
+		{
+			printf("ERROR loading unit IDs!\n");
+			return false;
+		}
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseUnit::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void Key::generateParameters()

@@ -258,7 +258,7 @@ protected:
 	bool initOrders;
 
 	virtual string generateParameterFlags();
-	virtual string generateParameterOrders(Order o);
+	virtual string generateParameterOrders(const Order &o);
 
 	Vector3df tempColour;
 	Vector3df tempColourChange;

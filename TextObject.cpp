@@ -88,11 +88,6 @@ bool TextObject::load(list<PARAMETER_TYPE >& params)
 
 bool TextObject::processParameter(const PARAMETER_TYPE& value)
 {
-	if (BaseUnit::processParameter(value))
-		return true;
-
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case tpFont:
@@ -102,13 +97,13 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
 		PENJIN_ERRORS err = currentText->loadFont(value.second,fontSize);
 		if (err != PENJIN_OK)
 		{
-			printf("ERROR: Loading font \"%s\" in size %i  failed: %s\n",value.second.c_str(),fontSize,TTF_GetError());
+			printf("ERROR: Loading font \"%s\" in size %i failed: %s\n",value.second.c_str(),fontSize,TTF_GetError());
 			delete currentText;
 			currentText = NULL;
 			return false;
 		}
 		fontFilename = value.second;
-		break;
+		return true;
 	}
 	case tpFontSize:
 	{
@@ -120,28 +115,28 @@ bool TextObject::processParameter(const PARAMETER_TYPE& value)
 				currentText->setFontSize(val);
 		}
 		else
-			parsed = false;
-		break;
+		{
+			printf("ERROR: Negative value for font size!\n");
+			return false;
+		}
+		return true;
 	}
 	case BaseUnit::upSize:
 	{
 		// As Penjin's text size calculation is often incorrect you can manually
 		// overwrite the value to prevent drawing errors
-		// Bloody inconvenient, I am a lazy fuck, deal with it
 		size = StringUtility::stringToVec<Vector2di>(value.second);
 		userSetSize = true;
-		break;
+		return true;
 	}
 	case tpText:
 	{
 		line = StringUtility::upper(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseUnit::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void TextObject::generateParameters()

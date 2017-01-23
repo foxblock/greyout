@@ -1770,21 +1770,29 @@ void Level::win()
 
 void Level::getUnitsByID(const vector<string>& IDs, vector<BaseUnit*>& unitVector) const
 {
-	for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
+	for (vector<string>::const_iterator str = IDs.begin(); str != IDs.end(); ++str)
 	{
-		for (vector<string>::const_iterator str = IDs.begin(); str != IDs.end(); ++str)
+		int count = 0;
+		for (vector<BaseUnit*>::const_iterator I = units.begin(); I != units.end(); ++I)
 		{
 			if ((*I)->id == (*str))
+			{
 				unitVector.push_back(*I);
+				++count;
+			}
 		}
-	}
-	for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
-	{
-		for (vector<string>::const_iterator str = IDs.begin(); str != IDs.end(); ++str)
+		for (vector<ControlUnit*>::const_iterator I = players.begin(); I != players.end(); ++I)
 		{
 			if ((*I)->id == (*str))
+			{
 				unitVector.push_back(*I);
+				++count;
+			}
 		}
+		if (count == 0)
+			printf("WARNING: No unit found with ID \"%s\"\n", (*str).c_str());
+		if (count > 1)
+			printf("WARNING: Multiple units found with ID \"%s\" (might be intentional).\n", (*str).c_str());
 	}
 }
 

@@ -44,8 +44,6 @@ CameraTrigger::~CameraTrigger()
 
 bool CameraTrigger::processParameter(const PARAMETER_TYPE& value)
 {
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case cpDestination:
@@ -54,26 +52,21 @@ bool CameraTrigger::processParameter(const PARAMETER_TYPE& value)
 		StringUtility::tokenize(value.second,token,DELIMIT_STRING);
 		if (token.size() != 2)
 		{
-			parsed = false;
-			break;
+			printf("ERROR: Not enough parameters for camera trigger destination (needs x and y coordinate)!\n");
+			return false;
 		}
 		dest.x = StringUtility::stringToFloat(token[0]);
 		dest.y = StringUtility::stringToFloat(token[1]);
-		break;
+		return true;
 	}
 	case cpTime:
 	{
 		time = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
-	}
-
-	if (not parsed)
 		return BaseTrigger::processParameter(value);
-
-	return parsed;
+	}
 }
 
 void CameraTrigger::generateParameters()

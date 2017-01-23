@@ -54,20 +54,26 @@ FadingBox::~FadingBox()
 
 bool FadingBox::processParameter(const PARAMETER_TYPE& value)
 {
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case upColour:
 	{
-		parsed = pLoadColour( value.second, colours.first );
+		if (!pLoadColour(value.second, colours.first))
+		{
+			printf("ERROR: Invalid colour parameter value \"%s\" (try XrXgXb or a colour name)!\n", value.second.c_str());
+			return false;
+		}
 		col = colours.first;
-		break;
+		return true;
 	}
 	case fpFarColour:
 	{
-		parsed = pLoadColour( value.second, colours.second );
-		break;
+		if (!pLoadColour(value.second, colours.second))
+		{
+			printf("ERROR: Invalid colour parameter value \"%s\" (try XrXgXb or a colour name)!\n", value.second.c_str());
+			return false;
+		}
+		return true;
 	}
 	case fpFadeRadius:
 	{
@@ -81,24 +87,20 @@ bool FadingBox::processParameter(const PARAMETER_TYPE& value)
 		}
 		if (fadeRadius.x < 0 || fadeRadius.y < 0 || fadeRadius.y < fadeRadius.x)
 		{
-			parsed = false;
+			printf("ERROR: Invalid value for fade radius (second value needs to be bigger than first value or only supply one value)!\n");
 			fadeRadius = Vector2df(32,96);
+			return false;
 		}
-		break;
+		return true;
 	}
 	case fpFadeSteps:
 	{
 		fadeSteps = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
-	}
-
-	if (parsed == false)
 		return PushableBox::processParameter(value);
-
-	return parsed;
+	}
 }
 
 void FadingBox::generateParameters()

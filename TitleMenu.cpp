@@ -57,12 +57,21 @@ int TitleMenu::selection = DEFAULT_SELECTION;
 TitleMenu::TitleMenu()
 {
 	bgVariant = rand() % 1000;
+#ifdef _DEBUG
+	if (bgVariant < 333)
+		bgVariant = 0;
+	else if (bgVariant < 666)
+		bgVariant = 1;
+	else
+		bgVariant = 2;
+#else
 	if (bgVariant < 990)
 		bgVariant = 0;
 	else if (bgVariant < 995)
 		bgVariant = 1;
 	else
 		bgVariant = 2;
+#endif
 
 	invertRegion.w = GFX::getXResolution();
 	invertRegion.h = MENU_ITEM_HEIGHT;

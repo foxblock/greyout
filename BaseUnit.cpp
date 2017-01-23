@@ -152,13 +152,15 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 	string className = params.front().second;
 
 	stateParams.clear();
+	int count = 1;
 	for (list<PARAMETER_TYPE >::iterator value = params.begin(); value != params.end(); ++value)
 	{
 		if (not processParameter(*value))
 		{
-			printf("WARNING: Unprocessed parameter \"%s\" on unit with id \"%s\" (%s)\n",
-				   value->first.c_str(),id.c_str(),className.c_str());
+			printf("WARNING: Unprocessed parameter #%i \"%s\" on unit with id \"%s\" (%s)\n",
+				   count, value->first.c_str(),id.c_str(),className.c_str());
 		}
+		++count;
 	}
 
 	// Not taking the unit's size into account here as it might not be available yet
@@ -203,19 +205,17 @@ bool BaseUnit::load(list<PARAMETER_TYPE >& params)
 
 bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 {
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case upClass:
 	{
 		tag = value.second;
-		break;
+		return true;
 	}
 	case upStartingState:
 	{
 		startingState = value.second;
-		break;
+		return true;
 	}
 	case upPosition:
 	{
@@ -223,8 +223,8 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		StringUtility::tokenize(value.second,token,DELIMIT_STRING);
 		if (token.size() != 2)
 		{
-			parsed = false;
-			break;
+			printf("ERROR: Invalid parameters for unit position (x and y values required)!\n");
+			return false;
 		}
 		if (parent->timeCounter == 0) // during Level::load
 		{
@@ -238,12 +238,12 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 			teleportPosition.y = StringUtility::stringToFloat(token[1]);
 			isTeleporting = true;
 		}
-		break;
+		return true;
 	}
 	case upVelocity:
 	{
 		velocity = StringUtility::stringToVec<Vector2df>(value.second);
-		break;
+		return true;
 	}
 	case upFlags:
 	{
@@ -259,7 +259,7 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 				printf("WARNING: Using deprecated flag noUnitCollision on unit with ID \"%s\", use CollisionMode=0 instead!\n",id.c_str());
 			}
 		}
-		break;
+		return true;
 	}
 	case upCollision:
 	{
@@ -269,54 +269,62 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		for (vector<string>::const_iterator col = token.begin(); col != token.end(); ++col)
 		{
 			Colour temp;
-			if ( !pLoadColour( *col, temp ) )
+			if (!pLoadColour(*col, temp))
 			{
-				parsed = false;
-				break;
+				printf("ERROR: Invalid colour parameter value \"%s\" (try XrXgXb or a colour name)!\n", (*col).c_str());
+				return false;
 			}
-			collisionColours.insert( temp.getIntColour() );
+			collisionColours.insert(temp.getIntColour());
 		}
-		break;
+		return true;
 	}
 	case upImageOverwrite:
 	{
 		imageOverwrite = value.second;
-		break;
+		return true;
 	}
 	case upTilesheet:
 	{
 		tiles = StringUtility::stringToVec<Vector2di>(value.second);
-		break;
+		return true;
 	}
 	case upFramerate:
 	{
 		framerate = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	case upLoops:
 	{
 		loops = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	case upTransCol:
 	{
-		parsed = pLoadColour( value.second, transCol );
-		break;
+		if (!pLoadColour(value.second, transCol))
+		{
+			printf("ERROR: Invalid colour parameter value \"%s\" (try XrXgXb or a colour name)!\n", value.second.c_str());
+			return false;
+		}
+		return true;
 	}
 	case upColour:
 	{
-		parsed = pLoadColour( value.second, col );
-		break;
+		if (!pLoadColour(value.second, col))
+		{
+			printf("ERROR: Invalid colour parameter value \"%s\" (try XrXgXb or a colour name)!\n", value.second.c_str());
+			return false;
+		}
+		return true;
 	}
 	case upHealth:
 	{
 		collisionInfo.squashThreshold = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	case upID:
 	{
 		id = value.second;
-		break;
+		return true;
 	}
 	case upOrder:
 	{
@@ -325,8 +333,12 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		if (params.size() < 2)
 		{
 			Order temp;
-			// Order key gets checked in processOrder at runtime, since child classes might provide implementation
 			temp.key = stringToOrder[params.front()];
+			if (temp.key == upUnknown)
+			{
+				printf("ERROR: Unknown order key \"%s\"!\n", params.front().c_str());
+				return false;
+			}
 			temp.ticks = 1;
 			temp.randomTicks = 0;
 			orderList.push_back(temp);
@@ -335,15 +347,21 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		{
 			Order temp;
 			temp.key = stringToOrder[params.front()];
+			if (temp.key == upUnknown)
+			{
+				printf("ERROR: Unknown order key \"%s\"!\n", params.front().c_str());
+				return false;
+			}
 			pLoadTime(params[1], temp.ticks);
 			if (temp.ticks <= 0)
 				temp.ticks = 1;
 			// Read reference time value for random ticks (if ticks are not set to random, it will be set to 0)
 			pLoadRandomTime(params[1], temp.randomTicks);
 			temp.params.insert(temp.params.begin(), params.begin()+1, params.end());
+
 			orderList.push_back(temp);
 		}
-		break;
+		return true;
 	}
 	case upCollisionMode:
 	{
@@ -354,8 +372,11 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		else if (value.second == "colour" || value.second == "color" || value.second == "2")
 			unitCollisionMode = 2;
 		else
-			parsed = false;
-		break;
+		{
+			printf("ERROR: Invalid collision mode value \"%s\" (should be one of never/always/colour)!\n", value.second.c_str());
+			return false;
+		}
+		return true;
 	}
 	case upState:
 	{
@@ -363,7 +384,8 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 		StringUtility::tokenize(value.second, params, DELIMIT_STRING);
 		if (params.size() < 3)
 		{
-			parsed = false;
+			printf("ERROR: Not enough parameters for unit state (needs at least name,startframe,num-frames).\n");
+			return false;
 		}
 		State temp;
 		temp.name = params[0];
@@ -387,13 +409,12 @@ bool BaseUnit::processParameter(const PARAMETER_TYPE& value)
 			temp.mode = pmNormal;
 		}
 		stateParams.push_back(temp);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		printf("ERROR: Unknown parameter \"%s\"!\n", value.first.c_str());
+		return false;
 	}
-
-	return parsed;
 }
 
 void BaseUnit::generateParameters()
@@ -463,6 +484,45 @@ void BaseUnit::generateParameters()
 	}
 }
 
+string BaseUnit::generateParameterFlags()
+{
+	string result = "";
+	if (flags.hasFlag(ufNoMapCollision)) result += "nomapcollision,";
+	if (flags.hasFlag(ufNoUnitCollision)) result += "nounitcollision,";
+	if (flags.hasFlag(ufNoGravity)) result += "nogravity,";
+	if (flags.hasFlag(ufInvincible)) result += "invincible,";
+	if (flags.hasFlag(ufMissionObjective)) result += "missionobjective,";
+	if (flags.hasFlag(ufNoUpdate)) result += "noupdate,";
+	if (flags.hasFlag(ufNoRender)) result += "norender,";
+	if (flags.hasFlag(ufDisregardBoundaries)) result += "disregardboundaries,";
+	if (flags.hasFlag(ufAlwaysOnTop)) result += "alwaysontop,";
+	result.erase(result.length()-1);
+	return result;
+}
+
+string BaseUnit::generateParameterOrders(const Order &o)
+{
+	// Key
+	string result = orderToString[o.key];
+	if (o.key == okRepeat || o.key == okRemove || o.key == okExplode)
+		return result;
+	// Time
+	if (o.key == okIdle || o.key == okPosition || o.key == okColour || o.key == okIncrement)
+	{
+		if (o.randomTicks > 0)
+			result += "," + StringUtility::intToString(o.randomTicks) + "r";
+		else
+			result += "," + StringUtility::intToString(o.ticks) + "f";
+	}
+	// Parameters
+	if (o.key == okPosition || o.key == okColour || o.key == okIncrement || o.key == okParameter || o.key == okSound || o.key == okState)
+	{
+		for (vector<string>::const_iterator I = o.params.begin(); I != o.params.end(); ++I)
+			result += "," + *I;
+	}
+	return result;
+}
+
 void BaseUnit::reset()
 {
 	velocity = Vector2df(0,0);
@@ -474,7 +534,7 @@ void BaseUnit::reset()
 		delete iter->second;
 	}
 	states.clear();
-	orderList.clear();
+	resetOrder(true);
 	toBeRemoved = false;
 	load(parameters);
 }
@@ -1062,43 +1122,4 @@ bool BaseUnit::finishOrder(const Order& curr)
 	}
 
 	return parsed;
-}
-
-string BaseUnit::generateParameterFlags()
-{
-	string result = "";
-	if (flags.hasFlag(ufNoMapCollision)) result += "nomapcollision,";
-	if (flags.hasFlag(ufNoUnitCollision)) result += "nounitcollision,";
-	if (flags.hasFlag(ufNoGravity)) result += "nogravity,";
-	if (flags.hasFlag(ufInvincible)) result += "invincible,";
-	if (flags.hasFlag(ufMissionObjective)) result += "missionobjective,";
-	if (flags.hasFlag(ufNoUpdate)) result += "noupdate,";
-	if (flags.hasFlag(ufNoRender)) result += "norender,";
-	if (flags.hasFlag(ufDisregardBoundaries)) result += "disregardboundaries,";
-	if (flags.hasFlag(ufAlwaysOnTop)) result += "alwaysontop,";
-	result.erase(result.length()-1);
-	return result;
-}
-
-string BaseUnit::generateParameterOrders(Order o)
-{
-	// Key
-	string result = orderToString[o.key];
-	if (o.key == okRepeat || o.key == okRemove || o.key == okExplode)
-		return result;
-	// Time
-	if (o.key == okIdle || o.key == okPosition || o.key == okColour || o.key == okIncrement)
-	{
-		if (o.randomTicks > 0)
-			result += StringUtility::intToString(o.randomTicks) + "r";
-		else
-			result += StringUtility::intToString(o.ticks) + "f";
-	}
-	// Parameters
-	if (o.key == okPosition || o.key == okColour || o.key == okIncrement || o.key == okParameter || o.key == okSound || o.key == okState)
-	{
-		for (vector<string>::iterator I = o.params.begin(); I != o.params.end(); ++I)
-			result += "," + *I;
-	}
-	return result;
 }

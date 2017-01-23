@@ -42,23 +42,16 @@ LevelTrigger::~LevelTrigger()
 
 bool LevelTrigger::processParameter(const PARAMETER_TYPE& value)
 {
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case BaseUnit::upTarget:
 	{
 		printf("WARNING: LevelTrigger does not take targets.\n");
-		break;
+		return false;
 	}
 	default:
-		parsed = false;
-	}
-
-	if (not parsed)
 		return BaseTrigger::processParameter(value);
-
-	return parsed;
+	}
 }
 
 ///---protected---

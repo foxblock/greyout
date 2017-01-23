@@ -48,33 +48,26 @@ SoundTrigger::~SoundTrigger()
 
 bool SoundTrigger::processParameter(const PARAMETER_TYPE& value)
 {
-	if (BaseTrigger::processParameter(value))
-		return true;
-
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case spFile:
 	{
 		filename = value.second;
-		break;
+		return true;
 	}
 	case spPlayCount:
 	{
 		playcount = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	case spLoops:
 	{
 		loops = StringUtility::stringToInt(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseTrigger::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void SoundTrigger::generateParameters()

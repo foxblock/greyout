@@ -69,56 +69,57 @@ BaseTrigger::~BaseTrigger()
 
 bool BaseTrigger::processParameter( const PARAMETER_TYPE &value )
 {
-	bool parsed = true;
-
 	switch ( stringToProp[value.first] )
 	{
 	case BaseUnit::upSize:
 	{
 		size = StringUtility::stringToVec<Vector2di>(value.second);
-		break;
+		return true;
 	}
 	case bpEnabled:
 	{
 		enabled = StringUtility::stringToBool( value.second );
-		break;
+		return true;
 	}
 	case BaseUnit::upTarget:
 	{
-		parsed = pLoadUintIDs( value.second, targetIDs );
-		break;
+		if (!pLoadUintIDs( value.second, targetIDs ))
+		{
+			printf("ERROR loading unit IDs!\n");
+			return false;
+		}
+		return true;
 	}
 	case bpAction:
 	{
 		vector<string> tokens;
 		StringUtility::tokenize( value.second, tokens, VALUE_STRING, 2 );
-		if ( tokens.size() < 2 )
+		if ( tokens.size() != 2 )
 		{
-			parsed = false;
-			break;
+			printf("ERROR: Invalid parameter for trigger action (needs a key=value pair)!\n");
+			return false;
 		}
 		targetParam.first = tokens.front();
 		targetParam.second = tokens.back();
-		break;
+		return true;
 	}
 	case bpActivator:
 	{
-		parsed = pLoadUintIDs( value.second, activatorIDs );
-		break;
+		if (!pLoadUintIDs( value.second, activatorIDs ))
+		{
+			printf("ERROR loading unit IDs!\n");
+			return false;
+		}
+		return true;
 	}
 	case bpAutoReEnable:
 	{
 		autoReEnable = StringUtility::stringToBool( value.second );
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseUnit::processParameter(value);
 	}
-
-	if ( not parsed )
-		return BaseUnit::processParameter( value );
-
-	return parsed;
 }
 
 void BaseTrigger::generateParameters()

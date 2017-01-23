@@ -63,16 +63,8 @@ PushableBox::~PushableBox()
 
 bool PushableBox::processParameter(const PARAMETER_TYPE& value)
 {
-	// first ensure backwards compatibility by passing the value to BaseUnit
-	// (also avoids having to copy that code)
-	if (BaseUnit::processParameter(value))
-		return true;
-
-	// if the specific parameter is not caught by BaseUnit is has to be special
-	// to this unit (or erroneous), so custom implementation here, following the
-	// same structure as BaseUnit::processParameter
-	bool parsed = true;
-
+	// first, check class-specific parameters, following the same structure
+	// as BaseUnit::processParameter
 	switch (stringToProp[value.first])
 	{
 	case BaseUnit::upSize:
@@ -81,18 +73,18 @@ bool PushableBox::processParameter(const PARAMETER_TYPE& value)
 		StringUtility::tokenize(value.second,token,DELIMIT_STRING);
 		if (token.size() != 2)
 		{
-			parsed = false;
-			break;
+			printf("ERROR: Invalid size parameter (needs width and height)!\n");
+			return false;
 		}
 		rect.w = StringUtility::stringToInt(token[0]);
 		rect.h = StringUtility::stringToInt(token[1]);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
+		// if the parameter has not been parsed at this point it might be a general
+		// parameter, so pass it to BaseUnit to ensure backwards compatibility
+		return BaseUnit::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void PushableBox::generateParameters()
@@ -318,7 +310,7 @@ bool PushableBox::updateOrder(const Order& curr)
 	return parsed;
 }
 
-string PushableBox::generateParameterOrders(Order o)
+string PushableBox::generateParameterOrders(const Order &o)
 {
 	if (o.key != boSize)
 		return BaseUnit::generateParameterOrders(o);
@@ -326,11 +318,11 @@ string PushableBox::generateParameterOrders(Order o)
 	string result = orderToString[o.key];
 	// Time
 	if (o.randomTicks > 0)
-		result += StringUtility::intToString(o.randomTicks) + "r";
+		result += "," + StringUtility::intToString(o.randomTicks) + "r";
 	else
-		result += StringUtility::intToString(o.ticks) + "f";
+		result += "," + StringUtility::intToString(o.ticks) + "f";
 	// Parameters
-	for (vector<string>::iterator I = o.params.begin(); I != o.params.end(); ++I)
+	for (vector<string>::const_iterator I = o.params.begin(); I != o.params.end(); ++I)
 		result += "," + *I;
 	return result;
 }

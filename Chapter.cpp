@@ -315,6 +315,8 @@ bool Chapter::processParameter(const PARAMETER_TYPE& value)
 		autoDetect = StringUtility::stringToBool(value.second);
 		break;
 	}
+	default:
+		return false;
 	}
 
 	return parsed;

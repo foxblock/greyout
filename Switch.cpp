@@ -108,11 +108,6 @@ bool Switch::load(list<PARAMETER_TYPE >& params)
 
 bool Switch::processParameter(const PARAMETER_TYPE& value)
 {
-	if (BaseUnit::processParameter(value))
-		return true;
-
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case spFunction:
@@ -131,10 +126,10 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
 			switchOff = &Switch::parameterOff;
 			vector<string> temp;
 			StringUtility::tokenize(tokens.back(),temp,VALUE_STRING,2);
-			if (tokens.size() < 2 || temp.size() < 2)
+			if (tokens.size() != 2 || temp.size() != 2)
 			{
-				parsed = false;
-				break;
+				printf("ERROR: Invalid switch parameters (needs a key=value pair)!\n");
+				return false;
 			}
 			paramOn.first = temp.front();
 			paramOn.second = temp.back();
@@ -147,10 +142,10 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
 			switchOn = &Switch::parameterOn;
 			vector<string> temp;
 			StringUtility::tokenize(tokens.back(),temp,VALUE_STRING,2);
-			if (tokens.size() < 2 || temp.size() < 2)
+			if (tokens.size() != 2 || temp.size() != 2)
 			{
-				parsed = false;
-				break;
+				printf("ERROR: Invalid switch parameters (needs a key=value pair)!\n");
+				return false;
 			}
 			paramOn.first = temp.front();
 			paramOn.second = temp.back();
@@ -163,8 +158,8 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
 			StringUtility::tokenize(tokens.back(),temp,VALUE_STRING,2);
 			if (tokens.size() < 2 || temp.size() < 2)
 			{
-				parsed = false;
-				break;
+				printf("ERROR: Invalid switch parameters (needs a key=value pair)!\n");
+				return false;
 			}
 			paramOff.first = temp.front();
 			paramOff.second = temp.back();
@@ -173,18 +168,20 @@ bool Switch::processParameter(const PARAMETER_TYPE& value)
 		default:
 			printf("Unknown function parameter for switch \"%s\"\n",id.c_str());
 		}
-		break;
+		return true;
 	}
 	case BaseUnit::upTarget:
 	{
-		parsed = pLoadUintIDs( value.second, targetIDs );
-		break;
+		if (!pLoadUintIDs(value.second, targetIDs))
+		{
+			printf("ERROR loading unit IDs!\n");
+			return false;
+		}
+		return true;
 	}
 	default:
-		parsed = false;
+		return BaseUnit::processParameter(value);
 	}
-
-	return parsed;
 }
 
 void Switch::generateParameters()

@@ -157,76 +157,90 @@ void ParticleEmitter::render(SDL_Surface* surf)
 
 bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 {
-	bool parsed = true;
-
 	switch (stringToProp[value.first])
 	{
 	case BaseUnit::upSize:
 	{
 		size = StringUtility::stringToVec<Vector2di>(value.second);
-		break;
+		return true;
 	}
 	case epEnabled:
 	{
 		enabled = StringUtility::stringToBool(value.second);
-		break;
+		return true;
 	}
 	case epDirection:
 	{
 		emitDir = StringUtility::stringToVec<Vector2df>(value.second);
 		emitDir.normalise();
-		break;
+		return true;
 	}
 	case epPower:
 	{
 		float temp = StringUtility::stringToFloat(value.second);
 		emitPower.x = temp;
 		emitPower.y = temp;
-		break;
+		return true;
 	}
 	case epLifetime:
 	{
 		int temp = 0;
-		pLoadTime( value.second, temp );
+		if (!pLoadTime( value.second, temp ))
+		{
+			printf("ERROR loading time value!\n");
+			return false;
+		}
 		particleLifetime.x = temp;
 		particleLifetime.y = temp;
-		break;
+		return true;
 	}
 	case epDelay:
 	{
 		int temp = 0;
-		pLoadTime( value.second, temp );
+		if (!pLoadTime( value.second, temp ))
+		{
+			printf("ERROR loading time value!\n");
+			return false;
+		}
 		nextParticleTime.x = temp;
 		nextParticleTime.y = temp;
-		break;
+		return true;
 	}
 	case epDirectionScatter:
 	{
 		angleScatter = NumberUtility::degToRad(StringUtility::stringToFloat(value.second));
-		break;
+		return true;
 	}
 	case epPowerScatter:
 	{
 		float temp = StringUtility::stringToFloat(value.second);
 		emitPower.x -= temp;
 		emitPower.y += temp;
-		break;
+		return true;
 	}
 	case epLifetimeScatter:
 	{
 		int temp = 0;
-		pLoadTime( value.second, temp );
+		if (!pLoadTime( value.second, temp ))
+		{
+			printf("ERROR loading time value!\n");
+			return false;
+		}
 		particleLifetime.x -= temp;
 		particleLifetime.y += temp;
-		break;
+		return true;
 	}
 	case epDelayScatter:
 	{
 		int temp = 0;
-		pLoadTime( value.second, temp );
+		if (!pLoadTime( value.second, temp ))
+		{
+			printf("ERROR loading time value!\n");
+			return false;
+		}
 		nextParticleTime.x -= temp;
 		nextParticleTime.y += temp;
-		break;
+		return true;
 	}
 	case epMultiplier:
 	{
@@ -242,21 +256,16 @@ bool ParticleEmitter::processParameter(const PARAMETER_TYPE& value)
 		{
 			multiplier.push_back(multiplier[temp-1]);
 		}
-		break;
+		return true;
 	}
 	case epCentred:
 	{
 		centred = StringUtility::stringToBool(value.second);
-		break;
+		return true;
 	}
 	default:
-		parsed = false;
-	}
-
-	if (not parsed)
 		return BaseUnit::processParameter(value);
-
-	return parsed;
+	}
 }
 
 void ParticleEmitter::generateParameters()
@@ -281,7 +290,7 @@ void ParticleEmitter::generateParameters()
 		for (vector<int>::iterator I = multiplier.begin(); I != multiplier.end(); ++I)
 			temp += StringUtility::intToString(*I) + DELIMIT_STRING;
 		temp.erase(temp.length()-1);
-		parameters.push_back(make_pair("multiplier", temp));	
+		parameters.push_back(make_pair("multiplier", temp));
 	}
 	if (!centred)
 		parameters.push_back(make_pair("centred", StringUtility::boolToString(centred)));

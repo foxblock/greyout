@@ -46,7 +46,7 @@ public:
 protected:
 	virtual bool processOrder(Order& next);
 
-	virtual string generateParameterOrders(Order o);
+	virtual string generateParameterOrders(const Order &o);
 
 	enum GearProp
 	{
