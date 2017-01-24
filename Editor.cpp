@@ -112,7 +112,7 @@
 // TODO: Build a resetAcceptKey(input) and resetCancelKey(input) for that maybe
 // TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
 // TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
-// TODO: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
+// DONE: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
 // TODO: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
 // TODO: Copy and paste for units
 // TODO: Add help (use showMessageBox and display hint when user presses F1 while highlighting something, e.g. menu Items in settings)
@@ -2110,70 +2110,86 @@ void Editor::inputDraw()
 			{
 				straightLineDirection = 0;
 			}
-			mousePos.x -= brushSize / 2;
-			mousePos.y -= brushSize / 2;
-			lastPos.x -= brushSize / 2;
-			lastPos.y -= brushSize / 2;
-			Sint16 polX[6];
-			Sint16 polY[6];
-			if (mousePos.x < lastPos.x)
+			if (brushSize == 1)
 			{
-				polX[0] = lastPos.x + editorOffset.x + brushSize - 1;
-				polY[0] = lastPos.y + editorOffset.y;
-				polX[2] = mousePos.x + editorOffset.x;
-				polY[2] = mousePos.y + editorOffset.y;
-				polX[3] = mousePos.x + editorOffset.x;
-				polY[3] = mousePos.y + editorOffset.y + brushSize - 1;
-				polX[5] = lastPos.x + editorOffset.x + brushSize - 1;
-				polY[5] = lastPos.y + editorOffset.y + brushSize - 1;
-				if (mousePos.y < lastPos.y)
-				{
-					polX[1] = mousePos.x + editorOffset.x + brushSize - 1;
-					polY[1] = mousePos.y + editorOffset.y;
-					polX[4] = lastPos.x + editorOffset.x;
-					polY[4] = lastPos.y + editorOffset.y + brushSize - 1;
-				}
+				if (input->isLeftClick())
+					lineColor(l->levelImage, 
+							lastPos.x + editorOffset.x, lastPos.y + editorOffset.y, 
+							mousePos.x + editorOffset.x, mousePos.y + editorOffset.y, 
+							brushCol.getRGBAvalue());
 				else
-				{
-					polX[1] = lastPos.x + editorOffset.x;
-					polY[1] = lastPos.y + editorOffset.y;
-					polX[4] = mousePos.x + editorOffset.x + brushSize - 1;
-					polY[4] = mousePos.y + editorOffset.y + brushSize - 1;
-				}
+					lineColor(l->levelImage, 
+							lastPos.x + editorOffset.x, lastPos.y + editorOffset.y, 
+							mousePos.x + editorOffset.x, mousePos.y + editorOffset.y, 
+							brushCol2.getRGBAvalue());
 			}
 			else
 			{
-				polX[0] = lastPos.x + editorOffset.x;
-				polY[0] = lastPos.y + editorOffset.y + brushSize - 1;
-				polX[2] = mousePos.x + editorOffset.x + brushSize - 1;
-				polY[2] = mousePos.y + editorOffset.y + brushSize - 1;
-				polX[3] = mousePos.x + editorOffset.x + brushSize - 1;
-				polY[3] = mousePos.y + editorOffset.y;
-				polX[5] = lastPos.x + editorOffset.x;
-				polY[5] = lastPos.y + editorOffset.y;
-				if (mousePos.y < lastPos.y)
+				mousePos.x -= brushSize / 2;
+				mousePos.y -= brushSize / 2;
+				lastPos.x -= brushSize / 2;
+				lastPos.y -= brushSize / 2;
+				Sint16 polX[6];
+				Sint16 polY[6];
+				if (mousePos.x < lastPos.x)
 				{
-					polX[1] = lastPos.x + editorOffset.x + brushSize - 1;
-					polY[1] = lastPos.y + editorOffset.y + brushSize - 1;
-					polX[4] = mousePos.x + editorOffset.x;
-					polY[4] = mousePos.y + editorOffset.y;
+					polX[0] = lastPos.x + editorOffset.x + brushSize - 1;
+					polY[0] = lastPos.y + editorOffset.y;
+					polX[2] = mousePos.x + editorOffset.x;
+					polY[2] = mousePos.y + editorOffset.y;
+					polX[3] = mousePos.x + editorOffset.x;
+					polY[3] = mousePos.y + editorOffset.y + brushSize - 1;
+					polX[5] = lastPos.x + editorOffset.x + brushSize - 1;
+					polY[5] = lastPos.y + editorOffset.y + brushSize - 1;
+					if (mousePos.y < lastPos.y)
+					{
+						polX[1] = mousePos.x + editorOffset.x + brushSize - 1;
+						polY[1] = mousePos.y + editorOffset.y;
+						polX[4] = lastPos.x + editorOffset.x;
+						polY[4] = lastPos.y + editorOffset.y + brushSize - 1;
+					}
+					else
+					{
+						polX[1] = lastPos.x + editorOffset.x;
+						polY[1] = lastPos.y + editorOffset.y;
+						polX[4] = mousePos.x + editorOffset.x + brushSize - 1;
+						polY[4] = mousePos.y + editorOffset.y + brushSize - 1;
+					}
 				}
 				else
 				{
-					polX[1] = mousePos.x + editorOffset.x;
-					polY[1] = mousePos.y + editorOffset.y + brushSize - 1;
-					polX[4] = lastPos.x + editorOffset.x + brushSize - 1;
-					polY[4] = lastPos.y + editorOffset.y;
+					polX[0] = lastPos.x + editorOffset.x;
+					polY[0] = lastPos.y + editorOffset.y + brushSize - 1;
+					polX[2] = mousePos.x + editorOffset.x + brushSize - 1;
+					polY[2] = mousePos.y + editorOffset.y + brushSize - 1;
+					polX[3] = mousePos.x + editorOffset.x + brushSize - 1;
+					polY[3] = mousePos.y + editorOffset.y;
+					polX[5] = lastPos.x + editorOffset.x;
+					polY[5] = lastPos.y + editorOffset.y;
+					if (mousePos.y < lastPos.y)
+					{
+						polX[1] = lastPos.x + editorOffset.x + brushSize - 1;
+						polY[1] = lastPos.y + editorOffset.y + brushSize - 1;
+						polX[4] = mousePos.x + editorOffset.x;
+						polY[4] = mousePos.y + editorOffset.y;
+					}
+					else
+					{
+						polX[1] = mousePos.x + editorOffset.x;
+						polY[1] = mousePos.y + editorOffset.y + brushSize - 1;
+						polX[4] = lastPos.x + editorOffset.x + brushSize - 1;
+						polY[4] = lastPos.y + editorOffset.y;
+					}
 				}
+				if (input->isLeftClick())
+					filledPolygonColor(l->levelImage, polX, polY, 6, brushCol.getRGBAvalue());
+				else
+					filledPolygonColor(l->levelImage, polX, polY, 6, brushCol2.getRGBAvalue());
+				mousePos.x += brushSize / 2;
+				mousePos.y += brushSize / 2;
+				lastPos.x += brushSize / 2;
+				lastPos.y += brushSize / 2;
 			}
-			if (input->isLeftClick())
-				filledPolygonColor(l->levelImage, polX, polY, 6, brushCol.getRGBAvalue());
-			else
-				filledPolygonColor(l->levelImage, polX, polY, 6, brushCol2.getRGBAvalue());
-			mousePos.x += brushSize / 2;
-			mousePos.y += brushSize / 2;
-			lastPos.x += brushSize / 2;
-			lastPos.y += brushSize / 2;
 		} // left or right click
 		else
 		{
