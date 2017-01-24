@@ -66,6 +66,7 @@ private:
 	void inputMessageBox();
 
 	void updateStart();
+	void updateDraw();
 
 	void renderStart();
 	void renderSettings();
@@ -82,6 +83,7 @@ private:
 	void goToMenu();
 	void goToFileList(string path, string filters, string *target);
 	void showMessageBox(string message, string buttons);
+	void showInputBox(string message, string *target);
 	void switchState(int toState); // Change editor state, do clean-up and preparation
 	void switchDrawTool(int newTool);
 
@@ -178,6 +180,7 @@ private:
 	vector<SDL_Surface*> stampThumbnailsChapter;
 	vector<string> stampImageFilenamesChapter;
 	FileLister stampImageLister;
+	string stampNewFilename;
 	void generateStampListing(FileLister *lister, string path, vector<SDL_Surface*> &stampTarget, vector<SDL_Surface*> &thumbnailTarget, vector<string> &filenameTarget);
 	void drawStampPanel(SDL_Surface *target);
 	/// Units
@@ -217,6 +220,7 @@ private:
 	string messageBoxContent;
 	SDL_Surface *messageBoxBg;
 	Text messageBoxText;
+	string *inputBoxTarget;
 };
 
 

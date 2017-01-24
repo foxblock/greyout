@@ -123,64 +123,64 @@
 // getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
 Uint32 getpixel(SDL_Surface *surface, const int &x, const int &y)
 {
-    int bpp = surface->format->BytesPerPixel;
-    /* Here p is the address to the pixel we want to retrieve */
-    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+	int bpp = surface->format->BytesPerPixel;
+	/* Here p is the address to the pixel we want to retrieve */
+	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
-    switch(bpp)
-    {
-    case 1:
-        return *p;
-        break;
-    case 2:
-        return *(Uint16 *)p;
-        break;
-    case 3:
-        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-            return p[0] << 16 | p[1] << 8 | p[2];
-        else
-            return p[0] | p[1] << 8 | p[2] << 16;
-        break;
-    case 4:
-        return *(Uint32 *)p;
-        break;
-    default:
-        return 0;       /* shouldn't happen, but avoids warnings */
-    }
+	switch(bpp)
+	{
+	case 1:
+		return *p;
+		break;
+	case 2:
+		return *(Uint16 *)p;
+		break;
+	case 3:
+		if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+			return p[0] << 16 | p[1] << 8 | p[2];
+		else
+			return p[0] | p[1] << 8 | p[2] << 16;
+		break;
+	case 4:
+		return *(Uint32 *)p;
+		break;
+	default:
+		return 0;       /* shouldn't happen, but avoids warnings */
+	}
 }
 
 void putpixel(SDL_Surface *surface, const int &x, const int &y, const Uint32 &pixel)
 {
-    int bpp = surface->format->BytesPerPixel;
-    /* Here p is the address to the pixel we want to set */
-    Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+	int bpp = surface->format->BytesPerPixel;
+	/* Here p is the address to the pixel we want to set */
+	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
-    switch(bpp)
-    {
-    case 1:
-        *p = pixel;
-        break;
-    case 2:
-        *(Uint16 *)p = pixel;
-        break;
-    case 3:
-        if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+	switch(bpp)
+	{
+	case 1:
+		*p = pixel;
+		break;
+	case 2:
+		*(Uint16 *)p = pixel;
+		break;
+	case 3:
+		if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
 		{
-            p[0] = (pixel >> 16) & 0xff;
-            p[1] = (pixel >> 8) & 0xff;
-            p[2] = pixel & 0xff;
-        }
+			p[0] = (pixel >> 16) & 0xff;
+			p[1] = (pixel >> 8) & 0xff;
+			p[2] = pixel & 0xff;
+		}
 		else
 		{
-            p[0] = pixel & 0xff;
-            p[1] = (pixel >> 8) & 0xff;
-            p[2] = (pixel >> 16) & 0xff;
-        }
-        break;
-    case 4:
-        *(Uint32 *)p = pixel;
-        break;
-    }
+			p[0] = pixel & 0xff;
+			p[1] = (pixel >> 8) & 0xff;
+			p[2] = (pixel >> 16) & 0xff;
+		}
+		break;
+	case 4:
+		*(Uint32 *)p = pixel;
+		break;
+	}
 }
 
 bool fileExists (const string &file) {
@@ -328,6 +328,7 @@ Editor::Editor()
 	currentStamp = NULL;
 	stampImageLister.addFilter("png");
 	stampImageLister.includePathLabelInListing(false);
+	stampNewFilename = "";
 
 	unitPanel.surf = SDL_CreateRGBSurface(SDL_SWSURFACE, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 	unitPanel.pos.x = 0;
@@ -373,6 +374,7 @@ Editor::Editor()
 	messageBoxActive = false;
 	messageBoxResult = -1;
 	messageBoxContent = "";
+	inputBoxTarget = NULL;
 	messageBoxText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
 	messageBoxText.setColour(WHITE);
 	messageBoxText.setAlignment(LEFT_JUSTIFIED);
@@ -491,6 +493,7 @@ void Editor::update()
 	case esSettings:
 		break;
 	case esDraw:
+		updateDraw();
 		break;
 	case esUnits:
 		break;
@@ -1387,7 +1390,7 @@ void Editor::inputDraw()
 						mousePos.y + editorOffset.y - copyBuffer->h / 2,
 						copyBuffer->w,
 						copyBuffer->h};
-                SDL_BlitSurface(copyBuffer, NULL, l->levelImage, &dst);
+				SDL_BlitSurface(copyBuffer, NULL, l->levelImage, &dst);
 			}
 			input->resetKey("V");
 		}
@@ -1439,7 +1442,11 @@ void Editor::inputDraw()
 			if (stampPanel.active)
 			{
 				stampPanel.changed = true;
-				generateStampListing(&stampImageLister, "images/stamps", stampImagesGlobal, stampThumbnailsGlobal, stampImageFilenamesGlobal);
+				generateStampListing(&stampImageLister, "images/stamps",
+						stampImagesGlobal, stampThumbnailsGlobal, stampImageFilenamesGlobal);
+				if (l->chapterPath[0] != 0)
+					generateStampListing(&stampImageLister, l->chapterPath + "/images/stamps",
+							stampImagesChapter, stampThumbnailsChapter, stampImageFilenamesChapter);
 			}
 			input->resetKeys();
 		}
@@ -1824,13 +1831,13 @@ void Editor::inputDraw()
 				{
 					case 0: // Offset by selected stamp text and "global" label
 						backupPos.y -= (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING) * 2;
-						tempCount = stampImagesGlobal.size();
+						tempCount = stampImagesGlobal.size() + 1;
 						tempOffset = 0;
 						break;
 					case 1: // Offset by global stamp buttons and "chapter" label
-						backupPos.y -= ceil(stampImagesGlobal.size() / columns) * (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING);
-						tempCount = stampImagesChapter.size();
-						tempOffset = stampImagesGlobal.size();
+						backupPos.y -= ceil((stampImagesGlobal.size() + 1) / columns) * (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING) + (EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING);
+						tempCount = stampImagesChapter.size() + 1;
+						tempOffset = stampImagesGlobal.size() + 1;
 						break;
 				}
 				if (backupPos.y < 0)
@@ -1851,8 +1858,22 @@ void Editor::inputDraw()
 			{
 				if (stampButtonHover < stampImagesGlobal.size())
 					currentStamp = stampImagesGlobal.at(stampButtonHover);
+				else if (stampButtonHover == stampImagesGlobal.size())
+				{
+					if (selectArea.w > 0 && selectArea.h > 0)
+					{
+						showInputBox("Input a filename for the new stamp:", &stampNewFilename);
+					}
+				}
+				else if (stampButtonHover < stampImagesGlobal.size() + stampImagesChapter.size() + 1)
+					currentStamp = stampImagesChapter.at(stampButtonHover - stampImagesGlobal.size() - 1);
 				else
-					currentStamp = stampImagesChapter.at(stampButtonHover - stampImagesGlobal.size());
+				{
+					if (selectArea.w > 0 && selectArea.h > 0)
+					{
+						showInputBox("Input a filename for the new stamp:", &stampNewFilename);
+					}
+				}
 				if (currentStamp)
 				{
 					stampButtonSelected = stampButtonHover;
@@ -2122,15 +2143,15 @@ void Editor::inputDraw()
 			}
 			else
 			{
-                polX[0] = lastPos.x + editorOffset.x;
-                polY[0] = lastPos.y + editorOffset.y + brushSize - 1;
-                polX[2] = mousePos.x + editorOffset.x + brushSize - 1;
-                polY[2] = mousePos.y + editorOffset.y + brushSize - 1;
-                polX[3] = mousePos.x + editorOffset.x + brushSize - 1;
-                polY[3] = mousePos.y + editorOffset.y;
-                polX[5] = lastPos.x + editorOffset.x;
-                polY[5] = lastPos.y + editorOffset.y;
-                if (mousePos.y < lastPos.y)
+				polX[0] = lastPos.x + editorOffset.x;
+				polY[0] = lastPos.y + editorOffset.y + brushSize - 1;
+				polX[2] = mousePos.x + editorOffset.x + brushSize - 1;
+				polY[2] = mousePos.y + editorOffset.y + brushSize - 1;
+				polX[3] = mousePos.x + editorOffset.x + brushSize - 1;
+				polY[3] = mousePos.y + editorOffset.y;
+				polX[5] = lastPos.x + editorOffset.x;
+				polY[5] = lastPos.y + editorOffset.y;
+				if (mousePos.y < lastPos.y)
 				{
 					polX[1] = lastPos.x + editorOffset.x + brushSize - 1;
 					polY[1] = lastPos.y + editorOffset.y + brushSize - 1;
@@ -2245,8 +2266,8 @@ void Editor::inputDraw()
 			SDL_Rect dstRect;
 			dstRect.x = std::max(-cropOffset.x, 0);
 			dstRect.y = std::max(-cropOffset.y, 0);
-            SDL_BlitSurface(l->levelImage, &srcRect, l->collisionLayer, &dstRect);
-            if (ownsImage)
+			SDL_BlitSurface(l->levelImage, &srcRect, l->collisionLayer, &dstRect);
+			if (ownsImage)
 				SDL_FreeSurface(l->levelImage);
 			l->levelImage = SDL_CreateRGBSurface(SDL_SWSURFACE, cropSize.x, cropSize.y, GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
 			ownsImage = true;
@@ -3109,7 +3130,7 @@ void Editor::inputUnits()
 					// If clicking on two overlapping units, always select smaller one
 					if (currentUnit && currentUnit->getWidth() * currentUnit->getHeight() > (*I)->getWidth() * (*I)->getHeight())
 					{
-                        currentUnit = *I;
+						currentUnit = *I;
 					}
 					if (!currentUnit)
 						currentUnit = *I;
@@ -3122,7 +3143,7 @@ void Editor::inputUnits()
 					// If clicking on two overlapping units, always select smaller one
 					if (currentUnit && currentUnit->getWidth() * currentUnit->getHeight() > (*I)->getWidth() * (*I)->getHeight())
 					{
-                        currentUnit = *I;
+						currentUnit = *I;
 					}
 					if (!currentUnit)
 						currentUnit = *I;
@@ -3450,6 +3471,7 @@ void Editor::inputFileList()
 			if (fileList.getSelectedType() == DT_DIR)
 			{
 				fileList.enter();
+				fileListing = fileList.getListing();
 				fileListSel = 1;
 				fileListOffset = 0;
 			}
@@ -3477,6 +3499,25 @@ void Editor::inputFileList()
 
 void Editor::inputMessageBox()
 {
+	// input box
+	if (input->isPollingKeyboard())
+	{
+		if (isAcceptKey(input))
+		{
+			input->stopKeyboardInput();
+			messageBoxResult = 0;
+			messageBoxActive = false;
+		}
+		if (isCancelKey(input))
+		{
+			input->stopKeyboardInput();
+			messageBoxResult = -1;
+			messageBoxActive = false;
+		}
+		input->resetKeys();
+		return;
+	}
+	// message box
 	mousePos = input->getMouse();
 	if (input->isUp())
 	{
@@ -3520,7 +3561,7 @@ void Editor::inputMessageBox()
 
 void Editor::updateStart()
 {
-	if (!loadFile[0] != 0) // loadFile is set when a level is seletected from goToFileList
+	if (loadFile[0] == 0 || fileListActive) // loadFile is set when a level is seletected from goToFileList
 	{
 		return;
 	}
@@ -3563,6 +3604,61 @@ void Editor::updateStart()
 	editorOffset.y = ((int)l->levelImage->h - (int)GFX::getYResolution()) / 2;
 	editorState = esDraw;
 	ownsImage = false;
+	loadFile = "";
+}
+
+void Editor::updateDraw()
+{
+	if (messageBoxActive && inputBoxTarget && input->keyboardBufferHasChanged())
+	{
+		messageBoxItems.clear();
+		messageBoxItems.push_back(*inputBoxTarget);
+	}
+	if (stampNewFilename[0] == 0 || messageBoxActive)
+	{
+		return;
+	}
+	if (messageBoxResult == -1)
+	{
+		// cancel
+		stampNewFilename = "";
+		return;
+	}
+	if (stampNewFilename.length() < 4 || stampNewFilename.substr(stampNewFilename.length()-4) != ".png")
+		stampNewFilename += ".png";
+	SDL_Surface *newStamp = SDL_CreateRGBSurface(SDL_SWSURFACE, selectArea.w, selectArea.h,
+			GFX::getVideoSurface()->format->BitsPerPixel, 0, 0, 0, 0);
+	SDL_BlitSurface(l->levelImage, &selectArea, newStamp, NULL);
+	if (stampButtonHover == stampImagesGlobal.size())
+	{
+		string temp = "images/stamps/" + stampNewFilename;
+		if (fileExists(temp))
+			SURFACE_CACHE->removeSurface(temp);
+		if (IMG_SavePNG(temp.c_str(), newStamp, IMG_COMPRESS_DEFAULT) == 0)
+			generateStampListing(&stampImageLister, "images/stamps",
+					stampImagesGlobal, stampThumbnailsGlobal, stampImageFilenamesGlobal);
+		else
+			printf("ERROR saving stamp image: %s\n", SDL_GetError());
+	}
+	else
+	{
+		#ifdef _WIN32
+		int result = mkdir((l->chapterPath + "images/stamps/").c_str());
+		#else
+		int result = mkdir((l->chapterPath + "images/stamps/").c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+		#endif // _WIN32
+		string temp = l->chapterPath + "images/stamps/" + stampNewFilename;
+		if (fileExists(temp))
+			SURFACE_CACHE->removeSurface(temp);
+		if (IMG_SavePNG(temp.c_str(), newStamp, IMG_COMPRESS_DEFAULT) == 0)
+			generateStampListing(&stampImageLister, l->chapterPath + "images/stamps",
+					stampImagesChapter, stampThumbnailsChapter, stampImageFilenamesChapter);
+		else
+			printf("ERROR saving stamp image: %s\n", SDL_GetError());
+	}
+	SDL_FreeSurface(newStamp);
+	stampPanel.changed = true;
+	stampNewFilename = "";
 }
 
 void Editor::renderStart()
@@ -4019,7 +4115,6 @@ void Editor::renderDraw()
 		for (vector<ControlUnit*>::const_iterator I = l->players.begin(); I != l->players.end(); ++I)
 			l->renderUnit(GFX::getVideoSurface(), *I, editorOffset);
 	}
-
 	// Grid
 	if (gridActive)
 	{
@@ -4043,6 +4138,11 @@ void Editor::renderDraw()
 				pixelColor(screen, K, I, EDITOR_GRID_COLOUR);
 			}
 		}
+	}
+	// Selection
+	if (selectArea.w > 0 && selectArea.h > 0)
+	{
+		rectangleColor(GFX::getVideoSurface(), selectArea.x - editorOffset.x, selectArea.y - editorOffset.y, selectArea.x - editorOffset.x + selectArea.w, selectArea.y - editorOffset.y + selectArea.h, EDITOR_SELECTION_COLOUR);
 	}
 	// Tool overlay (cursor/crop area, etc.)
 	if (drawTool == dtBrush)
@@ -4102,13 +4202,6 @@ void Editor::renderDraw()
 		boxColor(screen, -editorOffset.x + cropOffset.x + cropSize.x + 1, -editorOffset.y + cropOffset.y + cropSize.y / 2 - EDITOR_CROP_RECT_HALFHEIGHT,
 				-editorOffset.x + cropOffset.x  + cropSize.x + EDITOR_CROP_RECT_WIDTH, -editorOffset.y + cropOffset.y + cropSize.y / 2 + EDITOR_CROP_RECT_HALFHEIGHT - 1, EDITOR_CROP_COLOUR);
 	}
-	else if (drawTool == dtSelect)
-	{
-		if (selectArea.w > 0 && selectArea.h > 0)
-		{
-			rectangleColor(GFX::getVideoSurface(), selectArea.x - editorOffset.x, selectArea.y - editorOffset.y, selectArea.x - editorOffset.x + selectArea.w, selectArea.y - editorOffset.y + selectArea.h, EDITOR_SELECTION_COLOUR);
-		}
-	}
 	else if (drawTool == dtStamp)
 	{
 		if (currentStamp)
@@ -4118,27 +4211,17 @@ void Editor::renderDraw()
 			SDL_BlitSurface(currentStamp, NULL, GFX::getVideoSurface(), &dst);
 		}
 	}
-	if (colourPanel.active)
+	// Draw panels in reverse order of input
+	if (stampPanel.active)
 	{
-		if (colourPanel.changed)
+		if (stampPanel.changed)
 		{
-			drawColourPanel(colourPanel.surf);
-			colourPanel.changed = false;
+			drawStampPanel(stampPanel.surf);
+			stampPanel.changed = false;
 		}
-		dst.x = colourPanel.pos.x;
-		dst.y = colourPanel.pos.y;
-		SDL_BlitSurface(colourPanel.surf, NULL, GFX::getVideoSurface(), &dst);
-	}
-	if (toolPanel.active)
-	{
-		if (toolPanel.changed)
-		{
-			drawToolPanel(toolPanel.surf);
-			toolPanel.changed = false;
-		}
-		dst.x = toolPanel.pos.x;
-		dst.y = toolPanel.pos.y;
-		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+		dst.x = stampPanel.pos.x;
+		dst.y = stampPanel.pos.y;
+		SDL_BlitSurface(stampPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (toolSettingPanel.active)
 	{
@@ -4151,16 +4234,27 @@ void Editor::renderDraw()
 		dst.y = toolSettingPanel.pos.y;
 		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
-	if (stampPanel.active)
+	if (toolPanel.active)
 	{
-		if (stampPanel.changed)
+		if (toolPanel.changed)
 		{
-			drawStampPanel(stampPanel.surf);
-			stampPanel.changed = false;
+			drawToolPanel(toolPanel.surf);
+			toolPanel.changed = false;
 		}
-		dst.x = stampPanel.pos.x;
-		dst.y = stampPanel.pos.y;
-		SDL_BlitSurface(stampPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+		dst.x = toolPanel.pos.x;
+		dst.y = toolPanel.pos.y;
+		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+	}
+	if (colourPanel.active)
+	{
+		if (colourPanel.changed)
+		{
+			drawColourPanel(colourPanel.surf);
+			colourPanel.changed = false;
+		}
+		dst.x = colourPanel.pos.x;
+		dst.y = colourPanel.pos.y;
+		SDL_BlitSurface(colourPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 }
 
@@ -4220,27 +4314,16 @@ void Editor::renderUnits()
 		}
 	}
 
-	if (unitPanel.active)
+	if (toolSettingPanel.active)
 	{
-		if (unitPanel.changed)
+		if (toolSettingPanel.changed)
 		{
-			drawUnitPanel(unitPanel.surf);
-			unitPanel.changed = false;
+			drawToolSettingPanel(toolSettingPanel.surf);
+			toolSettingPanel.changed = false;
 		}
-		dst.x = unitPanel.pos.x;
-		dst.y = unitPanel.pos.y;
-		SDL_BlitSurface(unitPanel.surf, NULL, GFX::getVideoSurface(), &dst);
-	}
-	if (paramsPanel.active)
-	{
-		if (paramsPanel.changed)
-		{
-			drawParamsPanel(paramsPanel.surf);
-			paramsPanel.changed = false;
-		}
-		dst.x = paramsPanel.pos.x;
-		dst.y = paramsPanel.pos.y;
-		SDL_BlitSurface(paramsPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+		dst.x = toolSettingPanel.pos.x;
+		dst.y = toolSettingPanel.pos.y;
+		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 	if (toolPanel.active)
 	{
@@ -4253,16 +4336,27 @@ void Editor::renderUnits()
 		dst.y = toolPanel.pos.y;
 		SDL_BlitSurface(toolPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
-	if (toolSettingPanel.active)
+	if (paramsPanel.active)
 	{
-		if (toolSettingPanel.changed)
+		if (paramsPanel.changed)
 		{
-			drawToolSettingPanel(toolSettingPanel.surf);
-			toolSettingPanel.changed = false;
+			drawParamsPanel(paramsPanel.surf);
+			paramsPanel.changed = false;
 		}
-		dst.x = toolSettingPanel.pos.x;
-		dst.y = toolSettingPanel.pos.y;
-		SDL_BlitSurface(toolSettingPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+		dst.x = paramsPanel.pos.x;
+		dst.y = paramsPanel.pos.y;
+		SDL_BlitSurface(paramsPanel.surf, NULL, GFX::getVideoSurface(), &dst);
+	}
+	if (unitPanel.active)
+	{
+		if (unitPanel.changed)
+		{
+			drawUnitPanel(unitPanel.surf);
+			unitPanel.changed = false;
+		}
+		dst.x = unitPanel.pos.x;
+		dst.y = unitPanel.pos.y;
+		SDL_BlitSurface(unitPanel.surf, NULL, GFX::getVideoSurface(), &dst);
 	}
 }
 
@@ -4510,12 +4604,29 @@ void Editor::showMessageBox(string message, string buttons)
 		return;
 	SDL_BlitSurface(GFX::getVideoSurface(), NULL, messageBoxBg, NULL);
 	boxColor(messageBoxBg, 0, 0, GFX::getXResolution()-1, GFX::getYResolution()-1, 0x00000080);
-    messageBoxItems.clear();
-    StringUtility::tokenize(buttons, messageBoxItems, "|");
+	messageBoxItems.clear();
+	StringUtility::tokenize(buttons, messageBoxItems, "|");
 	messageBoxContent = message;
-    messageBoxActive = true;
-    messageBoxResult = -1;
+	messageBoxActive = true;
+	messageBoxResult = -1;
+	inputBoxTarget = NULL;
 	GFX::showCursor(true);
+}
+
+void Editor::showInputBox(string message, string *target)
+{
+	if (message[0] == 0 || !target)
+		return;
+	SDL_BlitSurface(GFX::getVideoSurface(), NULL, messageBoxBg, NULL);
+	boxColor(messageBoxBg, 0, 0, GFX::getXResolution()-1, GFX::getYResolution()-1, 0x00000080);
+	messageBoxItems.clear();
+	messageBoxItems.push_back(*target);
+	messageBoxContent = message;
+	messageBoxActive = true;
+	messageBoxResult = -1;
+	inputBoxTarget = target;
+	input->pollKeyboardInput(inputBoxTarget, KEYBOARD_MASK_FILE);
+	GFX::showCursor(false);
 }
 
 void Editor::switchState(int toState)
@@ -4635,19 +4746,19 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	xPos -= EDITOR_SLIDER_HEIGHT / 2;
 	yPos -= EDITOR_SLIDER_HEIGHT / 2;
 	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, brushCol.getRGBAvalue());
-    xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
+	xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
 	yPos = EDITOR_PANEL_SPACING;
 	// Draw sliders
 	int indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.red / 255;
-    panelText.setAlignment(LEFT_JUSTIFIED);
-    panelText.setUpBoundary(GFX::getXResolution(), GFX::getYResolution());
+	panelText.setAlignment(LEFT_JUSTIFIED);
+	panelText.setUpBoundary(GFX::getXResolution(), GFX::getYResolution());
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "R");
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
-    panelText.setPosition(xPos + 2, yPos);
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+	panelText.setPosition(xPos + 2, yPos);
 	if (panelInputTarget == 1)
 	{
 		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
@@ -4657,16 +4768,16 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	}
 	else
 		panelText.print(target, brushCol.red);
-    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
+	yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "G");
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
 	indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.green / 255;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
-    panelText.setPosition(xPos + 2, yPos);
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+	panelText.setPosition(xPos + 2, yPos);
 	if (panelInputTarget == 2)
 	{
 		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
@@ -4676,16 +4787,16 @@ void Editor::drawColourPanel(SDL_Surface *target)
 	}
 	else
 		panelText.print(target, brushCol.green);
-    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
+	yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	xPos = EDITOR_PANEL_SPACING + EDITOR_SLIDER_HEIGHT * 1.5f + EDITOR_PANEL_SPACING;
 	panelText.setPosition(xPos + 2, yPos);
 	panelText.print(target, "B");
 	xPos = EDITOR_COLOUR_PANEL_OFFSET;
 	indicatorPos = EDITOR_SLIDER_WIDTH * brushCol.blue / 255;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
-    panelText.setPosition(xPos + 2, yPos);
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+	panelText.setPosition(xPos + 2, yPos);
 	if (panelInputTarget == 3)
 	{
 		boxColor(target, xPos, yPos, EDITOR_COLOUR_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
@@ -4697,26 +4808,26 @@ void Editor::drawColourPanel(SDL_Surface *target)
 		panelText.print(target, brushCol.blue);
 	// Draw colour presets
 	xPos = EDITOR_PANEL_SPACING;
-    yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x939598FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF0000FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x32D936FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF9900FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFDCA8FF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x0033FFFF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xB2C1FFFF);
-    xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
-    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xD8CED4FF);
+	yPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x939598FF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF0000FF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x32D936FF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFF9900FF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFDCA8FF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x0033FFFF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xB2C1FFFF);
+	xPos += EDITOR_SLIDER_HEIGHT + EDITOR_PANEL_SPACING;
+	boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_HEIGHT - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xD8CED4FF);
 }
 
 void drawToolRectangle(SDL_Surface *target, int xPos, int yPos, bool selected)
@@ -4831,10 +4942,10 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		panelText.print(target, "BRUSH SIZE:");
 		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 		indicatorPos = EDITOR_SLIDER_WIDTH * brushSize / 128;
-	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
-	    panelText.setPosition(xPos + 2, yPos);
+		boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+		boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+		panelText.setPosition(xPos + 2, yPos);
 		if (panelInputTarget == 4)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
@@ -4854,10 +4965,10 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		panelText.print(target, "GRID SIZE:");
 		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 		indicatorPos = EDITOR_SLIDER_WIDTH * gridSize / 128;
-	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
-	    panelText.setPosition(xPos + 2, yPos);
+		boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+		boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+		panelText.setPosition(xPos + 2, yPos);
 		if (panelInputTarget == 5)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
@@ -4873,10 +4984,10 @@ void Editor::drawToolSettingPanel(SDL_Surface *target)
 		panelText.print(target, "GRID SNAP DISTANCE %:");
 		yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
 		indicatorPos = EDITOR_SLIDER_WIDTH * snapDistancePercent / 100.0f;
-	    boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
-	    boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
-	    xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
-	    panelText.setPosition(xPos + 2, yPos);
+		boxColor(target, xPos, yPos, xPos + EDITOR_SLIDER_WIDTH + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0x000000FF);
+		boxColor(target, xPos + indicatorPos, yPos, xPos + indicatorPos + EDITOR_SLIDER_INDICATOR_WIDTH - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
+		xPos += EDITOR_SLIDER_WIDTH + EDITOR_PANEL_SPACING;
+		panelText.setPosition(xPos + 2, yPos);
 		if (panelInputTarget == 6)
 		{
 			boxColor(target, xPos, yPos, EDITOR_TOOL_SET_PANEL_WIDTH - EDITOR_PANEL_SPACING - 1, yPos + EDITOR_SLIDER_HEIGHT - 1, 0xFFFFFFFF);
@@ -5127,10 +5238,14 @@ void Editor::drawStampPanel(SDL_Surface *target)
 	int activeSelection = (stampButtonHover == -1) ? stampButtonSelected : stampButtonHover;
 	if (activeSelection < 0)
 		panelText.print(target, "-NONE SELECTED-");
-	if (activeSelection < stampImageFilenamesGlobal.size())
+	else if (activeSelection < stampImageFilenamesGlobal.size())
 		panelText.print(target, StringUtility::upper(stampImageFilenamesGlobal.at(activeSelection)));
-	else if (activeSelection < stampImageFilenamesGlobal.size() + stampImageFilenamesChapter.size())
-		panelText.print(target, StringUtility::upper(stampImageFilenamesChapter.at(activeSelection - stampImageFilenamesGlobal.size())));
+	else if (activeSelection == stampImageFilenamesGlobal.size())
+		panelText.print(target, "-ADD CURRENT SELECTION-");
+	else if (activeSelection < stampImageFilenamesGlobal.size() + stampImageFilenamesChapter.size() + 1)
+		panelText.print(target, StringUtility::upper(stampImageFilenamesChapter.at(activeSelection - stampImageFilenamesGlobal.size() - 1)));
+	else
+		panelText.print(target, "-ADD CURRENT SELECTION-");
 	panelText.setAlignment(LEFT_JUSTIFIED);
 	int xPos = EDITOR_PANEL_SPACING;
 	int yPos = EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
@@ -5138,17 +5253,32 @@ void Editor::drawStampPanel(SDL_Surface *target)
 	panelText.setPosition(xPos, yPos);
 	panelText.print(target, "GLOBAL:");
 	yPos += EDITOR_PANEL_TEXT_SIZE + EDITOR_PANEL_SPACING;
-	for (int I = 0; I < stampImagesGlobal.size() + stampImagesChapter.size(); ++I)
+	for (int I = 0; I < stampImagesGlobal.size() + stampImagesChapter.size() + (l->chapterPath[0] != 0 ? 2 : 1); ++I)
 	{
 		drawButtonRectangle(target, xPos, yPos, EDITOR_STAMP_BUTTON_SIZE, EDITOR_STAMP_BUTTON_BORDER, (I == stampButtonSelected) ? 2 : (I == stampButtonHover) ? 1 : 0);
 		dst.x = xPos + EDITOR_STAMP_BUTTON_BORDER;
 		dst.y = yPos + EDITOR_STAMP_BUTTON_BORDER;
 		if (I < stampImagesGlobal.size())
 			SDL_BlitSurface(stampThumbnailsGlobal.at(I), NULL, target, &dst);
-		else
-			SDL_BlitSurface(stampThumbnailsChapter.at(I - stampImagesGlobal.size()), NULL, target, &dst);
-		if (I == stampImagesGlobal.size() - 1 && l->chapterPath[0] != 0)
+		else if (I == stampImagesGlobal.size())
 		{
+			boxColor(target, xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.45f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.25f,
+					xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.55f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.75f, 0xFFFFFFFF);
+			boxColor(target, xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.25f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.45f,
+					xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.75f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.55f, 0xFFFFFFFF);
+		}
+		else if (I < stampImagesGlobal.size() + stampImagesChapter.size() + 1)
+			SDL_BlitSurface(stampThumbnailsChapter.at(I - stampImagesGlobal.size() - 1), NULL, target, &dst);
+		else
+		{
+			boxColor(target, xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.45f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.25f,
+					xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.55f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.75f, 0xFFFFFFFF);
+			boxColor(target, xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.25f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.45f,
+					xPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.75f, yPos + (EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2) * 0.55f, 0xFFFFFFFF);
+		}
+		if (I == stampImagesGlobal.size() && l->chapterPath[0] != 0)
+		{
+			// move to chapter specific stamps
 			xPos = EDITOR_PANEL_SPACING;
 			yPos += EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			panelText.setPosition(xPos, yPos);
@@ -5157,6 +5287,7 @@ void Editor::drawStampPanel(SDL_Surface *target)
 		}
 		else
 		{
+			// move to next stamp in list
 			xPos += EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			if (xPos > EDITOR_STAMP_PANEL_WIDTH - EDITOR_STAMP_BUTTON_SIZE - EDITOR_STAMP_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
 			{
@@ -5164,6 +5295,8 @@ void Editor::drawStampPanel(SDL_Surface *target)
 				yPos += EDITOR_STAMP_BUTTON_SIZE + EDITOR_STAMP_BUTTON_BORDER * 2 + EDITOR_PANEL_SPACING;
 			}
 		}
+		// currently just stopping when at the end of the panel
+		// TODO: Add scrollbar
 		if (yPos > EDITOR_STAMP_PANEL_HEIGHT - EDITOR_STAMP_BUTTON_SIZE - EDITOR_STAMP_BUTTON_BORDER * 2 - EDITOR_PANEL_SPACING)
 			break;
 	}
