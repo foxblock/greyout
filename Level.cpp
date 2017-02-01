@@ -166,6 +166,10 @@ Level::Level()
 	headline.setAlignment(CENTRED);
 	headline.setUpBoundary(Vector2di((int)GFX::getXResolution(),HEADLINE_SIZE));
 	headline.setPosition(0,0);
+	pauseItemRect.x = 0;
+	pauseItemRect.y = 0;
+	pauseItemRect.w = GFX::getXResolution();
+	pauseItemRect.h = NAME_RECT_HEIGHT;
 
 	if (ENGINE->timeTrial || ENGINE->chapterTrial)
 	{
@@ -1412,6 +1416,39 @@ void Level::pauseUpdate()
 		musicLister.update();
 	}
 	#endif
+	Vector2di mousePos = input->getMouse();
+	mouseInBounds = false;
+	#ifdef _MUSIC
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - 
+			PAUSE_MENU_OFFSET_X * 2 + (trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
+	#else
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + 
+			(trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
+	#endif
+	for (int I = 0; I < pauseItems.size(); ++I)
+	{
+		// NOTE: do mouse selection handling here, so I don't have to copy code
+		if ( (mousePos.y >= pos && mousePos.y < pos + NAME_RECT_HEIGHT) && ( mousePos != lastPos || input->isLeftClick() ) )
+		{
+			pauseSelection = I;
+			mouseInBounds = true;
+		}
+		if (pauseItems[I] == "SETTINGS")
+		{
+			pos += PAUSE_MENU_SPACING_EXTRA; // extra offset
+		}
+	#ifdef _MUSIC
+		else if (pauseItems[I] == "MUSIC FILE:")
+		{
+			nameText.setPosition( nameText.getPosition().x + PAUSE_MENU_OFFSET_X, nameText.getPosition().y );
+			nameText.print(MUSIC_CACHE->getPlaying());
+			pos += PAUSE_MENU_SPACING_EXTRA; // extra offset
+		}
+	#endif
+
+		pos += NAME_RECT_HEIGHT + PAUSE_MENU_SPACING;
+	}
+	lastPos = mousePos;
 	EFFECTS->update();
 }
 
@@ -1441,47 +1478,28 @@ void Level::pauseScreen()
 	}
 #endif
 
-	int offset = 0;
-	if (trialEnd)
-	{
-		offset = TIME_TRIAL_MENU_OFFSET_Y;
-	}
-	else
-	{
-		offset = PAUSE_MENU_OFFSET_Y;
-	}
 	#ifdef _MUSIC
-	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - PAUSE_MENU_OFFSET_X * 2 + offset;
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - 
+			PAUSE_MENU_OFFSET_X * 2 + (trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
 	#else
-	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + offset;
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + 
+			(trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
 	#endif
 
 	// render text and selection
-	Vector2di mousePos = input->getMouse();
-
-	mouseInBounds = false;
 	for (int I = 0; I < pauseItems.size(); ++I)
 	{
-		// NOTE: do mouse selection handling here, so I don't have to copy code
-		if ( (mousePos.y >= pos && mousePos.y < pos + NAME_RECT_HEIGHT) && ( mousePos != lastPos || input->isLeftClick() ) )
-		{
-			pauseSelection = I;
-			mouseInBounds = true;
-		}
-
-		nameRect.setPosition(0,pos);
+		pauseItemRect.y = pos;
 		nameText.setPosition(PAUSE_MENU_OFFSET_X,pos + NAME_RECT_HEIGHT - NAME_TEXT_SIZE);
 		if (I == pauseSelection)
 		{
-			nameRect.setColour(WHITE);
 			nameText.setColour(BLACK);
 		}
 		else
 		{
-			nameRect.setColour(BLACK);
 			nameText.setColour(WHITE);
 		}
-		nameRect.render();
+		SDL_FillRect(GFX::getVideoSurface(), &pauseItemRect, (I == pauseSelection) ? -1 : 0);
 		nameText.print(pauseItems[I]);
 
 		if (pauseItems[I] == "SETTINGS")
@@ -1499,7 +1517,6 @@ void Level::pauseScreen()
 
 		pos += NAME_RECT_HEIGHT + PAUSE_MENU_SPACING;
 	}
-	lastPos = mousePos;
 
 	// in time trial mode also render text
 	if (ENGINE->timeTrial || ENGINE->chapterTrial)
