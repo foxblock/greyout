@@ -32,9 +32,6 @@ Gear::Gear(Level* newParent) : BaseUnit(newParent)
 	stringToOrder["rotateto"] = goRotateTo;
 	stringToOrder["rotateby"] = goRotateBy;
 
-	orderToString[goRotateTo] = "rotateto";
-	orderToString[goRotateBy] = "rotateby";
-
 	speed = 0;
 	angle = 0;
 	screenPosition = Vector2df(0,0);
@@ -194,14 +191,23 @@ string Gear::generateParameterOrders(const Order &o)
 	if (o.key != goRotateBy && o.key != goRotateTo)
 		return BaseUnit::generateParameterOrders(o);
 	// Key
-	string result = orderToString[o.key];
+	string result = "";
+	switch (o.key)
+	{
+	case goRotateBy:
+		result = "rotateby";
+		break;
+	case goRotateTo:
+		result = "rotateto";
+		break;
+	}
 	// Time
 	if (o.randomTicks > 0)
 		result += "," + StringUtility::intToString(o.randomTicks) + "r";
 	else
 		result += "," + StringUtility::intToString(o.ticks) + "f";
-	// Parameters
-	for (vector<string>::const_iterator I = o.params.begin(); I != o.params.end(); ++I)
+	// Parameters (skip time parameter)
+	for (vector<string>::const_iterator I = o.params.begin()+1; I != o.params.end(); ++I)
 		result += "," + *I;
 	return result;
 }

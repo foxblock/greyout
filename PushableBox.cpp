@@ -50,8 +50,6 @@ PushableBox::PushableBox(Level* newParent) : BaseUnit(newParent)
 	//pushSound.setSimultaneousPlay(true);
 
 	stringToOrder["size"] = boSize;
-
-	orderToString[boSize] = "size";
 }
 
 PushableBox::~PushableBox()
@@ -315,14 +313,20 @@ string PushableBox::generateParameterOrders(const Order &o)
 	if (o.key != boSize)
 		return BaseUnit::generateParameterOrders(o);
 	// Key
-	string result = orderToString[o.key];
+	string result = "";
+	switch (o.key)
+	{
+	case boSize:
+		result = "size";
+		break;
+	}
 	// Time
 	if (o.randomTicks > 0)
 		result += "," + StringUtility::intToString(o.randomTicks) + "r";
 	else
 		result += "," + StringUtility::intToString(o.ticks) + "f";
-	// Parameters
-	for (vector<string>::const_iterator I = o.params.begin(); I != o.params.end(); ++I)
+	// Parameters (skip time parameter)
+	for (vector<string>::const_iterator I = o.params.begin()+1; I != o.params.end(); ++I)
 		result += "," + *I;
 	return result;
 }

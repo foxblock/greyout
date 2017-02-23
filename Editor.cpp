@@ -58,6 +58,8 @@
 #define EDITOR_MESSAGE_BOX_BUTTONS_OFFSET 320
 #define EDITOR_SELECTION_COLOUR 0x32D936FF
 
+#define EDITOR_NUM_CHAPTER_SETTINGS 4
+
 #define EDITOR_DEFAULT_WIDTH 400
 #define EDITOR_DEFAULT_HEIGHT 240
 #define EDITOR_MIN_WIDTH 32
@@ -115,12 +117,13 @@
 // TODO: SimpleJoy::isModyfierKey() (checks for any strg, shift, alt)
 // TODO: SimpleJoy::isShift / isStrg / isAlt (checks for left+right shift/strg/alt key)
 // DONE: Do brush draw with sdl_gfx::line calls when brush size is 1, otherwise horizontal lines are not drawn
-// TODO: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
+// DONE: Make scrollbar size own define (current using EDITOR_RECT_SIZE) --> check for other double-usage of defines and eliminate them
 // TODO: Copy and paste for units
 // TODO: Add help (use showMessageBox and display hint when user presses F1 while highlighting something, e.g. menu Items in settings)
 // TODO: New chapter creation
 // TODO: Editing a chapter
 // TODO: Chosing a background colour
+// TODO: (Maybe?) Seperate lastPos variable for brush tool, so straight lines are not affected by other tool usage
 
 // getpixel/putpixel functions for bucket fill. Do not convert to Colour objects, like the functions in Penjin::GFX do
 Uint32 getpixel(SDL_Surface *surface, const int &x, const int &y)
@@ -269,6 +272,10 @@ Editor::Editor()
 	brushSize = 32;
 	mousePos.x = 0;
 	mousePos.y = 0;
+	lastPos.x = -1;
+	lastPos.y = -1;
+	lastPosLevel.x = 0;
+	lastPosLevel.y = 0;
 	editorOffset.x = 0;
 	editorOffset.y = 0;
 	cropSize.x = 0;
@@ -360,6 +367,10 @@ Editor::Editor()
 	addingParam = false;
 	addingParamTemp = "";
 
+	c = NULL;
+	chapterSettingsSel = 0;
+	chapterSettingsOffset = 0;
+
 	menuBg = SDL_CreateRGBSurface(SDL_SWSURFACE,GFX::getXResolution(),GFX::getYResolution(),GFX::getVideoSurface()->format->BitsPerPixel,0,0,0,0);
 	menuSel = 0;
 	menuActive = false;
@@ -402,6 +413,7 @@ Editor::~Editor()
 		SDL_FreeSurface(*I);
 	for (vector<SDL_Surface*>::const_iterator I = stampThumbnailsChapter.begin(); I != stampThumbnailsChapter.end(); ++I)
 		SDL_FreeSurface(*I);
+	delete c;
 }
 
 ///---public---
@@ -425,35 +437,38 @@ void Editor::userInput()
 		return;
 	}
 	// Global input
-	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("S"))
+	if (editorState != esChapterSettings && editorState != esChapterOrder)
 	{
-		save();
-		input->resetKeys();
-		return;
-	}
-	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("1"))
-	{
-		switchState(esSettings);
-		input->resetKeys();
-		return;
-	}
-	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("2"))
-	{
-		switchState(esDraw);
-		input->resetKeys();
-		return;
-	}
-	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("3"))
-	{
-		switchState(esUnits);
-		input->resetKeys();
-		return;
-	}
-	if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("4"))
-	{
-		switchState(esTest);
-		input->resetKeys();
-		return;
+		if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("S"))
+		{
+			save();
+			input->resetKeys();
+			return;
+		}
+		if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("1"))
+		{
+			switchState(esSettings);
+			input->resetKeys();
+			return;
+		}
+		if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("2"))
+		{
+			switchState(esDraw);
+			input->resetKeys();
+			return;
+		}
+		if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("3"))
+		{
+			switchState(esUnits);
+			input->resetKeys();
+			return;
+		}
+		if (l && (input->isKey("LEFT_CTRL") || input->isKey("RIGHT_CTRL")) && input->isKey("4"))
+		{
+			switchState(esTest);
+			input->resetKeys();
+			return;
+		}
 	}
 	// State specific input
 	switch (editorState)
@@ -475,6 +490,12 @@ void Editor::userInput()
 		break;
 	case esTest:
 		inputTest();
+		break;
+	case esChapterSettings:
+		inputChapterSettings();
+		break;
+	case esChapterOrder:
+		inputChapterOrder();
 		break;
 	default:
 		return;
@@ -501,6 +522,10 @@ void Editor::update()
 		break;
 	case esTest:
 		l->update();
+		break;
+	case esChapterSettings:
+		break;
+	case esChapterOrder:
 		break;
 	default:
 		return;
@@ -546,6 +571,12 @@ void Editor::render()
 	case esTest:
 		renderTest();
 		break;
+	case esChapterSettings:
+		renderChapterSettings();
+		break;
+	case esChapterOrder:
+		renderChapterOrder();
+		break;
 	default:
 		return;
 	}
@@ -581,6 +612,12 @@ string Editor::debugInfo()
 			break;
 		case esTest:
 			result += "TEST PLAY\n" + l->debugInfo();
+			break;
+		case esChapterSettings:
+			result += "CHAPTER SETTINGS\n";
+			break;
+		case esChapterOrder:
+			result += "CHAPTER ORDER\n";
 			break;
 		default:
 			result += "ERROR\n";
@@ -1902,6 +1939,10 @@ void Editor::inputDraw()
 		stampPanel.transparent = false;
 	}
 	/// Drawing area interaction (might be skipped if user is interacting with any panel)
+	// From this point on we want to work in editor coordinates, since we are
+	// editing the level itself (and want to account for changes in editor offset)
+	// Making sure to reset mousePos at the end (since some stuff is drawn at mousePos on screen)
+	mousePos += editorOffset;
 	// Snap mouse to grid (changes mousePos)
 	// Everything before works with the real mousePos, everything after works with a new virtual/aligned mousePos
 	if (gridActive)
@@ -1910,7 +1951,7 @@ void Editor::inputDraw()
 		{
 			mousePos.x -= brushSize / 2;
 			mousePos.y -= brushSize / 2;
-			int temp = (mousePos.x + editorOffset.x) % gridSize;
+			int temp = mousePos.x % gridSize;
 			if (temp != 0) // Possibly need to make a correction
 			{
 				if (temp < 0) // Wrap negative values (left of level area)
@@ -1921,7 +1962,7 @@ void Editor::inputDraw()
 					mousePos.x += gridSize - temp;
 				else // If not snapped to left of brush, check right side of brush
 				{
-					temp = (mousePos.x + editorOffset.x + brushSize) % gridSize;
+					temp = (mousePos.x + brushSize) % gridSize;
 					if (temp < 0)
 						temp += gridSize;
 					if (temp <= snapDistance)
@@ -1930,7 +1971,7 @@ void Editor::inputDraw()
 						mousePos.x += gridSize - temp;
 				}
 			}
-			temp = (mousePos.y + editorOffset.y) % gridSize;
+			temp = mousePos.y % gridSize;
 			if (temp != 0)
 			{
 				if (temp < 0) // Wrap negative values (top of level area)
@@ -1941,7 +1982,7 @@ void Editor::inputDraw()
 					mousePos.y += gridSize - temp;
 				else
 				{
-					temp = (mousePos.y + editorOffset.y + brushSize) % gridSize;
+					temp = (mousePos.y + brushSize) % gridSize;
 					if (temp < 0)
 						temp += gridSize;
 					if (temp <= snapDistance)
@@ -1957,7 +1998,7 @@ void Editor::inputDraw()
 		{
 			if (cropEdge == diLEFT || cropEdge == diRIGHT)
 			{
-				int temp = (mousePos.x + editorOffset.x - mouseCropOffset.x) % gridSize;
+				int temp = (mousePos.x + mouseCropOffset.x) % gridSize;
 				if (temp < 0)
 					temp += gridSize;
 				if (temp <= snapDistance)
@@ -1967,7 +2008,7 @@ void Editor::inputDraw()
 			}
 			else if (cropEdge == diTOP || cropEdge == diBOTTOM)
 			{
-				int temp = (mousePos.y + editorOffset.y - mouseCropOffset.y) % gridSize;
+				int temp = (mousePos.y + mouseCropOffset.y) % gridSize;
 				if (temp < 0)
 					temp += gridSize;
 				if (temp <= snapDistance)
@@ -1978,14 +2019,14 @@ void Editor::inputDraw()
 		} // end snap crop
 		else if (drawTool == dtSelect)
 		{
-			int temp = (mousePos.x + editorOffset.x) % gridSize;
+			int temp = mousePos.x % gridSize;
 			if (temp < 0)
 				temp += gridSize;
 			if (temp <= snapDistance)
 				mousePos.x -= temp;
 			else if (gridSize - temp <= snapDistance)
 				mousePos.x += gridSize - temp;
-			temp = (mousePos.y + editorOffset.y) % gridSize;
+			temp = mousePos.y % gridSize;
 			if (temp < 0)
 				temp += gridSize;
 			if (temp <= snapDistance)
@@ -1999,7 +2040,7 @@ void Editor::inputDraw()
 			{
 				mousePos.x -= currentStamp->w / 2;
 				mousePos.y -= currentStamp->h / 2;
-				int temp = (mousePos.x + editorOffset.x) % gridSize;
+				int temp = mousePos.x % gridSize;
 				if (temp != 0) // Possibly need to make a correction
 				{
 					if (temp < 0) // Wrap negative values (left of level area)
@@ -2010,7 +2051,7 @@ void Editor::inputDraw()
 						mousePos.x += gridSize - temp;
 					else // If not snapped to left of brush, check right side of brush
 					{
-						temp = (mousePos.x + editorOffset.x + currentStamp->w) % gridSize;
+						temp = (mousePos.x + currentStamp->w) % gridSize;
 						if (temp < 0)
 							temp += gridSize;
 						if (temp <= snapDistance)
@@ -2019,7 +2060,7 @@ void Editor::inputDraw()
 							mousePos.x += gridSize - temp;
 					}
 				}
-				temp = (mousePos.y + editorOffset.y) % gridSize;
+				temp = mousePos.y % gridSize;
 				if (temp != 0)
 				{
 					if (temp < 0) // Wrap negative values (top of level area)
@@ -2030,7 +2071,7 @@ void Editor::inputDraw()
 						mousePos.y += gridSize - temp;
 					else
 					{
-						temp = (mousePos.y + editorOffset.y + currentStamp->h) % gridSize;
+						temp = (mousePos.y + currentStamp->h) % gridSize;
 						if (temp < 0)
 							temp += gridSize;
 						if (temp <= snapDistance)
@@ -2049,40 +2090,40 @@ void Editor::inputDraw()
 	{
 		if (input->isLeftClick() == SimpleJoy::sjPRESSED)
 		{
-			selectArea.x = mousePos.x + editorOffset.x;
-			selectArea.y = mousePos.y + editorOffset.y;
+			selectArea.x = mousePos.x;
+			selectArea.y = mousePos.y;
 			selectAnchorPos.x = selectArea.x;
 			selectAnchorPos.y = selectArea.y;
 			selectArea.w = selectArea.h = 0;
 		}
 		else if (input->isLeftClick() == SimpleJoy::sjHELD)
 		{
-			if (mousePos.x + editorOffset.x < selectAnchorPos.x)
+			if (mousePos.x < selectAnchorPos.x)
 			{
-				selectArea.w = selectAnchorPos.x - (mousePos.x + editorOffset.x);
-				selectArea.x = mousePos.x + editorOffset.x;
+				selectArea.w = selectAnchorPos.x - mousePos.x;
+				selectArea.x = mousePos.x;
 			}
 			else
 			{
 				selectArea.x = selectAnchorPos.x;
-				selectArea.w = mousePos.x + editorOffset.x - selectArea.x;
+				selectArea.w = mousePos.x - selectArea.x;
 			}
-			if (mousePos.y + editorOffset.y < selectAnchorPos.y)
+			if (mousePos.y < selectAnchorPos.y)
 			{
-				selectArea.h = selectAnchorPos.y - (mousePos.y + editorOffset.y);
-				selectArea.y = mousePos.y + editorOffset.y;
+				selectArea.h = selectAnchorPos.y - mousePos.y;
+				selectArea.y = mousePos.y;
 			}
 			else
 			{
 				selectArea.y = selectAnchorPos.y;
-				selectArea.h = mousePos.y + editorOffset.y - selectArea.y;
+				selectArea.h = mousePos.y - selectArea.y;
 			}
 		}
 	}
 	if (drawTool == dtBrush)
 	{
 		if ((input->isLeftClick() == SimpleJoy::sjPRESSED || input->isRightClick() == SimpleJoy::sjPRESSED) && !input->isKey("LEFT_SHIFT") && !input->isKey("RIGHT_SHIFT"))
-			lastPos = mousePos; // Reset lastPos on first press, except when user explicitly wants to connect the dots
+			lastPosLevel = mousePos; // Reset lastPos on first press, except when user explicitly wants to connect the dots
 		if (input->isLeftClick() || input->isRightClick())
 		{
 			// Straight lines
@@ -2116,71 +2157,71 @@ void Editor::inputDraw()
 			{
 				if (input->isLeftClick())
 					lineColor(l->levelImage,
-							lastPos.x + editorOffset.x, lastPos.y + editorOffset.y,
-							mousePos.x + editorOffset.x, mousePos.y + editorOffset.y,
+							lastPosLevel.x, lastPosLevel.y,
+							mousePos.x, mousePos.y,
 							brushCol.getRGBAvalue());
 				else
 					lineColor(l->levelImage,
-							lastPos.x + editorOffset.x, lastPos.y + editorOffset.y,
-							mousePos.x + editorOffset.x, mousePos.y + editorOffset.y,
+							lastPosLevel.x, lastPosLevel.y,
+							mousePos.x, mousePos.y,
 							brushCol2.getRGBAvalue());
 			}
 			else
 			{
 				mousePos.x -= brushSize / 2;
 				mousePos.y -= brushSize / 2;
-				lastPos.x -= brushSize / 2;
-				lastPos.y -= brushSize / 2;
+				lastPosLevel.x -= brushSize / 2;
+				lastPosLevel.y -= brushSize / 2;
 				Sint16 polX[6];
 				Sint16 polY[6];
-				if (mousePos.x < lastPos.x)
+				if (mousePos.x < lastPosLevel.x)
 				{
-					polX[0] = lastPos.x + editorOffset.x + brushSize - 1;
-					polY[0] = lastPos.y + editorOffset.y;
-					polX[2] = mousePos.x + editorOffset.x;
-					polY[2] = mousePos.y + editorOffset.y;
-					polX[3] = mousePos.x + editorOffset.x;
-					polY[3] = mousePos.y + editorOffset.y + brushSize - 1;
-					polX[5] = lastPos.x + editorOffset.x + brushSize - 1;
-					polY[5] = lastPos.y + editorOffset.y + brushSize - 1;
-					if (mousePos.y < lastPos.y)
+					polX[0] = lastPosLevel.x + brushSize - 1;
+					polY[0] = lastPosLevel.y;
+					polX[2] = mousePos.x;
+					polY[2] = mousePos.y;
+					polX[3] = mousePos.x;
+					polY[3] = mousePos.y + brushSize - 1;
+					polX[5] = lastPosLevel.x + brushSize - 1;
+					polY[5] = lastPosLevel.y + brushSize - 1;
+					if (mousePos.y < lastPosLevel.y)
 					{
-						polX[1] = mousePos.x + editorOffset.x + brushSize - 1;
-						polY[1] = mousePos.y + editorOffset.y;
-						polX[4] = lastPos.x + editorOffset.x;
-						polY[4] = lastPos.y + editorOffset.y + brushSize - 1;
+						polX[1] = mousePos.x + brushSize - 1;
+						polY[1] = mousePos.y;
+						polX[4] = lastPosLevel.x;
+						polY[4] = lastPosLevel.y + brushSize - 1;
 					}
 					else
 					{
-						polX[1] = lastPos.x + editorOffset.x;
-						polY[1] = lastPos.y + editorOffset.y;
-						polX[4] = mousePos.x + editorOffset.x + brushSize - 1;
-						polY[4] = mousePos.y + editorOffset.y + brushSize - 1;
+						polX[1] = lastPosLevel.x;
+						polY[1] = lastPosLevel.y;
+						polX[4] = mousePos.x + brushSize - 1;
+						polY[4] = mousePos.y + brushSize - 1;
 					}
 				}
 				else
 				{
-					polX[0] = lastPos.x + editorOffset.x;
-					polY[0] = lastPos.y + editorOffset.y + brushSize - 1;
-					polX[2] = mousePos.x + editorOffset.x + brushSize - 1;
-					polY[2] = mousePos.y + editorOffset.y + brushSize - 1;
-					polX[3] = mousePos.x + editorOffset.x + brushSize - 1;
-					polY[3] = mousePos.y + editorOffset.y;
-					polX[5] = lastPos.x + editorOffset.x;
-					polY[5] = lastPos.y + editorOffset.y;
-					if (mousePos.y < lastPos.y)
+					polX[0] = lastPosLevel.x;
+					polY[0] = lastPosLevel.y + brushSize - 1;
+					polX[2] = mousePos.x + brushSize - 1;
+					polY[2] = mousePos.y + brushSize - 1;
+					polX[3] = mousePos.x + brushSize - 1;
+					polY[3] = mousePos.y;
+					polX[5] = lastPosLevel.x;
+					polY[5] = lastPosLevel.y;
+					if (mousePos.y < lastPosLevel.y)
 					{
-						polX[1] = lastPos.x + editorOffset.x + brushSize - 1;
-						polY[1] = lastPos.y + editorOffset.y + brushSize - 1;
-						polX[4] = mousePos.x + editorOffset.x;
-						polY[4] = mousePos.y + editorOffset.y;
+						polX[1] = lastPosLevel.x + brushSize - 1;
+						polY[1] = lastPosLevel.y + brushSize - 1;
+						polX[4] = mousePos.x;
+						polY[4] = mousePos.y;
 					}
 					else
 					{
-						polX[1] = mousePos.x + editorOffset.x;
-						polY[1] = mousePos.y + editorOffset.y + brushSize - 1;
-						polX[4] = lastPos.x + editorOffset.x + brushSize - 1;
-						polY[4] = lastPos.y + editorOffset.y;
+						polX[1] = mousePos.x;
+						polY[1] = mousePos.y + brushSize - 1;
+						polX[4] = lastPosLevel.x + brushSize - 1;
+						polY[4] = lastPosLevel.y;
 					}
 				}
 				if (input->isLeftClick())
@@ -2189,8 +2230,8 @@ void Editor::inputDraw()
 					filledPolygonColor(l->levelImage, polX, polY, 6, brushCol2.getRGBAvalue());
 				mousePos.x += brushSize / 2;
 				mousePos.y += brushSize / 2;
-				lastPos.x += brushSize / 2;
-				lastPos.y += brushSize / 2;
+				lastPosLevel.x += brushSize / 2;
+				lastPosLevel.y += brushSize / 2;
 			}
 		} // left or right click
 		else
@@ -2204,25 +2245,25 @@ void Editor::inputDraw()
 		{
 			if (cropEdge == diNONE) // selecting an edge
 			{
-				if (mousePos.inRect(-editorOffset.x + cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+				if (mousePos.inRect(cropOffset.x - EDITOR_CROP_RECT_WIDTH - 1, cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
 				{
 					cropEdge = diLEFT;
-					mouseCropOffset.x = mousePos.x + editorOffset.x - cropOffset.x;
+					mouseCropOffset.x = mousePos.x - cropOffset.x;
 				}
-				else if (mousePos.inRect(-editorOffset.x + cropOffset.x + cropSize.x, -editorOffset.y + cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
+				else if (mousePos.inRect(cropOffset.x + cropSize.x, cropOffset.y, EDITOR_CROP_RECT_WIDTH + 1, cropSize.y))
 				{
 					cropEdge = diRIGHT;
-					mouseCropOffset.x = mousePos.x + editorOffset.x - cropOffset.x - cropSize.x;
+					mouseCropOffset.x = mousePos.x - cropOffset.x - cropSize.x;
 				}
-				else if (mousePos.inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+				else if (mousePos.inRect(cropOffset.x, cropOffset.y - EDITOR_CROP_RECT_WIDTH - 1, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
 				{
 					cropEdge = diTOP;
-					mouseCropOffset.y = mousePos.y + editorOffset.y - cropOffset.y;
+					mouseCropOffset.y = mousePos.y - cropOffset.y;
 				}
-				else if (mousePos.inRect(-editorOffset.x + cropOffset.x, -editorOffset.y + cropOffset.y + cropSize.y, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
+				else if (mousePos.inRect(cropOffset.x, cropOffset.y + cropSize.y, cropSize.x, EDITOR_CROP_RECT_WIDTH + 1))
 				{
 					cropEdge = diBOTTOM;
-					mouseCropOffset.y = mousePos.y + editorOffset.y - cropOffset.y - cropSize.y;
+					mouseCropOffset.y = mousePos.y - cropOffset.y - cropSize.y;
 				}
 				else
 				{
@@ -2231,14 +2272,14 @@ void Editor::inputDraw()
 					mouseCropOffset.y = 0;
 				}
 			}
-			else if (mousePos != lastPos) // moving an edge
+			else if (mousePos != lastPosLevel) // moving an edge
 			{
 				switch (cropEdge.value)
 				{
-					case diLEFT: cropOffset.x += mousePos.x - lastPos.x; cropSize.x -= mousePos.x - lastPos.x; break;
-					case diRIGHT: cropSize.x += mousePos.x - lastPos.x; break;
-					case diTOP: cropOffset.y += mousePos.y - lastPos.y; cropSize.y -= mousePos.y - lastPos.y; break;
-					case diBOTTOM: cropSize.y += mousePos.y - lastPos.y; break;
+					case diLEFT: cropOffset.x += mousePos.x - lastPosLevel.x; cropSize.x -= mousePos.x - lastPosLevel.x; break;
+					case diRIGHT: cropSize.x += mousePos.x - lastPosLevel.x; break;
+					case diTOP: cropOffset.y += mousePos.y - lastPosLevel.y; cropSize.y -= mousePos.y - lastPosLevel.y; break;
+					case diBOTTOM: cropSize.y += mousePos.y - lastPosLevel.y; break;
 				}
 				if (cropSize.x < 0)
 				{
@@ -2312,18 +2353,19 @@ void Editor::inputDraw()
 	{
 		if (input->isLeftClick() || input->isRightClick())
 		{
-			if (mousePos.x < -editorOffset.x || mousePos.x >= -editorOffset.x + l->levelImage->w ||
-					mousePos.y < -editorOffset.y || mousePos.y >= -editorOffset.y + l->levelImage->h ||
-					GFX::getPixel(l->levelImage, mousePos.x + editorOffset.x, mousePos.y + editorOffset.y) == (input->isLeftClick() ? brushCol : brushCol2))
+			if (mousePos.x < 0 || mousePos.x >= l->levelImage->w ||
+					mousePos.y < 0 || mousePos.y >= l->levelImage->h ||
+					GFX::getPixel(l->levelImage, mousePos.x, mousePos.y) == (input->isLeftClick() ? brushCol : brushCol2))
 			{
 				input->resetMouseButtons();
+				mousePos -= editorOffset;
 				return;
 			}
 			GFX::lockSurface(l->levelImage);
 			Uint32 c = input->isLeftClick() ? brushCol.getSDL_Uint32Colour(l->levelImage) : brushCol2.getSDL_Uint32Colour(l->levelImage);
-			Uint32 startCol = getpixel(l->levelImage, mousePos.x + editorOffset.x, mousePos.y + editorOffset.y);
+			Uint32 startCol = getpixel(l->levelImage, mousePos.x, mousePos.y);
 			std::list<pair<int,int> > pixelList;
-			pixelList.push_back(make_pair(mousePos.x + editorOffset.x, mousePos.y + editorOffset.y));
+			pixelList.push_back(make_pair(mousePos.x, mousePos.y));
 			while (!pixelList.empty())
 			{
 				if (getpixel(l->levelImage, pixelList.front().first, pixelList.front().second) != startCol)
@@ -2350,13 +2392,18 @@ void Editor::inputDraw()
 	{
 		if (input->isLeftClick() && currentStamp)
 		{
-			SDL_Rect dst = {mousePos.x + editorOffset.x - currentStamp->w / 2, mousePos.y + editorOffset.y - currentStamp->h / 2, 0, 0};
+			SDL_Rect dst = {mousePos.x - currentStamp->w / 2, mousePos.y - currentStamp->h / 2, 0, 0};
 			SDL_BlitSurface(currentStamp, NULL, l->levelImage, &dst);
 			input->resetMouseButtons();
 		}
 	}
-	if (input->isLeftClick() || input->isRightClick())
+	// Reset mousePos to screen coordinates (so overlays are drawn at the correct position)
+	mousePos -= editorOffset;
+
+	if (input->isLeftClick() || input->isRightClick()) {
+		lastPosLevel = mousePos + editorOffset;
 		lastPos = mousePos;
+	}
 }
 
 void Editor::inputUnits()
@@ -3191,7 +3238,7 @@ void Editor::inputUnits()
 					else
 					{
 						movingCurrentUnit = true;
-						unitMoveMouseOffset = currentUnit->getPixel(diMIDDLE) - mousePos - editorOffset;
+						unitMoveMouseOffset = currentUnit->getPixel(diMIDDLE) - (mousePos + editorOffset);
 					}
 				}
 				else
@@ -3317,6 +3364,16 @@ void Editor::inputTest()
 	}
 	else
 		l->userInput();
+}
+
+void Editor::inputChapterSettings()
+{
+	//
+}
+
+void Editor::inputChapterOrder()
+{
+	//
 }
 
 void Editor::inputMenu()
@@ -3714,7 +3771,7 @@ void Editor::renderSettings()
 	bg.render(screen);
 
 	int pos = EDITOR_MENU_OFFSET_Y;
-	for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1); ++I)
+	for (int I = settingsOffset; I < min((int)settingsItems.size(), settingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN) - 1; ++I)
 	{
 		rect.x = 0;
 		rect.y = pos;
@@ -4196,13 +4253,25 @@ void Editor::renderDraw()
 				GFX::setPixel(screen, pos.x + brushSize - 1, pos.y + I, Colour(WHITE) - GFX::getPixel(screen, pos.x + brushSize - 1, pos.y + I));
 			}
 		}
-		// Cross at exact mouse position
+		// Cross at exact mouse position (without adjustments)
 		if (brushSize > 5)
 		{
 			for (int I = -2; I <= 2 && input->getMouseX() + I < GFX::getXResolution(); ++I)
 				GFX::setPixel(screen, input->getMouseX() + I, input->getMouseY(), Colour(WHITE) - GFX::getPixel(screen, input->getMouseX() + I, input->getMouseY()));
 			for (int I = -2; I <= 2 && input->getMouseY() + I < GFX::getYResolution(); I == -1 ? I += 2 : ++I)
 				GFX::setPixel(screen, input->getMouseX(), input->getMouseY() + I, Colour(WHITE) - GFX::getPixel(screen, input->getMouseX(), input->getMouseY() + I));
+		}
+		// If user wants to draw a straight line -> draw last active mouse position
+		if ((input->isKey("LEFT_SHIFT") || input->isKey("RIGHT_SHIFT"))
+				&& (lastPosLevel - editorOffset).inRect(0, 0, GFX::getXResolution()-1, GFX::getYResolution()-1)
+				&& !(input->isLeftClick() || input->isRightClick()))
+		{
+			for (int I = -2; I <= 2 && lastPosLevel.x - editorOffset.x + I < GFX::getXResolution(); ++I)
+				GFX::setPixel(screen, lastPosLevel.x - editorOffset.x + I, lastPosLevel.y - editorOffset.y,
+						Colour(WHITE) - GFX::getPixel(screen, lastPosLevel.x - editorOffset.x + I, lastPosLevel.y - editorOffset.y));
+			for (int I = -2; I <= 2 && lastPosLevel.y - editorOffset.y + I < GFX::getYResolution(); I == -1 ? I += 2 : ++I)
+				GFX::setPixel(screen, lastPosLevel.x - editorOffset.x, lastPosLevel.y - editorOffset.y + I,
+						Colour(WHITE) - GFX::getPixel(screen, lastPosLevel.x - editorOffset.x, lastPosLevel.y - editorOffset.y + I));
 		}
 	}
 	else if (drawTool == dtCrop)
@@ -4381,6 +4450,172 @@ void Editor::renderUnits()
 void Editor::renderTest()
 {
 	l->render();
+}
+
+// name [string]
+// imageFile [string]
+// dialogueFile [string]
+// autoDetect [bool]
+// list of levels
+
+void Editor::renderChapterSettings()
+{
+	SDL_Surface *screen = GFX::getVideoSurface();
+	bg.render(screen);
+
+	int pos = EDITOR_MENU_OFFSET_Y;
+	for (int I = chapterSettingsOffset; I < min(EDITOR_NUM_CHAPTER_SETTINGS, chapterSettingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1); ++I)
+	{
+		rect.x = 0;
+		rect.y = pos;
+		rect.w = GFX::getXResolution() - EDITOR_SCROLL_SIZE - EDITOR_MENU_SPACING;
+		rect.h = EDITOR_RECT_HEIGHT;
+		// render text and selection
+		menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+		if (I == chapterSettingsSel) // active selection (swap colours)
+		{
+			if (input->isPollingKeyboard()) // Active input selection
+			{
+				SDL_FillRect(screen, &rect, 0);
+				if (I <= 3) // Text input
+				{
+					rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+					rect.w = EDITOR_ENTRY_SIZE;
+					SDL_FillRect(screen, &rect, -1);
+				}
+				menuText.setColour(WHITE);
+			}
+			else
+			{
+				SDL_FillRect(screen, &rect, -1);
+				menuText.setColour(BLACK);
+			}
+		}
+		else
+		{
+			SDL_FillRect(screen, &rect, 0);
+			menuText.setColour(WHITE);
+		}
+		switch (I)
+		{
+			case 0: menuText.print("NAME:"); break;
+			case 1: menuText.print("FOLDER:"); break;
+			case 2: menuText.print("IMAGE:"); break;
+			case 3: menuText.print("DIALOGUE:"); break;
+			case 4: menuText.print("AUTO DETECT:"); break;
+		}
+
+		// render specific menu item content
+		if (I <= 3) // Text
+		{
+			if (I == chapterSettingsSel)
+				entriesText.setColour(BLACK);
+			else
+				entriesText.setColour(WHITE);
+			string entryTemp;
+			switch (I)
+			{
+				case 0: entryTemp = c->name; break;
+				case 1: entryTemp = c->path; break;
+				case 2: entryTemp = c->imageFile; break;
+				case 3: entryTemp = c->dialogueFile; break;
+			}
+			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+			rect.y = pos;
+			rect.w = EDITOR_ENTRY_SIZE;
+			rect.h = EDITOR_RECT_HEIGHT;
+			SDL_SetClipRect(GFX::getVideoSurface(), &rect);
+			if (entriesText.getDimensions(entryTemp).x > EDITOR_ENTRY_SIZE)
+			{
+				if (I == chapterSettingsSel && input->isPollingKeyboard())
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+							pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+					entriesText.setAlignment(RIGHT_JUSTIFIED);
+				}
+				else
+				{
+					entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+							pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+					entriesText.setAlignment(LEFT_JUSTIFIED);
+				}
+				entriesText.print(entryTemp);
+				entriesText.setAlignment(CENTRED);
+			}
+			else
+			{
+				entriesText.setPosition((int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING,
+						pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+				entriesText.print(entryTemp);
+			}
+			SDL_SetClipRect(GFX::getVideoSurface(), NULL);
+		}
+		else if (I == 4) // Checkbox
+		{
+			rect.w = EDITOR_RECT_HEIGHT;
+			rect.x = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+			if (I == chapterSettingsSel)
+				SDL_FillRect(screen, &rect, 0);
+			else
+				SDL_FillRect(screen, &rect, -1);
+			rect.w = EDITOR_CHECK_HEIGHT;
+			rect.h = EDITOR_CHECK_HEIGHT;
+			rect.x += (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2;
+			rect.y += (EDITOR_RECT_HEIGHT - EDITOR_CHECK_HEIGHT) / 2;
+			if (I == chapterSettingsSel && !c->autoDetect)
+				SDL_FillRect(screen, &rect, -1);
+			else if (I != chapterSettingsSel && !c->autoDetect)
+				SDL_FillRect(screen, &rect, 0);
+		}
+		pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+	}
+	// render back menu item (always visible)
+	rect.x = 0;
+	rect.y = pos;
+	rect.w = GFX::getXResolution();
+	rect.h = EDITOR_RECT_HEIGHT;
+	menuText.setPosition(EDITOR_MENU_OFFSET_X, pos + EDITOR_RECT_HEIGHT - EDITOR_TEXT_SIZE);
+	if (chapterSettingsSel == EDITOR_NUM_CHAPTER_SETTINGS)
+	{
+		SDL_FillRect(screen, &rect, -1);
+		menuText.setColour(BLACK);
+	}
+	else
+	{
+		SDL_FillRect(screen, &rect, 0);
+		menuText.setColour(WHITE);
+	}
+	menuText.print("MENU");
+	// render scroll bar
+	int fullBarSize = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING;
+	rect.x = (int)GFX::getXResolution() - EDITOR_SCROLL_SIZE;
+	rect.y = EDITOR_MENU_OFFSET_Y;
+	rect.w = EDITOR_SCROLL_SIZE;
+	rect.h = EDITOR_SCROLL_SIZE;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 2 ? -1 : 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_SCROLL_SIZE / 2, EDITOR_MENU_OFFSET_Y + EDITOR_SCROLL_SIZE / 3,
+			(int)GFX::getXResolution() - EDITOR_SCROLL_SIZE + (EDITOR_SCROLL_SIZE * 0.25f) / 2, EDITOR_MENU_OFFSET_Y + EDITOR_SCROLL_SIZE / 1.5f,
+			(int)GFX::getXResolution() - (EDITOR_SCROLL_SIZE * 0.25f) / 2, EDITOR_MENU_OFFSET_Y + EDITOR_SCROLL_SIZE / 1.5f,
+			mouseOnScrollItem == 2 ? 0x000000FF : -1);
+	rect.y = EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_SCROLL_SIZE;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 3 ? -1 : 0);
+	filledTrigonColor(screen,
+			(int)GFX::getXResolution() - EDITOR_SCROLL_SIZE / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_SCROLL_SIZE / 3,
+			(int)GFX::getXResolution() - (EDITOR_SCROLL_SIZE * 0.25f) / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_SCROLL_SIZE / 1.5f,
+			(int)GFX::getXResolution() - EDITOR_SCROLL_SIZE + (EDITOR_SCROLL_SIZE * 0.25f) / 2, EDITOR_MENU_OFFSET_Y + fullBarSize - EDITOR_SCROLL_SIZE / 1.5f,
+			mouseOnScrollItem == 3 ? 0x000000FF : -1);
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_SCROLL_SIZE;
+	rect.h = fullBarSize - EDITOR_SCROLL_SIZE * 2;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? -1 : 0);
+	rect.y = EDITOR_MENU_OFFSET_Y + EDITOR_SCROLL_SIZE + rect.h / EDITOR_NUM_CHAPTER_SETTINGS * chapterSettingsOffset;
+	rect.h = (fullBarSize - EDITOR_SCROLL_SIZE * 2) / (float)EDITOR_NUM_CHAPTER_SETTINGS * EDITOR_MAX_MENU_ITEMS_SCREEN + 1;
+	SDL_FillRect(screen, &rect, mouseOnScrollItem == 1 ? 0 : -1);
+}
+
+void Editor::renderChapterOrder()
+{
+	//
 }
 
 void Editor::renderMenu()

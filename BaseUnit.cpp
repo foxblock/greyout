@@ -515,9 +515,15 @@ string BaseUnit::generateParameterOrders(const Order &o)
 			result += "," + StringUtility::intToString(o.ticks) + "f";
 	}
 	// Parameters
-	if (o.key == okPosition || o.key == okColour || o.key == okIncrement || o.key == okParameter || o.key == okSound || o.key == okState)
+	if (o.key == okParameter || o.key == okSound || o.key == okState)
 	{
 		for (vector<string>::const_iterator I = o.params.begin(); I != o.params.end(); ++I)
+			result += "," + *I;
+	}
+	else if (o.key == okPosition || o.key == okColour || o.key == okIncrement)
+	{
+		// Skip time parameter
+		for (vector<string>::const_iterator I = o.params.begin()+1; I != o.params.end(); ++I)
 			result += "," + *I;
 	}
 	return result;
@@ -1022,7 +1028,7 @@ bool BaseUnit::processOrder(Order& next)
 		int delimPos = next.params.front().find('=');
 		param.first = next.params.front().substr(0, delimPos);
 		param.second = next.params.front().substr(delimPos + 1);
-		if (not processParameter(param))
+		if (!processParameter(param))
 		{
 			printf("WARNING: Unprocessed parameter \"%s\" on unit with id \"%s\" in Order #%i\n",
 					param.first.c_str(), id.c_str(), currentOrder + 1);

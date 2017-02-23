@@ -26,6 +26,7 @@
 #define EDITOR_H
 
 #include "Level.h"
+#include "Chapter.h"
 
 struct EditorPanel
 {
@@ -61,10 +62,11 @@ private:
 	void inputDraw();
 	void inputUnits();
 	void inputTest();
+	void inputChapterSettings();
+	void inputChapterOrder();
 	void inputMenu();
 	void inputFileList();
 	void inputMessageBox();
-
 	void updateStart();
 	void updateDraw();
 
@@ -74,6 +76,8 @@ private:
 	void renderDraw();
 	void renderUnits();
 	void renderTest();
+	void renderChapterSettings();
+	void renderChapterOrder();
 	void renderMenu();
 	void renderFileList();
 	void renderMessageBox();
@@ -97,6 +101,8 @@ private:
 		,esDraw
 		,esUnits
 		,esTest
+		,esChapterSettings
+		,esChapterOrder
 	};
 
 	vector<string> startItems;
@@ -108,7 +114,7 @@ private:
 	/// Startup + Settings
 	string loadFile;
 	AnimatedSprite bg;
-	Vector2di lastPos;
+	Vector2di lastPos; // MousePos on last active frame in screen coordinates
 	bool mouseInBounds;
 	Text entriesText;
 	Text menuText; // Used for multiple menus
@@ -141,8 +147,9 @@ private:
 	Colour brushCol;
 	Colour brushCol2;
 	int brushSize;
-	Vector2di mousePos; // Current mouse pos, adjusted for snapping to grid and other stuff
-	Vector2di editorOffset; // Offset of the window relative to the level image
+	Vector2di mousePos; // Current mouse pos in screen coordinates, adjusted for snapping to grid and other stuff
+	Vector2di lastPosLevel; // mousePos on last active frame in level coordinates (only updates on clicks in draw mode)
+	Vector2di editorOffset; // Offset of the window relative to the level image. Add to screen coordinates to transform into level coordinates
 	Vector2di cropSize; // Size of the crop rectangle
 	Vector2di cropOffset; // Offset of the upper left corner of the crop offset relative to the level image
 	Vector2di mouseCropOffset; // Offset of the mouse to the crop rectangle when moving an edge
@@ -202,6 +209,10 @@ private:
 	int paramsSize; // Height of all unit parameters (used for sizing scrollbar for example). Set in panel draw function
 	bool addingParam; // Indicating that user is currently adding a new unit parameter
 	string addingParamTemp;
+	/// Chapter
+	Chapter *c;
+	int chapterSettingsSel;
+	int chapterSettingsOffset;
 	/// Menu
 	SDL_Surface *menuBg;
 	int menuSel;
