@@ -1382,7 +1382,7 @@ void Editor::inputDraw()
 	}
 	else
 	{
-		// Hotkeys
+		// Tool-independent Hotkeys
 		#ifndef PLATFORM_PC
 		if (isCancelKey(input))
 		#else
@@ -2160,6 +2160,11 @@ void Editor::inputDraw()
 			{
 				straightLineDirection = 0;
 			}
+			// Clip to selection box, if present
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_SetClipRect(l->levelImage, &selectArea);
+			}
 			if (brushSize == 1)
 			{
 				if (input->isLeftClick())
@@ -2240,6 +2245,10 @@ void Editor::inputDraw()
 				lastPosLevel.x += brushSize / 2;
 				lastPosLevel.y += brushSize / 2;
 			}
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_SetClipRect(l->levelImage, NULL);
+			}
 		} // left or right click
 		else
 		{
@@ -2318,7 +2327,7 @@ void Editor::inputDraw()
 			}
 			cropEdge = diNONE;
 		}
-		if (isAcceptKey(input) && drawTool == dtCrop)
+		if (isAcceptKey(input))
 		{
 			if (l->collisionLayer)
 				SDL_FreeSurface(l->collisionLayer);
@@ -2354,14 +2363,30 @@ void Editor::inputDraw()
 			drawTool = dtBrush;
 			GFX::showCursor(false);
 			input->resetKeys();
+			toolPanel.changed = true;
+			toolSettingPanel.changed = true;
 		}
 	} // crop
 	else if (drawTool == dtBucket)
 	{
 		if (input->isLeftClick() || input->isRightClick())
 		{
-			if (mousePos.x < 0 || mousePos.x >= l->levelImage->w ||
-					mousePos.y < 0 || mousePos.y >= l->levelImage->h ||
+			SDL_Rect fillerRect;
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				fillerRect.x = std::max((int)selectArea.x, 0);
+				fillerRect.y = std::max((int)selectArea.y, 0);
+				fillerRect.w = std::min((int)selectArea.w - (fillerRect.x - selectArea.x), l->levelImage->w);
+				fillerRect.h = std::min((int)selectArea.h - (fillerRect.y - selectArea.y), l->levelImage->h);
+			}
+			else
+			{
+				fillerRect.x = fillerRect.y = 0;
+				fillerRect.w = l->levelImage->w;
+				fillerRect.h = l->levelImage->h;
+			}
+			if (mousePos.x < fillerRect.x || mousePos.x >= fillerRect.x + fillerRect.w ||
+					mousePos.y < fillerRect.y || mousePos.y >= fillerRect.y + fillerRect.h ||
 					GFX::getPixel(l->levelImage, mousePos.x, mousePos.y) == (input->isLeftClick() ? brushCol : brushCol2))
 			{
 				input->resetMouseButtons();
@@ -2381,13 +2406,13 @@ void Editor::inputDraw()
 					continue;
 				}
 				putpixel(l->levelImage, pixelList.front().first, pixelList.front().second, c);
-				if (pixelList.front().first - 1 >= 0)
+				if (pixelList.front().first - 1 >= fillerRect.x)
 					pixelList.push_back(make_pair(pixelList.front().first - 1, pixelList.front().second));
-				if (pixelList.front().first + 1 < l->levelImage->w)
+				if (pixelList.front().first + 1 < fillerRect.x + fillerRect.w)
 					pixelList.push_back(make_pair(pixelList.front().first + 1, pixelList.front().second));
-				if (pixelList.front().second - 1 >= 0)
+				if (pixelList.front().second - 1 >= fillerRect.y)
 					pixelList.push_back(make_pair(pixelList.front().first, pixelList.front().second - 1));
-				if (pixelList.front().second + 1 < l->levelImage->h)
+				if (pixelList.front().second + 1 < fillerRect.y + fillerRect.h)
 					pixelList.push_back(make_pair(pixelList.front().first, pixelList.front().second + 1));
 				pixelList.pop_front();
 			}
@@ -2399,9 +2424,17 @@ void Editor::inputDraw()
 	{
 		if (input->isLeftClick() && currentStamp)
 		{
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_SetClipRect(l->levelImage, &selectArea);
+			}
 			SDL_Rect dst = {mousePos.x - currentStamp->w / 2, mousePos.y - currentStamp->h / 2, 0, 0};
 			SDL_BlitSurface(currentStamp, NULL, l->levelImage, &dst);
 			input->resetMouseButtons();
+			if (selectArea.w > 0 && selectArea.h > 0)
+			{
+				SDL_SetClipRect(l->levelImage, NULL);
+			}
 		}
 	}
 	// Reset mousePos to screen coordinates (so overlays are drawn at the correct position)
