@@ -1899,6 +1899,7 @@ void Editor::inputDraw()
 					currentStamp = stampImagesGlobal.at(stampButtonHover);
 				else if (stampButtonHover == stampImagesGlobal.size())
 				{
+					currentStamp = NULL;
 					if (selectArea.w > 0 && selectArea.h > 0)
 					{
 						showInputBox("Input a filename for the new stamp:", &stampNewFilename);
@@ -1908,6 +1909,7 @@ void Editor::inputDraw()
 					currentStamp = stampImagesChapter.at(stampButtonHover - stampImagesGlobal.size() - 1);
 				else
 				{
+					currentStamp = NULL;
 					if (selectArea.w > 0 && selectArea.h > 0)
 					{
 						showInputBox("Input a filename for the new stamp:", &stampNewFilename);
@@ -1931,6 +1933,11 @@ void Editor::inputDraw()
 		{
 			stampPanel.userIsInteracting = false;
 		}
+	}
+	else
+	{
+		stampButtonHover = -1;
+		stampPanel.changed = true;
 	}
 	// Reset panel transparency
 	if (stampPanel.active && stampPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(stampPanel.pos.x, stampPanel.pos.y, EDITOR_UNIT_PANEL_WIDTH, EDITOR_STAMP_PANEL_HEIGHT)))
@@ -2855,6 +2862,11 @@ void Editor::inputUnits()
 		{
 			unitPanel.userIsInteracting = false;
 		}
+	}
+	else
+	{
+		unitButtonHover = -1;
+		unitPanel.changed = true;
 	}
 	// Reset panel transparency
 	if (unitPanel.active && unitPanel.transparent && ((!input->isLeftClick() && !input->isRightClick()) || !mousePos.inRect(unitPanel.pos.x, unitPanel.pos.y, EDITOR_UNIT_PANEL_WIDTH, EDITOR_UNIT_PANEL_HEIGHT)))
