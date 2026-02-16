@@ -63,12 +63,12 @@
 map<int,int> Settings::savePos;
 
 Settings::Settings() :
-	active(false),
 	category(-1),
 	sel(0),
 	lastPos(0, 0),
 	mouseInBounds(false),
-	usedMouse(false)
+	usedMouse(false),
+	active(false)
 {
 	loadFromFile();
 	headlineRect.x = 0;
