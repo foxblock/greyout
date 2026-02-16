@@ -23,5 +23,18 @@ static bool isCancelKey(SimpleJoy *input)
 		);
 }
 
+static void resetAcceptKey(SimpleJoy *input)
+{
+    input->resetB();
+    input->resetKey("RETURN");
+    input->resetKey("KP_ENTER");
+}
+
+static void resetCancelKey(SimpleJoy *input)
+{
+    input->resetA();
+    input->resetKey("ESCAPE");
+}
+
 #endif // _GLOBAL_CONTROLS_H_
 
