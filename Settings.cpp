@@ -143,7 +143,7 @@ Settings::~Settings()
 
 ///--- PUBLIC ------------------------------------------------------------------
 
-int Settings::update()
+void Settings::update()
 {
 	//
 }

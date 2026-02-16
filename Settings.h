@@ -40,7 +40,7 @@ public:
 	Settings();
 	virtual ~Settings();
 
-	int update();
+	void update();
 	void render(SDL_Surface *screen);
 	void userInput(SimpleJoy *input);
 
