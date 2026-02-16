@@ -36,6 +36,7 @@ BasePlayer::BasePlayer(Level* newParent) : ControlUnit(newParent)
 	flags.addFlag(ufMissionObjective);
 	fallCounter = 0;
 	activelyMoving = false;
+	lastYCorrection = 0;
 }
 
 BasePlayer::~BasePlayer()

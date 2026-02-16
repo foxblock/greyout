@@ -75,11 +75,11 @@ public:
 	// returns "" on error or ending of chapter
 	virtual string getNextLevelAndSave(CRstring current);
 
-	string filename; // info.txt filename and path
+	string filename; // info.txt filename and full path
 	string path; // path to chapter folder (where info.txt is in) including trailing backslash
 	string name; // name of the chapter (mandatory)
-	string imageFile; // image displayed in the chapter menu
-	string dialogueFile; // file containing the strings loaded as dialogue
+	string imageFile; // filename and relative path (from chapter folder) to image displayed in the chapter menu
+	string dialogueFile; // filename and relative path (from chapter folder) to file containing the strings loaded as dialogue
 	bool autoDetect; // make this chapter auto-detect level files in the folder
 
 	// used for error output

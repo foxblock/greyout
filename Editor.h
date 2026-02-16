@@ -119,7 +119,6 @@ private:
 	Text entriesText;
 	Text menuText; // Used for multiple menus
 	SDL_Rect rect; // Dummy rect object used for drawing
-	AnimatedSprite arrows;
 	int mouseOnScrollItem; // 0 - not, 1 - on bar, 2 - up button, 3 - down button
 	int startSel;
 	int settingsSel;

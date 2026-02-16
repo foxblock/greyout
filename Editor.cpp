@@ -58,7 +58,7 @@
 #define EDITOR_MESSAGE_BOX_BUTTONS_OFFSET 320
 #define EDITOR_SELECTION_COLOUR 0x32D936FF
 
-#define EDITOR_NUM_CHAPTER_SETTINGS 4
+#define EDITOR_NUM_CHAPTER_SETTINGS 5
 
 #define EDITOR_DEFAULT_WIDTH 400
 #define EDITOR_DEFAULT_HEIGHT 240
@@ -195,31 +195,6 @@ bool fileExists (const string &file) {
 
 Editor::Editor()
 {
-	l = NULL;
-	#ifdef _DEBUG
-	debugText.loadFont(DEBUG_FONT,8);
-	debugText.setColour(50,217,54);
-	debugString = "";
-	#endif
-
-	editorState = esStart;
-	lastState = esStart;
-	GFX::showCursor(true);
-
-	bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
-	bg.disableTransparentColour();
-	bg.setPosition(0,0);
-
-	loadFile = "";
-
-	menuText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
-	menuText.setColour(WHITE);
-	menuText.setAlignment(LEFT_JUSTIFIED);
-	menuText.setUpBoundary(Vector2di(GFX::getXResolution(), GFX::getYResolution()));
-	entriesText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
-	entriesText.setColour(WHITE);
-	entriesText.setAlignment(CENTRED);
-	entriesText.setWrapping(false);
 	startItems.push_back("NEW LEVEL");
 	startItems.push_back("LOAD LEVEL");
 	startItems.push_back("NEW CHAPTER");
@@ -256,6 +231,36 @@ Editor::Editor()
 	menuItems.push_back("SAVE");
 	menuItems.push_back("BACK");
 	menuItems.push_back("EXIT");
+
+	l = NULL;
+	#ifdef _DEBUG
+	debugText.loadFont(DEBUG_FONT,8);
+	debugText.setColour(50,217,54);
+	debugString = "";
+	#endif
+
+	editorState = esStart;
+	lastState = esStart;
+	GFX::showCursor(true);
+
+	loadFile = "";
+	bg.loadFrames(SURFACE_CACHE->loadSurface("images/menu/error_bg_800_480.png"),1,1,0,0);
+	bg.disableTransparentColour();
+	bg.setPosition(0,0);
+	lastPos.x = -1;
+	lastPos.y = -1;
+	mouseInBounds = false;
+	entriesText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
+	entriesText.setColour(WHITE);
+	entriesText.setAlignment(CENTRED);
+	entriesText.setWrapping(false);
+	menuText.loadFont(GAME_FONT, EDITOR_TEXT_SIZE);
+	menuText.setColour(WHITE);
+	menuText.setAlignment(LEFT_JUSTIFIED);
+	menuText.setUpBoundary(Vector2di(GFX::getXResolution(), GFX::getYResolution()));
+	rect.x = rect.y = -1;
+	rect.w = rect.h = 0;
+	mouseOnScrollItem = 0;
 	startSel = 0;
 	settingsSel = 0;
 	settingsOffset = 0;
@@ -272,8 +277,6 @@ Editor::Editor()
 	brushSize = 32;
 	mousePos.x = 0;
 	mousePos.y = 0;
-	lastPos.x = -1;
-	lastPos.y = -1;
 	lastPosLevel.x = 0;
 	lastPosLevel.y = 0;
 	editorOffset.x = 0;
@@ -584,8 +587,10 @@ void Editor::render()
 #ifdef _DEBUG
 	hlineColor(GFX::getVideoSurface(), 0, GFX::getXResolution()-1, input->getMouseY(), 0xFF0000AA);
 	vlineColor(GFX::getVideoSurface(), input->getMouseX(), 0, GFX::getYResolution()-1, 0xFF0000AA);
-	debugText.setPosition(10,10);
-	debugText.print(debugString);
+	if (editorState != esTest) {
+		debugText.setPosition(10,10);
+		debugText.print(debugString);
+	}
 #endif
 }
 
@@ -684,20 +689,27 @@ void Editor::inputStart()
 			break;
 		case 1: // Open level
 		{
-			char* temp;
-			temp = new char[_MAX_PATH];
-			temp = getcwd(temp,_MAX_PATH);
-			// Actual loading done in updateStart
-			goToFileList((string)temp + "/levels", "DIR|txt", &loadFile);
+			char temp[_MAX_PATH];
+			if (getcwd(temp, _MAX_PATH) != NULL)
+			{
+				// Actual loading done in updateStart
+				goToFileList((string)temp + "/levels", "DIR|txt", &loadFile);
+			}
+			else
+			{
+				input->resetKeys();
+				ENGINE->stateParameter = "ERROR: getcwd (get working directory) returned with an error!";
+				setNextState(STATE_ERROR);
+				return;
+			}
 			break;
 		}
 		case 2: // New chapter
-			{
-				Chapter temp;
-				temp.loadFromFile("chapters/newDefault/info.txt");
-				temp.saveToFile("chapters/newDefault/info2.txt");
-				break;
-			}
+		{
+			c = new Chapter();
+			switchState(esChapterSettings);
+			break;
+		}
 		case 3: // Open chapter
 			break;
 		default:
@@ -3411,9 +3423,209 @@ void Editor::inputTest()
 		l->userInput();
 }
 
+// name [string]
+// folder [string]
+// imageFile [string]
+// dialogueFile [string]
+// autoDetect [bool]
+// list of levels
+
 void Editor::inputChapterSettings()
 {
-	//
+	// Keyboard input before anything else
+	if (input->isPollingKeyboard())
+	{
+		if (isAcceptKey(input))
+		{
+			input->stopKeyboardInput();
+			if (chapterSettingsSel == 0)
+			{
+				if (c->name[0] != 0 && c->path[0] != 0)
+				{
+					int temp = 1;
+					c->filename = DEFAULT_CHAPTER_FOLDER + c->name + "/" + DEFAULT_CHAPTER_INFO_FILE;
+					while (fileExists(c->filename))
+					{
+						filename = DEFAULT_CHAPTER_FOLDER + c->name + "_" + StringUtility::intToString(temp) + "/" + DEFAULT_CHAPTER_INFO_FILE;
+						++temp;
+					}
+					c->path = c->filename.substr(0,c->filename.find_last_of('/')+1);
+				}
+			}
+			else if (chapterSettingsSel == 1)
+			{
+				if (c->path[0] != 0)
+					c->filename = c->path + DEFAULT_CHAPTER_INFO_FILE;
+				else
+					c->filename = "";
+			}
+		}
+		else if (isCancelKey(input))
+		{
+			input->stopKeyboardInput();
+			if (chapterSettingsSel == 0)
+			{
+				c->name = keyboardInputBackup;
+			}
+			else if (chapterSettingsSel == 1)
+			{
+				c->path = keyboardInputBackup;
+			}
+			else if (chapterSettingsSel == 2)
+			{
+				c->imageFile = keyboardInputBackup;
+			}
+			else if (chapterSettingsSel == 3)
+			{
+				c->dialogueFile = keyboardInputBackup;
+			}
+		}
+		input->resetKeys();
+		return;
+	}
+	// Scrollbar
+	if (input->isLeftClick() && mouseOnScrollItem != 0)
+	{
+		if (mouseOnScrollItem == 2 && chapterSettingsOffset > 0)
+		{
+			--chapterSettingsOffset;
+			input->resetMouseButtons();
+		}
+		else if (mouseOnScrollItem == 3 && chapterSettingsOffset < EDITOR_NUM_CHAPTER_SETTINGS - EDITOR_MAX_MENU_ITEMS_SCREEN)
+		{
+			++chapterSettingsOffset;
+			input->resetMouseButtons();
+		}
+		else if (mouseOnScrollItem == 1)
+		{
+			int barSize = (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) * (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) - EDITOR_MENU_SPACING - EDITOR_SCROLL_SIZE * 2;
+			int scrollSize = (barSize - EDITOR_SCROLL_SIZE * 2) / (float)(EDITOR_NUM_CHAPTER_SETTINGS - 1) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1);
+			chapterSettingsOffset = round((float)(EDITOR_NUM_CHAPTER_SETTINGS - EDITOR_MAX_MENU_ITEMS_SCREEN) * (float)(input->getMouseY() - EDITOR_MENU_OFFSET_Y - EDITOR_SCROLL_SIZE - scrollSize / 2) / (float)(barSize - scrollSize));
+			if (chapterSettingsOffset < 0)
+				chapterSettingsOffset = 0;
+			else if (chapterSettingsOffset > EDITOR_NUM_CHAPTER_SETTINGS - EDITOR_MAX_MENU_ITEMS_SCREEN)
+				chapterSettingsOffset = max(EDITOR_NUM_CHAPTER_SETTINGS - EDITOR_MAX_MENU_ITEMS_SCREEN, 0);
+			return; // skip rest of input
+		}
+	}
+
+	int pos = EDITOR_MENU_OFFSET_Y;
+	mouseInBounds = false;
+	if (input->getMouse() != lastPos || input->isLeftClick() || input->isRightClick())
+	{
+		for (int I = chapterSettingsOffset; I < min(EDITOR_NUM_CHAPTER_SETTINGS, chapterSettingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN); ++I)
+		{
+			// Check Y-Position - Mouse is on menu item vertically
+			if (input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT)
+			{
+				if (input->getMouseX() < GFX::getXResolution() - EDITOR_SCROLL_SIZE - EDITOR_MENU_SPACING)
+				{
+					chapterSettingsSel = I;
+					// Check X-Position depending on menu item
+					if (I == 4) // Checkbox
+					{
+						int temp = (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE / 2 - EDITOR_RECT_HEIGHT / 2 - EDITOR_MENU_OFFSET_X - EDITOR_RECT_HEIGHT - EDITOR_MENU_SPACING;
+						mouseInBounds = (input->getMouseX() >= temp && input->getMouseX() < temp + EDITOR_RECT_HEIGHT);
+					}
+					else
+						mouseInBounds = true;
+				}
+				break;
+			}
+			pos += EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING;
+		}
+		if (!mouseInBounds && input->getMouseY() >= pos && input->getMouseY() < pos + EDITOR_RECT_HEIGHT)
+		{
+			chapterSettingsSel = EDITOR_NUM_CHAPTER_SETTINGS;
+			mouseInBounds = true;
+		}
+		mouseOnScrollItem = 0;
+		if (input->getMouseX() >= GFX::getXResolution() - EDITOR_SCROLL_SIZE)
+		{
+			if (input->getMouseY() >= EDITOR_MENU_OFFSET_Y)
+			{
+				if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + EDITOR_SCROLL_SIZE)
+					mouseOnScrollItem = 2;
+				else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) - EDITOR_MENU_SPACING - EDITOR_SCROLL_SIZE)
+					mouseOnScrollItem = 1;
+				else if (input->getMouseY() < EDITOR_MENU_OFFSET_Y + (EDITOR_RECT_HEIGHT + EDITOR_MENU_SPACING) * (EDITOR_MAX_MENU_ITEMS_SCREEN - 1) - EDITOR_MENU_SPACING)
+					mouseOnScrollItem = 3;
+			}
+		}
+		lastPos = input->getMouse();
+	}
+
+	if (input->isUp() && chapterSettingsSel > 0)
+	{
+		--chapterSettingsSel;
+		if (chapterSettingsSel < chapterSettingsOffset)
+			--chapterSettingsOffset;
+		else if (chapterSettingsSel >= chapterSettingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1) // Coming from fixed "back item" after moving there with the mouse
+			chapterSettingsOffset = chapterSettingsSel - EDITOR_MAX_MENU_ITEMS_SCREEN + 2;
+		input->resetUp();
+	}
+	else if (input->isDown() && chapterSettingsSel < EDITOR_NUM_CHAPTER_SETTINGS - 1)
+	{
+		++chapterSettingsSel;
+		if (chapterSettingsSel >= chapterSettingsOffset + EDITOR_MAX_MENU_ITEMS_SCREEN - 1 && chapterSettingsSel != EDITOR_NUM_CHAPTER_SETTINGS-1)
+			++chapterSettingsOffset;
+		input->resetDown();
+	}
+	if (input->getMouseWheelDelta())
+	{
+		chapterSettingsOffset -= input->getMouseWheelDelta();
+		if (chapterSettingsOffset < 0)
+			chapterSettingsOffset = 0;
+		else if (chapterSettingsOffset > EDITOR_NUM_CHAPTER_SETTINGS - EDITOR_MAX_MENU_ITEMS_SCREEN)
+			chapterSettingsOffset = EDITOR_NUM_CHAPTER_SETTINGS - EDITOR_MAX_MENU_ITEMS_SCREEN;
+		input->resetMouseWheel();
+	}
+
+	if (isAcceptKey(input) || (input->isLeftClick() && mouseInBounds))
+	{
+		//// Input Code for selection box
+		//		if (sel == 0)
+		//		{
+		//			if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE - EDITOR_MENU_OFFSET_X &&
+		//					mousePos.x < (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE * 0.85f - EDITOR_MENU_OFFSET_X)
+		//				setDrawPattern(getDrawPattern() - 1);
+		//			else if(mousePos.x > (int)GFX::getXResolution() - EDITOR_ENTRY_SIZE * 0.15f - EDITOR_MENU_OFFSET_X &&
+		//					mousePos.x < (int)GFX::getXResolution() - EDITOR_MENU_OFFSET_X)
+		//				setDrawPattern(getDrawPattern() + 1);
+		//		}
+		switch (settingsSel)
+		{
+		case 0: // Name
+			input->pollKeyboardInput(&c->name, KEYBOARD_MASK_ASCII);
+			keyboardInputBackup = c->name;
+			break;
+		case 1: // Chapter Path
+			input->pollKeyboardInput(&c->path, KEYBOARD_MASK_FILEFOLDER);
+			keyboardInputBackup = c->path;
+			break;
+		case 2: // Chapter image file path
+			input->pollKeyboardInput(&c->imageFile, KEYBOARD_MASK_FILEFOLDER);
+			keyboardInputBackup = c->imageFile;
+			break;
+		case 3: // Dialogue strings file path
+			input->pollKeyboardInput(&c->dialogueFile, KEYBOARD_MASK_FILEFOLDER);
+			keyboardInputBackup = c->dialogueFile;
+			break;
+		case 4: // Auto detect levels
+			c->autoDetect = !c->autoDetect;
+			break;
+		case 5: // Menu
+			//goToMenu();
+			break;
+		default:
+			break;
+		}
+		input->resetKeys();
+	}
+	else if (isCancelKey(input))
+	{
+		input->resetKeys();
+	}
 }
 
 void Editor::inputChapterOrder()
@@ -4498,6 +4710,7 @@ void Editor::renderTest()
 }
 
 // name [string]
+// folder [string]
 // imageFile [string]
 // dialogueFile [string]
 // autoDetect [bool]
@@ -4956,6 +5169,10 @@ void Editor::switchState(int toState)
 	case esTest:
 		l->reset();
 		break;
+	case esChapterSettings:
+		break;
+	case esChapterOrder:
+		break;
 	default:
 		break;
 	}
@@ -4965,26 +5182,34 @@ void Editor::switchState(int toState)
 	case esStart:
 		break;
 	case esSettings:
-		editorState = esSettings;
+		editorState = toState;
 		GFX::showCursor(true);
 		break;
 	case esDraw:
-		editorState = esDraw;
+		editorState = toState;
 		GFX::showCursor(drawTool != dtBrush);
 		toolPanel.changed = true;
 		toolSettingPanel.changed = true;
 		break;
 	case esUnits:
-		editorState = esUnits;
+		editorState = toState;
 		GFX::showCursor(true);
 		toolPanel.changed = true;
 		toolSettingPanel.changed = true;
 		break;
 	case esTest:
 		lastState = editorState;
-		editorState = esTest;
+		editorState = toState;
 		l->generateParameters();
 		l->reset();
+		break;
+	case esChapterSettings:
+		GFX::showCursor(true);
+		editorState = toState;
+		break;
+	case esChapterOrder:
+		GFX::showCursor(true);
+		editorState = toState;
 		break;
 	default:
 		break;

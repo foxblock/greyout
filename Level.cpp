@@ -551,12 +551,21 @@ void Level::init()
 	{
 	case Settings::pdFew:
 		effects.reserve(256);
+		#ifdef _DEBUG
+		cout << "Setting particle capacity to " << 256 << ", actual: " << effects.capacity() << endl;
+		#endif
 		break;
 	case Settings::pdMany:
 		effects.reserve(1024);
+		#ifdef _DEBUG
+		cout << "Setting particle capacity to " << 1024 << ", actual: " << effects.capacity() << endl;
+		#endif
 		break;
 	case Settings::pdTooMany:
 		effects.reserve(4096);
+		#ifdef _DEBUG
+		cout << "Setting particle capacity to " << 4096 << ", actual: " << effects.capacity() << endl;
+		#endif
 		break;
 	default:
 		break;
@@ -712,6 +721,13 @@ void Level::update()
 			++unit;
 		}
 	}
+
+	#ifdef _DEBUG
+	cout << "Particles before removing:";
+	for (vector<PixelParticle*>::iterator I = effects.begin(); I != effects.end(); ++I)
+		cout << *I << " ";
+	cout << endl;
+	#endif
 	for (vector<PixelParticle*>::iterator part = effects.begin();  part != effects.end();)
 	{
 		(*part)->resetTemporary();
@@ -739,6 +755,12 @@ void Level::update()
 		}
 	}
 
+	#ifdef _DEBUG
+	cout << "Particles before coll:    ";
+	for (vector<PixelParticle*>::iterator I = effects.begin(); I != effects.end(); ++I)
+		cout << *I << " ";
+	cout << endl;
+	#endif
 	// particle-map collision
 	// and update (velocity, gravity, etc.)
 	for (vector<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
@@ -860,6 +882,12 @@ void Level::update()
 	EFFECTS->update();
 
 	cam.update();
+	#ifdef _DEBUG
+	cout << "Particles after update:   ";
+	for (vector<PixelParticle*>::iterator I = effects.begin(); I != effects.end(); ++I)
+		cout << *I << " ";
+	cout << endl;
+	#endif
 
 #ifdef _DEBUG
 	debugString = debugInfo();
@@ -1419,10 +1447,10 @@ void Level::pauseUpdate()
 	Vector2di mousePos = input->getMouse();
 	mouseInBounds = false;
 	#ifdef _MUSIC
-	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - 
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 -
 			PAUSE_MENU_OFFSET_X * 2 + (trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
 	#else
-	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + 
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 +
 			(trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
 	#endif
 	for (int I = 0; I < pauseItems.size(); ++I)
@@ -1479,10 +1507,10 @@ void Level::pauseScreen()
 #endif
 
 	#ifdef _MUSIC
-	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 - 
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size())) / 2 -
 			PAUSE_MENU_OFFSET_X * 2 + (trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
 	#else
-	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 + 
+	int pos = (GFX::getYResolution() - PAUSE_MENU_SPACING * (pauseItems.size()-1)) / 2 +
 			(trialEnd ? TIME_TRIAL_OFFSET_Y : PAUSE_MENU_OFFSET_Y);
 	#endif
 
@@ -1815,13 +1843,28 @@ void Level::getUnitsByID(const vector<string>& IDs, vector<BaseUnit*>& unitVecto
 
 void Level::addParticle(const BaseUnit* const caller, const Colour& col, const Vector2df& pos, const Vector2df& vel, CRint lifeTime)
 {
+	#ifdef _DEBUG
+	cout << "Adding Particle - Before: ";
+	for (vector<PixelParticle*>::iterator I = effects.begin(); I != effects.end(); ++I)
+		cout << *I << " ";
+	cout << endl;
+	#endif
 	PixelParticle* temp = new PixelParticle(this,lifeTime);
+	#ifdef _DEBUG
+	cout << "Adding Particle - Var:    " << temp << endl;
+	#endif
 	// copy the collision colours from the calling unit to mimic behaviour
 	temp->collisionColours.insert(caller->collisionColours.begin(),caller->collisionColours.end());
 	temp->position = pos;
 	temp->velocity = vel;
 	temp->col = col;
 	effects.push_back(temp);
+	#ifdef _DEBUG
+	cout << "Adding Particle - After:  ";
+	for (vector<PixelParticle*>::iterator I = effects.begin(); I != effects.end(); ++I)
+		cout << *I << " ";
+	cout << endl;
+	#endif
 }
 
 void Level::addLink(BaseUnit* source, BaseUnit* target)

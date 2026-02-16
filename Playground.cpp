@@ -221,6 +221,12 @@ void Playground::render(SDL_Surface* screen)
 	}
 
 	// particles
+	#ifdef _DEBUG
+	cout << "Rendering particles:      ";
+	for (vector<PixelParticle*>::iterator I = effects.begin(); I != effects.end(); ++I)
+		cout << *I << " ";
+	cout << endl;
+	#endif
 	for (vector<PixelParticle*>::iterator curr = effects.begin(); curr != effects.end(); ++curr)
 	{
 		(*curr)->updateScreenPosition(drawOffset);
